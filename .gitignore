@@ -1,3 +1,4 @@
 .env
 ANTHROPIC_API_KEY*
 .DS_Store
+node_modules/
