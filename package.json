@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/H-RV/automatic-potato/issues"
   },
-  "homepage": "https://github.com/H-RV/automatic-potato#readme"
+  "homepage": "https://github.com/H-RV/automatic-potato#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
 }
