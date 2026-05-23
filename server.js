@@ -102,7 +102,15 @@ app.post('/api/analyse', (req, res) => {
 app.get('/api/price/:symbol', (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-  https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, yahooRes => {
+  const yahooHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Origin': 'https://finance.yahoo.com',
+    'Referer': 'https://finance.yahoo.com/'
+  };
+  https.get(url, { headers: yahooHeaders }, yahooRes => {
     let data = '';
     yahooRes.on('data', chunk => data += chunk);
     yahooRes.on('end', () => {
@@ -123,7 +131,15 @@ app.post('/api/prices', (req, res) => {
   let completed = 0;
   symbols.forEach(symbol => {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-    https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, yahooRes => {
+    const yahooHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Origin': 'https://finance.yahoo.com',
+    'Referer': 'https://finance.yahoo.com/'
+  };
+  https.get(url, { headers: yahooHeaders }, yahooRes => {
       let data = '';
       yahooRes.on('data', chunk => data += chunk);
       yahooRes.on('end', () => {
@@ -144,7 +160,15 @@ app.post('/api/prices', (req, res) => {
 app.get('/api/earnings/:symbol', (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=calendarEvents`;
-  https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, yahooRes => {
+  const yahooHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Origin': 'https://finance.yahoo.com',
+    'Referer': 'https://finance.yahoo.com/'
+  };
+  https.get(url, { headers: yahooHeaders }, yahooRes => {
     let data = '';
     yahooRes.on('data', chunk => data += chunk);
     yahooRes.on('end', () => {
