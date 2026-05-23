@@ -1,0 +1,22 @@
+{
+  "name": "options-desk",
+  "version": "1.0.0",
+  "description": "Upload a screenshot of your broker positions. Understand exactly what you own, what you risk, and what you make — in plain English.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/H-RV/automatic-potato.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/H-RV/automatic-potato/issues"
+  },
+  "homepage": "https://github.com/H-RV/automatic-potato#readme"
+}
