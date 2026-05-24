@@ -736,6 +736,10 @@ DTE CALCULATION EXAMPLES (today is ${today}):
 - "29MAY26" = May 29 2026 — count days from ${today} to May 29 2026  
 - "18DEC26" = December 18 2026 — count days from ${today} to Dec 18 2026
 - If DTE column shows directly (e.g. "16d") use that number
+- DTE must ALWAYS be positive (minimum 1) unless the option literally expired today
+- Do NOT use the Trade Date or Settlement Date to calculate DTE — use the EXPIRY date in the symbol
+- "IREN 29MAY26 57 C" expiry is 29MAY26 = May 29 2026, NOT the trade date shown in the row
+- If calculated DTE is negative, you used the wrong date — use the date in the SYMBOL string
 
 TYPE DETERMINATION — READ CAREFULLY:
 - Last letter of option symbol = type. P = PUT. C = CALL. This is definitive.
@@ -1073,10 +1077,15 @@ function deleteReviewRow(i){
 function getReviewTrades(){
   const rows=document.getElementById('review-tbody').rows;
   const trades=[];
+  let rowIdx=0;
   for(let row of rows){
     const inputs=row.querySelectorAll('input,select');
     const sym=inputs[0].value.trim().toUpperCase();
     if(!sym)continue;
+    // Check if this row was a demo trade
+    const origTrade = pendingTrades[rowIdx];
+    const isDemo = origTrade?._isDemo || false;
+    rowIdx++;
     trades.push({
       id:Date.now()+Math.random(),
       symbol:sym,
@@ -1090,7 +1099,8 @@ function getReviewTrades(){
       iv:parseFloat(inputs[8].value)||30,
       volume:0,
       notes:'',
-      openDate:new Date().toISOString().slice(0,10)
+      openDate:new Date().toISOString().slice(0,10),
+      _isDemo:isDemo
     });
   }
   return trades;
