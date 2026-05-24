@@ -98,29 +98,53 @@ app.post('/api/analyse', (req, res) => {
   apiReq.end();
 });
 
-// ── Live prices via Yahoo Finance ─────────────────────
+// ── Live prices ──────────────────────────────────────
+// yahooHeaders defined once, reused across all price calls
+const yahooHeaders = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'Origin': 'https://finance.yahoo.com',
+  'Referer': 'https://finance.yahoo.com/',
+  'Cache-Control': 'no-cache'
+};
+
+function fetchPrice(symbol, callback) {
+  const urls = [
+    `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
+    `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
+  ];
+  let urlIdx = 0;
+
+  function tryNext() {
+    if (urlIdx >= urls.length) return callback(null);
+    const url = urls[urlIdx++];
+    const req = https.get(url, { headers: yahooHeaders }, res => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) return tryNext();
+        try {
+          const meta = JSON.parse(data)?.chart?.result?.[0]?.meta;
+          const price = meta?.regularMarketPrice || meta?.previousClose || null;
+          if (price) callback(+price.toFixed(2));
+          else tryNext();
+        } catch(e) { tryNext(); }
+      });
+    });
+    req.on('error', tryNext);
+    req.setTimeout(8000, () => { req.destroy(); tryNext(); });
+  }
+  tryNext();
+}
+
 app.get('/api/price/:symbol', (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-  const yahooHeaders = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Origin': 'https://finance.yahoo.com',
-    'Referer': 'https://finance.yahoo.com/'
-  };
-  https.get(url, { headers: yahooHeaders }, yahooRes => {
-    let data = '';
-    yahooRes.on('data', chunk => data += chunk);
-    yahooRes.on('end', () => {
-      try {
-        const meta = JSON.parse(data)?.chart?.result?.[0]?.meta;
-        const price = meta?.regularMarketPrice || meta?.previousClose || null;
-        res.json({ symbol, price: price ? +price.toFixed(2) : null, source: 'yahoo' });
-      } catch(e) { res.json({ symbol, price: null }); }
-    });
-  }).on('error', () => res.json({ symbol, price: null }));
+  fetchPrice(symbol, price => {
+    console.log(`Price ${symbol}: ${price}`);
+    res.json({ symbol, price, source: price ? 'yahoo' : 'unavailable' });
+  });
 });
 
 // ── Batch prices ──────────────────────────────────────
@@ -130,28 +154,12 @@ app.post('/api/prices', (req, res) => {
   const results = {};
   let completed = 0;
   symbols.forEach(symbol => {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-    const yahooHeaders = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Origin': 'https://finance.yahoo.com',
-    'Referer': 'https://finance.yahoo.com/'
-  };
-  https.get(url, { headers: yahooHeaders }, yahooRes => {
-      let data = '';
-      yahooRes.on('data', chunk => data += chunk);
-      yahooRes.on('end', () => {
-        try {
-          const meta = JSON.parse(data)?.chart?.result?.[0]?.meta;
-          results[symbol] = meta?.regularMarketPrice ? +meta.regularMarketPrice.toFixed(2) : null;
-        } catch(e) { results[symbol] = null; }
-        if (++completed === symbols.length) res.json({ prices: results });
-      });
-    }).on('error', () => {
-      results[symbol] = null;
-      if (++completed === symbols.length) res.json({ prices: results });
+    fetchPrice(symbol, price => {
+      results[symbol] = price;
+      if (++completed === symbols.length) {
+        console.log('Batch prices:', results);
+        res.json({ prices: results });
+      }
     });
   });
 });
