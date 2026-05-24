@@ -65,10 +65,16 @@ nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-co
 .parse-sub{font-size:12px;color:var(--muted)}
 
 /* ── SCREENSHOT THUMB ── */
-.ss-thumb{display:none;max-width:660px;margin:0 auto 28px}
+.ss-thumb{display:none;max-width:900px;margin:0 auto 28px}
 .ss-thumb.show{display:block}
 .ss-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;color:var(--muted);margin-bottom:8px}
-.ss-img{width:100%;border-radius:10px;border:1px solid var(--border);opacity:0.55}
+.ss-img{width:100%;border-radius:10px;border:1px solid var(--border);opacity:0.85;cursor:zoom-in;transition:opacity 0.2s}
+.ss-img:hover{opacity:1}
+/* Lightbox */
+.ss-lightbox{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.92);
+  align-items:center;justify-content:center;cursor:zoom-out;padding:20px}
+.ss-lightbox.open{display:flex}
+.ss-lightbox img{max-width:95vw;max-height:95vh;border-radius:10px;object-fit:contain}
 
 /* ── REVIEW TABLE ── */
 .review-section{display:none;max-width:1100px;margin:0 auto}
@@ -393,7 +399,7 @@ tbody td{padding:10px 14px;vertical-align:middle}
       <div class="ss-label" style="margin-bottom:0">YOUR SCREENSHOT</div>
       <button onclick="resetUpload()" style="background:rgba(255,58,92,0.08);border:1px solid rgba(255,58,92,0.25);color:rgba(255,58,92,0.7);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;padding:4px 10px;border-radius:6px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.color='var(--r)'" onmouseout="this.style.color='rgba(255,58,92,0.7)'">✕ CLEAR</button>
     </div>
-    <img class="ss-img" id="ss-img" src="" alt="">
+    <img class="ss-img" id="ss-img" src="" alt="" onclick="openLightbox()" title="Click to zoom">
   </div>
 
   <!-- ══ REVIEW / CONFIRMATION TABLE ══ -->
@@ -705,49 +711,49 @@ async function parseWithAI(dataUrl){
     const base64=dataUrl.split(',')[1];
     const mediaType=dataUrl.split(';')[0].split(':')[1];
 
-    const today = new Date().toISOString().slice(0,10);
+        const today = new Date().toISOString().slice(0,10);
     const prompt=`Analyse this broker screenshot and extract ALL options positions. Return ONLY a valid JSON array, no markdown, no explanation.
 
-Today's date is ${today}. Use this to calculate DTE.
+Today's date is ${today}. Use this to calculate DTE accurately.
 
 Each object must have:
 - symbol: ticker only e.g. "TSLA"
-- type: "put" or "call" (C = call, P = put)
-- direction: "short" if selling/writing, "long" if buying
-- action: "open" if this is a new position being opened, "close" if this is a position being closed/sold-to-close/expired/assigned. Look for keywords like "Buy to Close", "Sell to Close", "Expired", "Assigned", "Closed", or if the screenshot shows trade history with closing transactions.
-- strike: the strike price number
-- stock: set to 0 — will be fetched automatically
-- premium: ALWAYS positive per share (e.g. 1.02). For closing trades this is the price paid to close.
-- dte: days from today to expiry. Set to 0 if already closed/expired.
+- type: CRITICAL — "put" if the option symbol ends in P, "call" if it ends in C. "IWM 12JUN26 265 P" = PUT. "TSLA 26MAY26 440 C" = CALL. The FINAL LETTER before any spaces determines type. P = put, C = call. Never guess — read the last letter.
+- direction: "short" if SELL/selling/writing, "long" if BUY/buying. Negative quantity = short.
+- action: "open" if opening a new position, "close" if closing/expired/assigned. Code O = open, C/C;Ep/A;C = close.
+- strike: the number immediately before the final C or P in the symbol. "IWM 12JUN26 265 P" = strike 265. "TSLA 26MAY26 440 C" = strike 440.
+- stock: set to 0 — fetched automatically
+- premium: ALWAYS positive, between 0.01 and 30.00 per share. Use T.Price or Price column. NEVER use Proceeds.
+- dte: CRITICAL — calculate days from today (${today}) to the expiry date in the symbol. "12JUN26" = June 12 2026. Count exact days. "IWM 12JUN26 265 P" with today ${today} = count days from today to June 12 2026. Never leave blank, never put 0 unless truly expired today.
 - contracts: absolute value of quantity
-- iv: estimate 35 for stocks, 18 for ETFs if not shown
+- iv: estimate 35 for stocks, 18 for ETFs (IWM/SPY/QQQ/XLE etc)
 - volume: 0 if not shown
-- notes: any relevant notes, empty string if none
-- confidence: "high" if clearly readable, "medium" if inferred
+- notes: empty string
+- confidence: "high" if type/strike/expiry clearly readable, "medium" if inferred
 
-HOW TO DETECT OPENING VS CLOSING:
-- Opening trades: new positions, "Sell to Open", "Buy to Open", "STO", "BTO", positive DTE
-- Closing trades: "Buy to Close", "Sell to Close", "BTC", "STC", "Expired", "Assigned", "Closed", trade history showing a completed round-trip, or positions with 0 DTE that were resolved
-- If a screenshot shows a trade HISTORY or ACTIVITY log with both opens and closes, set action correctly for each row
-- If unsure, default to "open"
+DTE CALCULATION EXAMPLES (today is ${today}):
+- "12JUN26" = June 12 2026 — count days from ${today} to June 12 2026
+- "29MAY26" = May 29 2026 — count days from ${today} to May 29 2026  
+- "18DEC26" = December 18 2026 — count days from ${today} to Dec 18 2026
+- If DTE column shows directly (e.g. "16d") use that number
+
+TYPE DETERMINATION — READ CAREFULLY:
+- Last letter of option symbol = type. P = PUT. C = CALL. This is definitive.
+- "IWM 12JUN26 265 P" → type: "put" ← P at end = PUT
+- "TSLA 26MAY26 440 C" → type: "call" ← C at end = CALL
+- "AAPL 20JUN26 185 P" → type: "put" ← P at end = PUT
+- Do NOT confuse the ticker symbol with the option type
 
 PREMIUM RULES:
-- Always positive. If negative you are reading a P/L column — find the fill price instead.
-- Premium is ALWAYS a small number between 0.01 and 30.00 per share. Never thousands.
-- IBKR activity report: use the "T. Price" column (Trade Price) — NOT Proceeds, NOT Basis, NOT Realized P/L. T.Price for "1.0200" means $1.02 per share premium. The number has 4 decimal places — read it carefully e.g. 1.0200 = 1.02, NOT 10200.
-- IBKR Code column: O = opened trade, C = closed trade, C;Ep = expired, A;C = assigned. Use this to set action field.
-- Tastytrade: read per-share price from sub-rows, NOT the Cst or P/L columns
-- For closing trades: premium = the T.Price of the closing row (the buyback price)
-- Proceeds = T.Price x 100 x contracts — do NOT use Proceeds as premium
+- Always positive. If negative you are reading P/L — find fill price instead
+- IBKR T.Price column = premium (e.g. 2.3500 = $2.35)
+- Tastytrade Cst column for sub-rows = premium
+- Proceeds = premium x 100 x contracts — never use as premium
 
-BROKER SYMBOL FORMAT:
-- IBKR positions: "IREN 29MAY26 57 C" = ticker IREN, expiry 29 May 2026, strike $57, call
-- IBKR activity report: Same symbol format. Rows come in pairs — open row (Code=O, Qty=-1) and close row (Code=C or C;Ep or A;C, Qty=+1). Set action="open" for O rows, action="close" for C/C;Ep/A;C rows.
-- Open row T.Price = premium collected. Close row T.Price = buyback/close price.
-- Tastytrade sub-rows: "-1 May 22 16d 566 P" = short 1, expiry May 22, 16 days, strike $566, put
-- Strike is the number before the final C or P
-- For expired trades (C;Ep): close price = 0.00, action = "close"
-- For assigned trades (A;C): note "assigned" in notes field
+BROKER FORMATS:
+- IBKR: "IWM 12JUN26 265 P" = IWM, June 12 2026, $265 strike, PUT
+- IBKR activity: Code O = open, C = close, C;Ep = expired, A;C = assigned
+- Tastytrade: "-1 May 22 16d 566 P" = short 1, May 22, 16 days, $566, PUT
 
 Return ONLY the JSON array starting with [ and ending with ]`;
 
@@ -1142,10 +1148,10 @@ function confirmTrades(){
 
   // Process opening trades
   if(openingTrades.length){
-    const issues=openingTrades.filter(t=>!t.strike||!t.premium||t.dte<1);
+    const issues=openingTrades.filter(t=>!t.strike||!t.premium);
     if(issues.length){
       const names=issues.map(t=>t.symbol).join(', ');
-      if(!confirm(`Some trades may have missing data (${names}). Build cards anyway?`))return;
+      if(!confirm(`Some trades are missing strike or premium data (${names}). Build cards anyway?`))return;
     }
     savedTrades=[...savedTrades,...openingTrades];
     localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
@@ -1184,6 +1190,8 @@ function showDashboard(){
   document.getElementById('dashboard').style.display='block';
   document.getElementById('trade-count').textContent=savedTrades.length+' OPEN';
   renderAll(savedTrades);
+  // Show demo banner if any demo trades present
+  if(savedTrades.some(t=>t._isDemo)) showDemoBanner();
   document.getElementById('dashboard').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -1219,7 +1227,9 @@ function buildCard(t,idx){
   const T=Math.max(t.dte/365,.0001);
   const sig=Math.max(t.iv/100,0.01);
   const b=bsc(t.stock,t.strike,T,sig,t.type);
-  const accent=isPut?(isShort?'#00e5a0':'#ff3a5c'):(isShort?'#4d9fff':'#ffb547');
+  // PUT = amber/orange family, CALL = blue family
+  // Short = brighter, Long = muted version
+  const accent=isPut?(isShort?'#ff9500':'#ff6b35'):(isShort?'#4d9fff':'#a78bfa');
 
   const be=isPut?t.strike-t.premium:t.strike+t.premium;
   const beBreached=isPut?t.stock<be:t.stock>be;
@@ -1228,6 +1238,8 @@ function buildCard(t,idx){
   const keep=premIn-bbCost;
   const pctCap=premIn>0?Math.min(150,Math.max(-50,keep/premIn*100)):0;
   const dailyTheta=Math.abs(b.theta)*100*t.contracts;
+  // Expired flag — DTE is 0 or negative
+  const isExpired=t.dte<=0;
 
   const ivColor=t.iv<25?'var(--g)':t.iv<50?'var(--y)':'var(--r)';
   const ivPct=Math.min(100,t.iv/80*100);
@@ -1276,6 +1288,9 @@ function buildCard(t,idx){
     </div>
   </div>
 
+  ${isExpired?`<div style="background:rgba(255,181,71,0.08);border:1px solid rgba(255,181,71,0.3);border-radius:0;padding:10px 20px;display:flex;align-items:center;gap:10px;font-size:12px;color:rgba(255,181,71,0.9)">
+    <span>⚠️</span><div><strong>This trade may have expired</strong> — DTE is 0. Close at $0.00 if expired worthless, or use Close Trade if assigned/closed early.</div>
+  </div>`:''}
   <div class="iv-vol-row">
     <div class="iv-pill">
       <div style="flex:1">
@@ -1335,6 +1350,7 @@ function buildCard(t,idx){
     <div class="cf-theta">Time decay: <strong style="color:${isShort?'var(--g)':'var(--r)'}">${isShort?'+':'-'}$${dailyTheta.toFixed(2)}/day</strong> ${isShort?'✓ for you':'✗ against you'}</div>
     <div class="cf-btns">
       <button class="cf-btn" onclick="openEditModal('${t.id}')">✎ EDIT</button>
+      <button class="cf-btn" onclick="expireWorthless('${t.id}')" style="border-color:rgba(255,181,71,0.3);color:rgba(255,181,71,0.7)">✕ REMOVE</button>
       <button class="cf-btn close-btn" onclick="closeTrade('${t.id}')">◆ CLOSE TRADE</button>
     </div>
   </div>
@@ -1532,7 +1548,38 @@ function loadDemo(){
     {id:3,symbol:'NVDA',type:'call',direction:'short',strike:920,stock:875,premium:7.40,dte:35,contracts:1,iv:46,volume:9870,notes:'Covered call',confidence:'high'},
     {id:4,symbol:'XLE',type:'put',direction:'short',strike:55,stock:57.56,premium:0.36,dte:7,contracts:2,iv:10,volume:4200,notes:'Short put — 7 days',confidence:'high'},
   ];
-  showReviewTable(demo);
+  // Mark as demo so they can be cleared
+  const demoTagged = demo.map(t=>({...t,_isDemo:true}));
+  showReviewTable(demoTagged);
+}
+
+function showDemoBanner(){
+  const existing=document.getElementById('demo-banner');
+  if(existing)return;
+  const cardsEl=document.getElementById('cards');
+  if(!cardsEl)return;
+  const banner=document.createElement('div');
+  banner.id='demo-banner';
+  banner.style.cssText='background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-radius:10px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;color:rgba(77,159,255,0.8)';
+  banner.innerHTML=`<div><strong style="color:var(--b)">📊 DEMO TRADES</strong> — Example positions to explore the app.</div><button onclick="clearAllDemoTrades()" style="background:rgba(255,58,92,0.1);border:1px solid rgba(255,58,92,0.3);color:var(--r);font-size:9px;padding:7px 14px;border-radius:7px;cursor:pointer;white-space:nowrap;flex-shrink:0">✕ CLEAR ALL DEMOS</button>`;
+  cardsEl.parentNode.insertBefore(banner,cardsEl);
+}
+
+function clearAllDemoTrades(){
+  pendingTrades=[];
+  savedTrades=savedTrades.filter(t=>!t._isDemo);
+  localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
+  const banner=document.getElementById('demo-banner');
+  if(banner)banner.remove();
+  document.getElementById('confirm-banner').classList.remove('show');
+  renderAll(savedTrades);
+  if(!savedTrades.length){
+    document.getElementById('dashboard').style.display='none';
+    document.getElementById('hero').style.display='';
+    document.getElementById('how-section').style.display='';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  showToast('Demo trades cleared');
 }
 
 // ══════════════════════════════════════════════════════
@@ -1699,8 +1746,50 @@ function exportCSV(){
 }
 
 // ══════════════════════════════════════════════════════
+// EXPIRE WORTHLESS / REMOVE TRADE
+// ══════════════════════════════════════════════════════
+function expireWorthless(id){
+  const t=savedTrades.find(x=>String(x.id)===String(id));
+  if(!t)return;
+  const choice=confirm(`Remove ${t.symbol} from your dashboard?\n\nClick OK to remove this trade.\nIf it expired worthless it will be recorded as $0 close (100% capture).\nIf it was a mistake, it will simply be deleted.`);
+  if(!choice)return;
+  // Archive as expired worthless (close at 0, 100% capture)
+  const closed={
+    ...t,
+    closePrice:0,
+    closeDate:new Date().toISOString().slice(0,10),
+    closeTimestamp:Date.now(),
+    realisedPnl:t.premium*100*t.contracts,
+    capturedPct:100,
+    notes:(t.notes||'')+' (expired worthless)',
+    status:'closed'
+  };
+  closedTrades.push(closed);
+  localStorage.setItem('smt_v1_closed',JSON.stringify(closedTrades));
+  savedTrades=savedTrades.filter(x=>String(x.id)!==String(id));
+  localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
+  renderAll(savedTrades);
+  document.getElementById('trade-count').textContent=savedTrades.length+' OPEN';
+  showToast('Trade removed — recorded as expired worthless');
+}
+
+// ══════════════════════════════════════════════════════
 // TOAST
 // ══════════════════════════════════════════════════════
+function openLightbox(){
+  const src = document.getElementById('ss-img').src;
+  if(!src) return;
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('ss-lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox(){
+  document.getElementById('ss-lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Close lightbox on escape key
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeLightbox(); });
+
 function showToast(msg, duration=3000){
   const t=document.getElementById('toast');
   t.textContent=msg;
@@ -1717,6 +1806,11 @@ if(savedTrades.length){
   showDashboard();
 }
 </script>
+  <!-- LIGHTBOX -->
+  <div class="ss-lightbox" id="ss-lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Screenshot">
+  </div>
+
   <!-- TOAST -->
   <div class="toast" id="toast"></div>
 </body>
