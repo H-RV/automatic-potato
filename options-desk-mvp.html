@@ -822,9 +822,20 @@ TASTYTRADE PREMIUM — READ THIS CAREFULLY:
 - After calculating, verify: is premium between $0.01 and $15.00? If not, recalculate using the formula above.
 
 BROKER FORMATS:
-- IBKR: "IWM 12JUN26 265 P" = IWM, June 12 2026, $265 strike, PUT
-- IBKR activity: Code O = open, C = close, C;Ep = expired, A;C = assigned
-- Tastytrade: "-1 May 22 16d 566 P" = short 1, May 22, 16 days, $566, PUT
+
+IBKR positions: "IWM 12JUN26 265 P" = IWM, June 12 2026, $265 strike, PUT. Final letter = type (P=put, C=call).
+IBKR activity report: Code O = open (direction=short if Qty negative), C/C;Ep/A;C = close. T.Price = premium per share.
+
+Tastytrade positions: Sub-rows "-1 May 22 16d 566 P" = short 1, May 22, 16 days, $566 strike, PUT.
+Premium = Cst ÷ (|contracts| × 100). DTE column = days to expiry (not D'sOpn column).
+Final letter P = PUT, C = CALL. This is definitive.
+
+Robinhood activity (screenshot of spreadsheet):
+- Description: "HOOD 3/13/2026 Call $84.00" = ticker HOOD, expiry Mar 13 2026, Call type, $84 strike
+- Trans Code: STO = Sell to Open (action=open, direction=short), BTC = Buy to Close (action=close), OEXP = Expired worthless (action=close, premium=0)
+- Price column = premium per share already (use directly, no calculation needed)
+- Ignore rows with Trans Code: Buy, CFIR, MTCH, ACAT — not options trades
+- For OEXP: the option expired worthless, close price = 0
 
 Return ONLY the JSON array starting with [ and ending with ]`;
 
