@@ -642,7 +642,20 @@ tbody td{padding:10px 14px;vertical-align:middle}
 function ncdf(x){const a1=.254829592,a2=-.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=.3275911,s=x<0?-1:1;x=Math.abs(x)/Math.sqrt(2);const t=1/(1+p*x);return .5*(1+s*(1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x)))}
 function npdf(x){return Math.exp(-.5*x*x)/Math.sqrt(2*Math.PI)}
 function bsc(S,K,T,sig,type){
-  if(T<=.0001||sig<=0){const i=type==='put'?Math.max(K-S,0):Math.max(S-K,0);return{price:i,delta:0,theta:0,vega:0,gamma:0}}
+  // Clamp inputs to prevent instability
+  T = Math.max(T, 0.0001);
+  sig = Math.max(sig, 0.01);
+  S = Math.max(S, 0.01);
+  K = Math.max(K, 0.01);
+  
+  // For very deep ITM/OTM options use intrinsic value to prevent oscillation
+  const moneyness = Math.abs(Math.log(S/K));
+  if(moneyness > 2.0 || T <= 0.0001){
+    const i=type==='put'?Math.max(K-S,0):Math.max(S-K,0);
+    const delta=type==='put'?(S<K?-1:0):(S>K?1:0);
+    return{price:i,delta,theta:0,vega:0,gamma:0}
+  }
+  
   const r=.05,d1=(Math.log(S/K)+(r+.5*sig*sig)*T)/(sig*Math.sqrt(T)),d2=d1-sig*Math.sqrt(T);
   const iC=type!=='put';
   const price=iC?S*ncdf(d1)-K*Math.exp(-r*T)*ncdf(d2):K*Math.exp(-r*T)*ncdf(-d2)-S*ncdf(-d1);
@@ -794,14 +807,19 @@ TYPE DETERMINATION — READ CAREFULLY:
 - Do NOT confuse the ticker symbol with the option type
 
 PREMIUM RULES — CRITICAL:
-- Premium is ALWAYS between $0.01 and $25.00 per share. If your number is higher, you have the wrong column.
-- IBKR T.Price column = premium per share (e.g. 2.3500 = $2.35, 1.0200 = $1.02)
-- Tastytrade sub-rows: the "Cst" column shows TOTAL cost basis in dollars NOT per share. To get per-share premium: divide Cst by (contracts x 100). Example: Cst=12.00, contracts=4 → premium = 12/(4x100) = $0.03/share. OR look at the Last price column on the sub-row for the current per-share price.
-- Tastytrade: NEVER use the summary row Cst (e.g. 265.98, 961.00) — these are portfolio totals, not premiums.
-- Tastytrade: The per-share premium you originally collected is typically shown as the fill price in your trade history, not the current Cst. Use the Cst sub-row value divided by (contracts x 100) as a guide.
-- P/L Open, P/L Day, P/L YTD columns are NEVER premiums — these are gains/losses.
-- Proceeds = premium x 100 x contracts — never use as premium
-- Sanity check: is your premium between $0.01 and $25.00? If not, recalculate.
+- Premium is ALWAYS between $0.01 and $25.00 per share. If your number exceeds $25, you have the wrong value.
+- IBKR T.Price column = premium per share (e.g. 2.3500 = $2.35, 1.0200 = $1.02). Never use Proceeds.
+
+TASTYTRADE PREMIUM — READ THIS CAREFULLY:
+- Sub-rows show: "QTY EXPIRY DTE STRIKE TYPE" e.g. "-4 May 29 29d 55 P"
+- The "Cst" column on sub-rows = TOTAL cost basis (NOT per share). Formula: premium/share = Cst ÷ (|contracts| × 100)
+  Example: Cst=136.00, contracts=4 → premium = 136 ÷ (4×100) = $0.34/share ✓
+  Example: Cst=498.00, contracts=6 → premium = 498 ÷ (6×100) = $0.83/share ✓
+  Example: Cst=264.00, contracts=4 → premium = 264 ÷ (4×100) = $0.66/share ✓
+- The "Last" column on sub-rows shows the CURRENT option price (not what you collected)
+- P/L Open = unrealised gain/loss — NEVER use as premium
+- Summary row Cst values (265.98, 961.00 etc) are PORTFOLIO TOTALS — ignore completely
+- After calculating, verify: is premium between $0.01 and $15.00? If not, recalculate using the formula above.
 
 BROKER FORMATS:
 - IBKR: "IWM 12JUN26 265 P" = IWM, June 12 2026, $265 strike, PUT
