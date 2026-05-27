@@ -793,11 +793,15 @@ TYPE DETERMINATION — READ CAREFULLY:
 - "AAPL 20JUN26 185 P" → type: "put" ← P at end = PUT
 - Do NOT confuse the ticker symbol with the option type
 
-PREMIUM RULES:
-- Always positive. If negative you are reading P/L — find fill price instead
-- IBKR T.Price column = premium (e.g. 2.3500 = $2.35)
-- Tastytrade Cst column for sub-rows = premium
+PREMIUM RULES — CRITICAL:
+- Premium is ALWAYS between $0.01 and $25.00 per share. If your number is higher, you have the wrong column.
+- IBKR T.Price column = premium per share (e.g. 2.3500 = $2.35, 1.0200 = $1.02)
+- Tastytrade sub-rows: the "Cst" column shows TOTAL cost basis in dollars NOT per share. To get per-share premium: divide Cst by (contracts x 100). Example: Cst=12.00, contracts=4 → premium = 12/(4x100) = $0.03/share. OR look at the Last price column on the sub-row for the current per-share price.
+- Tastytrade: NEVER use the summary row Cst (e.g. 265.98, 961.00) — these are portfolio totals, not premiums.
+- Tastytrade: The per-share premium you originally collected is typically shown as the fill price in your trade history, not the current Cst. Use the Cst sub-row value divided by (contracts x 100) as a guide.
+- P/L Open, P/L Day, P/L YTD columns are NEVER premiums — these are gains/losses.
 - Proceeds = premium x 100 x contracts — never use as premium
+- Sanity check: is your premium between $0.01 and $25.00? If not, recalculate.
 
 BROKER FORMATS:
 - IBKR: "IWM 12JUN26 265 P" = IWM, June 12 2026, $265 strike, PUT
