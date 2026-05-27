@@ -1083,7 +1083,7 @@ function getReviewTrades(){
     const sym=inputs[0].value.trim().toUpperCase();
     if(!sym)continue;
     // Check if this row was a demo trade
-    const origTrade = pendingTrades[rowIdx];
+    const origTrade = (typeof pendingTrades !== 'undefined' && pendingTrades[rowIdx]) || null;
     const isDemo = origTrade?._isDemo || false;
     rowIdx++;
     trades.push({
