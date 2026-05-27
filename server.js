@@ -98,52 +98,41 @@ app.post('/api/analyse', (req, res) => {
   apiReq.end();
 });
 
-// ── Live prices ──────────────────────────────────────
-// yahooHeaders defined once, reused across all price calls
-const yahooHeaders = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Accept': 'application/json, text/plain, */*',
-  'Accept-Language': 'en-US,en;q=0.9',
-  'Accept-Encoding': 'gzip, deflate, br',
-  'Origin': 'https://finance.yahoo.com',
-  'Referer': 'https://finance.yahoo.com/',
-  'Cache-Control': 'no-cache'
-};
-
+// ── Live prices via Twelve Data ──────────────────────
 function fetchPrice(symbol, callback) {
-  const urls = [
-    `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
-    `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
-  ];
-  let urlIdx = 0;
-
-  function tryNext() {
-    if (urlIdx >= urls.length) return callback(null);
-    const url = urls[urlIdx++];
-    const req = https.get(url, { headers: yahooHeaders }, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        if (res.statusCode !== 200) return tryNext();
-        try {
-          const meta = JSON.parse(data)?.chart?.result?.[0]?.meta;
-          const price = meta?.regularMarketPrice || meta?.previousClose || null;
-          if (price) callback(+price.toFixed(2));
-          else tryNext();
-        } catch(e) { tryNext(); }
-      });
-    });
-    req.on('error', tryNext);
-    req.setTimeout(8000, () => { req.destroy(); tryNext(); });
+  const apiKey = process.env.TWELVE_DATA_API_KEY;
+  if (!apiKey) {
+    console.log('TWELVE_DATA_API_KEY not set');
+    return callback(null);
   }
-  tryNext();
+  const url = `https://api.twelvedata.com/price?symbol=${symbol}&apikey=${apiKey}`;
+  const req = https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
+    let data = '';
+    res.on('data', chunk => data += chunk);
+    res.on('end', () => {
+      try {
+        const parsed = JSON.parse(data);
+        // Twelve Data returns { price: "417.85" } or { code: 400, message: "..." }
+        const price = parsed?.price ? +parseFloat(parsed.price).toFixed(2) : null;
+        console.log(`Price ${symbol}: ${price} (status: ${res.statusCode})`);
+        callback(price);
+      } catch(e) {
+        console.log(`Price ${symbol}: parse error`, e.message);
+        callback(null);
+      }
+    });
+  });
+  req.on('error', err => {
+    console.log(`Price ${symbol}: network error`, err.message);
+    callback(null);
+  });
+  req.setTimeout(8000, () => { req.destroy(); callback(null); });
 }
 
 app.get('/api/price/:symbol', (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   fetchPrice(symbol, price => {
-    console.log(`Price ${symbol}: ${price}`);
-    res.json({ symbol, price, source: price ? 'yahoo' : 'unavailable' });
+    res.json({ symbol, price, source: price ? 'twelvedata' : 'unavailable' });
   });
 });
 
