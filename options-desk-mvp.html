@@ -160,6 +160,35 @@ tbody td{padding:10px 14px;vertical-align:middle}
 .nav-journal-btn:hover,.nav-journal-btn.active{background:rgba(0,229,160,0.1);
   border-color:rgba(0,229,160,0.3);color:var(--g)}
 
+/* ── GRID SELECTOR ── */
+.grid-selector{display:flex;align-items:center;gap:6px}
+.grid-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.14em;color:var(--muted)}
+.grid-btn{width:28px;height:28px;border-radius:5px;border:1px solid var(--border);
+  background:rgba(255,255,255,0.03);color:var(--muted);font-family:'DM Mono',monospace;
+  font-size:10px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center}
+.grid-btn:hover{border-color:var(--border2);color:var(--text)}
+.grid-btn.active{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.3);color:var(--g)}
+
+/* ── CAROUSEL ── */
+.carousel-wrap{background:rgba(0,0,0,0.3);border-bottom:1px solid var(--border);
+  padding:10px 28px;position:sticky;top:57px;z-index:99;backdrop-filter:blur(14px);
+  display:none}
+.carousel-wrap.show{display:block}
+.carousel-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.2em;
+  color:var(--muted);margin-bottom:6px}
+.carousel-track{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.06) transparent}
+.carousel-track::-webkit-scrollbar{height:3px}
+.carousel-track::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+.c-chip{flex-shrink:0;padding:5px 11px;border-radius:6px;border:2px solid var(--cc);
+  background:color-mix(in srgb,var(--cc) 8%,transparent);cursor:pointer;
+  transition:all 0.15s;min-width:80px;text-align:center}
+.c-chip:hover{background:color-mix(in srgb,var(--cc) 18%,transparent);transform:translateY(-1px)}
+.c-sym{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:0.06em;
+  color:var(--cc);line-height:1;margin-bottom:1px}
+.c-pnl{font-size:8px;font-weight:700}
+.c-type{font-size:7px;letter-spacing:0.08em;color:var(--muted);margin-top:1px}
+
 /* ── JOURNAL ── */
 .journal-section{display:none;max-width:1200px;margin:0 auto;padding:32px 0 80px}
 .journal-section.show{display:block}
@@ -357,6 +386,12 @@ tbody td{padding:10px 14px;vertical-align:middle}
   </div>
 </nav>
 
+<!-- CAROUSEL -->
+<div class="carousel-wrap" id="carousel-wrap">
+  <div class="carousel-label">OPEN POSITIONS — CLICK TO JUMP</div>
+  <div class="carousel-track" id="carousel-track"></div>
+</div>
+
 <div class="wrap">
 
   <!-- HERO + UPLOAD -->
@@ -444,8 +479,15 @@ tbody td{padding:10px 14px;vertical-align:middle}
   <div id="dashboard" style="display:none">
     <div class="sec-hdr">
       <div class="sec-title">YOUR <span>POSITIONS</span></div>
-      <div style="display:flex;align-items:center;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div class="sec-meta" id="trade-count">0 OPEN</div>
+        <div class="grid-selector">
+          <span class="grid-label">COLUMNS:</span>
+          <button class="grid-btn" data-cols="1" onclick="setGrid(1)">1</button>
+          <button class="grid-btn active" data-cols="2" onclick="setGrid(2)">2</button>
+          <button class="grid-btn" data-cols="3" onclick="setGrid(3)">3</button>
+          <button class="grid-btn" data-cols="4" onclick="setGrid(4)">4</button>
+        </div>
         <button class="scan-again-btn" onclick="showUpload()">📷 SCAN MORE TRADES</button>
       </div>
     </div>
@@ -455,7 +497,7 @@ tbody td{padding:10px 14px;vertical-align:middle}
       <div class="port-stat"><div class="ps-label">YOU KEEP</div><div class="ps-value" id="pb-keep" style="color:var(--g)">—</div></div>
       <div class="port-stat"><div class="ps-label">AVG CAPTURE</div><div class="ps-value" id="pb-cap">—</div></div>
     </div>
-    <div class="cards" id="cards"></div>
+    <div class="cards" id="cards" style="grid-template-columns:repeat(2,1fr)"></div>
   </div>
 
   <!-- ── JOURNAL SECTION ── -->
@@ -740,6 +782,9 @@ DTE CALCULATION EXAMPLES (today is ${today}):
 - Do NOT use the Trade Date or Settlement Date to calculate DTE — use the EXPIRY date in the symbol
 - "IREN 29MAY26 57 C" expiry is 29MAY26 = May 29 2026, NOT the trade date shown in the row
 - If calculated DTE is negative, you used the wrong date — use the date in the SYMBOL string
+- Tastytrade shows a "DTE" column and a "D'sOpn" column. D'sOpn = days the position has been OPEN (ignore this). DTE = days until expiry (use this if shown). If DTE column shows 232d use 232, not the D'sOpn value.
+- For LEAPS (long-dated options expiring 1-2 years out): DTE will be 200-500+ days. This is correct. Do not reduce it.
+- Always use the expiry date in the symbol string to verify: count days from today (${today}) to that date
 
 TYPE DETERMINATION — READ CAREFULLY:
 - Last letter of option symbol = type. P = PUT. C = CALL. This is definitive.
@@ -1004,7 +1049,7 @@ async function fetchLivePrices(trades){
     const fetched=Object.values(prices).filter(p=>p!==null).length;
     const hint=document.querySelector('.review-hint div:last-child');
     if(hint){
-      hint.innerHTML=`Check each row carefully — correct anything the AI got wrong before building your cards. <strong style="color:var(--g)">✓ ${fetched}/${symbols.length} live prices loaded from Yahoo Finance.</strong> Strike price and DTE are the most important to verify.`;
+      hint.innerHTML=`Check each row carefully — correct anything the AI got wrong before building your cards. <strong style="color:var(--g)">✓ ${fetched}/${symbols.length} live prices loaded.</strong> Strike price and DTE are the most important to verify.`;
     }
 
   }catch(err){
@@ -1206,8 +1251,15 @@ function showDashboard(){
 }
 
 function renderAll(trades){
-  document.getElementById('cards').innerHTML=trades.map((t,i)=>buildCard(t,i)).join('');
+  const cardsEl = document.getElementById('cards');
+  cardsEl.style.gridTemplateColumns = `repeat(${currentGrid},1fr)`;
+  cardsEl.innerHTML = trades.map((t,i) => buildCard(t,i)).join('');
   updatePortBar(trades);
+  renderCarousel(trades);
+  // Restore grid button state
+  document.querySelectorAll('.grid-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.cols) === currentGrid);
+  });
 }
 
 function updatePortBar(trades){
@@ -1431,12 +1483,12 @@ function buildChart(t,b,be,T,sig,accent,isPut,isShort){
   <text x="${beX.toFixed(1)}" y="${(H-4).toFixed(1)}" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="8" font-family="monospace">$${be.toFixed(0)}</text>
   <text x="${nowX.toFixed(1)}" y="${(H-4).toFixed(1)}" text-anchor="middle" fill="${dotCol}" font-size="8" font-family="monospace" font-weight="bold">NOW</text>
   <text x="${(PL+plotW).toFixed(1)}" y="${(H-4).toFixed(1)}" text-anchor="end" fill="rgba(255,255,255,0.2)" font-size="8" font-family="monospace">$${Math.round(pMax)}</text>
-  <circle cx="${PL+8}" cy="${PT+8}" r="4" fill="#00e5a0"/>
-  <text x="${PL+16}" y="${PT+8}" fill="rgba(255,255,255,0.4)" font-size="7" font-family="monospace" dominant-baseline="middle">NOW</text>
-  <circle cx="${PL+52}" cy="${PT+8}" r="3" fill="rgba(255,180,0,0.7)"/>
-  <text x="${PL+59}" y="${PT+8}" fill="rgba(255,255,255,0.3)" font-size="7" font-family="monospace" dominant-baseline="middle">STRIKE</text>
-  <line x1="${PL+100}" y1="${PT+8}" x2="${PL+112}" y2="${PT+8}" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="3,3"/>
-  <text x="${PL+116}" y="${PT+8}" fill="rgba(255,255,255,0.3)" font-size="7" font-family="monospace" dominant-baseline="middle">B/E</text>
+  <!-- Legend moved to bottom right, outside plot area -->
+  <rect x="${W-95}" y="${H-16}" width="90" height="13" rx="3" fill="rgba(0,0,0,0.4)"/>
+  <circle cx="${W-88}" cy="${H-10}" r="3" fill="#00e5a0"/>
+  <text x="${W-83}" y="${H-10}" fill="rgba(255,255,255,0.35)" font-size="7" font-family="monospace" dominant-baseline="middle">NOW</text>
+  <circle cx="${W-57}" cy="${H-10}" r="2.5" fill="rgba(255,180,0,0.7)"/>
+  <text x="${W-52}" y="${H-10}" fill="rgba(255,255,255,0.25)" font-size="7" font-family="monospace" dominant-baseline="middle">STRIKE</text>
 </svg>`;
 }
 
@@ -1753,6 +1805,60 @@ function exportCSV(){
   a.download='options-desk-journal-'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════════════════
+// GRID SELECTOR
+// ══════════════════════════════════════════════════════
+let currentGrid = parseInt(localStorage.getItem('smt_grid') || '2');
+
+function setGrid(n){
+  currentGrid = n;
+  localStorage.setItem('smt_grid', n);
+  document.querySelectorAll('.grid-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.cols) === n);
+  });
+  const cards = document.getElementById('cards');
+  if(cards) cards.style.gridTemplateColumns = `repeat(${n},1fr)`;
+}
+
+// ══════════════════════════════════════════════════════
+// CAROUSEL
+// ══════════════════════════════════════════════════════
+function renderCarousel(trades){
+  const wrap = document.getElementById('carousel-wrap');
+  const track = document.getElementById('carousel-track');
+  if(!wrap || !track) return;
+
+  if(!trades || !trades.length){
+    wrap.classList.remove('show');
+    return;
+  }
+
+  wrap.classList.add('show');
+  track.innerHTML = trades.map(t => {
+    const T = Math.max(t.dte/365, 0.0001);
+    const b = bsc(t.stock, t.strike, T, Math.max(t.iv/100, 0.01), t.type);
+    const isPut = t.type === 'put';
+    const isShort = t.direction === 'short';
+    const pnl = isShort ? (t.premium - b.price)*100*t.contracts : (b.price - t.premium)*100*t.contracts;
+    const cc = isPut ? (isShort ? '#ff9500' : '#ff6b35') : (isShort ? '#4d9fff' : '#a78bfa');
+    const pnlStr = (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toFixed(0);
+    return `<div class="c-chip" style="--cc:${cc}" onclick="jumpToCard('${t.id}')">
+      <div class="c-sym">${t.symbol}</div>
+      <div class="c-pnl" style="color:${pnl >= 0 ? 'var(--g)' : 'var(--r)'}">${pnlStr}</div>
+      <div class="c-type">${t.type.toUpperCase()}</div>
+    </div>`;
+  }).join('');
+}
+
+function jumpToCard(id){
+  const el = document.getElementById('card-' + id);
+  if(el){
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.style.boxShadow = '0 0 0 2px var(--g)';
+    setTimeout(() => el.style.boxShadow = '', 1500);
+  }
 }
 
 // ══════════════════════════════════════════════════════
