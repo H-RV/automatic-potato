@@ -211,8 +211,11 @@ tbody td{padding:10px 14px;vertical-align:middle}
   /* Wrap padding */
   .wrap{padding:0 16px}
 
-  /* Hero */
-  .hero{padding:40px 0 32px}
+  /* Centre everything on mobile */
+  .hero{padding:40px 0 32px;text-align:center}
+  .hero-trust{justify-content:center}
+  .drop-zone{text-align:center}
+  .dz-chips{justify-content:center}
   .hero-h{font-size:clamp(48px,14vw,72px)}
   .hero-sub{font-size:14px}
   .hero-trust{gap:12px}
@@ -230,7 +233,7 @@ tbody td{padding:10px 14px;vertical-align:middle}
   .c-sym{font-size:12px}
 
   /* Dashboard header */
-  .sec-hdr{flex-direction:column;align-items:flex-start;gap:10px}
+  .sec-hdr{flex-direction:column;align-items:center;gap:10px;text-align:center}
   .grid-selector{display:none} /* hide grid selector on mobile — always 1 col */
 
   /* Cards — always 1 column on mobile */
@@ -254,7 +257,7 @@ tbody td{padding:10px 14px;vertical-align:middle}
 
   /* Journal */
   .journal-section{padding:20px 0 60px}
-  .journal-hdr{flex-direction:column;align-items:flex-start;gap:12px}
+  .journal-hdr{flex-direction:column;align-items:center;gap:12px;text-align:center}
   .journal-actions{flex-wrap:wrap;gap:8px}
   .j-stats{grid-template-columns:repeat(2,1fr)}
   .j-table-wrap{overflow-x:scroll}
@@ -1752,8 +1755,8 @@ function buildCard(t,idx){
 // ══════════════════════════════════════════════════════
 function buildChart(t,b,be,T,sig,accent,isPut,isShort){
   // Canvas dimensions with strict padding to prevent overflow
-  const W=560, H=200;
-  const PL=52, PR=20, PT=28, PB=32; // left/right/top/bottom padding
+  const W=560, H=220;
+  const PL=44, PR=16, PT=32, PB=36; // left/right/top/bottom padding
   const PW=W-PL-PR, PH=H-PT-PB;    // plot width/height
 
   // Price range — stock ± 30%
@@ -1863,11 +1866,11 @@ function buildChart(t,b,be,T,sig,accent,isPut,isShort){
     if(ly<PT+10)ly=kp.y+18;
     if(ly>H-PB-4)ly=kp.y-12;
     
-    // Check collision with previously placed labels
+    // Check collision with previously placed labels — push apart more aggressively
     for(let prev of labelYPositions){
-      if(Math.abs(lx-prev.x)<40&&Math.abs(ly-prev.y)<14){
-        ly=prev.y+(ly>prev.y?16:-16);
-        ly=Math.max(PT+8,Math.min(H-PB-4,ly));
+      if(Math.abs(lx-prev.x)<52&&Math.abs(ly-prev.y)<18){
+        ly=prev.y+(ly>prev.y?20:-20);
+        ly=Math.max(PT+10,Math.min(H-PB-10,ly));
       }
     }
     labelYPositions.push({x:lx,y:ly});
@@ -1908,7 +1911,7 @@ function buildChart(t,b,be,T,sig,accent,isPut,isShort){
     <circle cx="${legendX-10}" cy="${legendY}" r="3" fill="rgba(255,58,92,0.8)"/>
     <text x="${legendX-5}" y="${legendY}" fill="rgba(255,255,255,0.3)" font-size="8" font-family="monospace" dominant-baseline="middle" text-anchor="start">LOSS</text>`;
 
-  return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="height:200px">
+  return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="height:auto;min-height:160px">
   <rect width="${W}" height="${H}" fill="rgba(0,0,0,0.25)" rx="10"/>
   ${profitFill}${lossFill}
   ${zeroLine}
