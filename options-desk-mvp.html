@@ -928,7 +928,7 @@ Robinhood activity (screenshot of spreadsheet):
 - Ignore rows with Trans Code: Buy, CFIR, MTCH, ACAT — not options trades
 - For OEXP: the option expired worthless, close price = 0
 
-Return ONLY the JSON array starting with [ and ending with ]`;
+Return ONLY the JSON array starting with [ and ending with ]. All numeric fields must be plain numbers — no dollar signs, no quotes around numbers, no NaN. Example: "premium": 1.02 not "premium": "$1.02"`;
 
     const res=await fetch('/api/analyse',{
       method:'POST',
@@ -941,7 +941,16 @@ Return ONLY the JSON array starting with [ and ending with ]`;
 
     if(data.error){throw new Error(data.error)}
 
-    const text=data.content[0].text.trim().replace(/```json|```/g,'').trim();
+    let text=data.content[0].text.trim().replace(/```json|```/g,'').trim();
+    // Sanitise common AI number formatting issues
+    text = text
+      .replace(/:\s*\$([0-9.]+)/g, ': $1')       // "$1.02" → 1.02
+      .replace(/:\s*"([0-9.]+)"/g, ': $1')          // "1.02" string → number
+      .replace(/:\s*NaN/g, ': 0')                   // NaN → 0
+      .replace(/:\s*undefined/g, ': 0')             // undefined → 0
+      .replace(/:\s*null,/g, ': 0,')                // null mid-object → 0
+      .replace(/,\s*}/g, '}')                       // trailing commas
+      .replace(/,\s*]/g, ']');                      // trailing commas in arrays
     const trades=JSON.parse(text);
     showReviewTable(trades);
 
