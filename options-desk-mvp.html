@@ -1486,20 +1486,35 @@ function buildCard(t,idx){
 
       <!-- Progress bar with 50% and 80% markers -->
       <div style="position:relative;margin:12px 0 6px">
+        ${pctCap>=0?`
+        <!-- Positive bar: fills left to right -->
         <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:visible;position:relative">
-          <div style="height:100%;border-radius:4px;width:${Math.max(0,Math.min(100,pctCap))}%;background:${pctCap>=80?'var(--g)':pctCap>=50?'var(--b)':pctCap>=0?'var(--y)':'var(--r)'};transition:width 0.6s ease;position:relative"></div>
-          <!-- 50% marker -->
+          <div style="height:100%;border-radius:4px;width:${Math.max(0,Math.min(100,pctCap))}%;background:${pctCap>=80?'var(--g)':pctCap>=50?'var(--b)':'var(--y)'};transition:width 0.6s ease"></div>
           <div style="position:absolute;top:-3px;left:50%;width:2px;height:14px;background:rgba(255,255,255,0.15);border-radius:1px;transform:translateX(-50%)"></div>
-          <!-- 80% marker -->
           <div style="position:absolute;top:-3px;left:80%;width:2px;height:14px;background:rgba(255,255,255,0.15);border-radius:1px;transform:translateX(-50%)"></div>
         </div>
-        <!-- Marker labels -->
         <div style="display:flex;justify-content:space-between;margin-top:5px;position:relative">
           <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--dim)">0%</span>
           <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(77,159,255,0.5);position:absolute;left:50%;transform:translateX(-50%)">50%</span>
           <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(0,229,160,0.5);position:absolute;left:80%;transform:translateX(-50%)">80%</span>
           <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--dim)">100%</span>
+        </div>`
+        :`
+        <!-- Negative bar: shows loss beyond premium collected -->
+        <div style="margin-bottom:5px;font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,58,92,0.7)">
+          LOSS vs PREMIUM COLLECTED
         </div>
+        <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;position:relative">
+          <!-- Premium collected marker at 50% of bar -->
+          <div style="position:absolute;top:0;left:0;height:100%;width:50%;background:rgba(255,255,255,0.04);border-right:2px solid rgba(255,255,255,0.15)"></div>
+          <!-- Loss bar fills from center rightward -->
+          <div style="position:absolute;top:0;left:50%;height:100%;width:${Math.min(50,Math.abs(pctCap)/2)}%;background:linear-gradient(90deg,rgba(255,181,71,0.6),rgba(255,58,92,0.9));transition:width 0.6s ease;border-radius:0 4px 4px 0"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:5px">
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--dim)">MAX LOSS</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(255,255,255,0.2)">BREAK EVEN</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--dim)">SAFE ZONE →</span>
+        </div>`}
       </div>
 
       <!-- Action prompt based on capture % -->
@@ -1510,7 +1525,7 @@ function buildCard(t,idx){
         <span>◈</span><span><strong>50%+ captured</strong> — good progress, monitor closely</span>
       </div>`
       :pctCap<0?`<div style="margin:8px 0;padding:7px 10px;background:rgba(255,58,92,0.06);border:1px solid rgba(255,58,92,0.2);border-radius:7px;font-size:11px;color:rgba(255,58,92,0.8);display:flex;align-items:center;gap:7px">
-        <span>⚠</span><span><strong>Trade is underwater</strong> — buyback costs more than premium collected</span>
+        <span>⚠</span><div><strong>Trade is underwater</strong><br><span style="font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6">You'd pay <strong style="color:rgba(255,58,92,0.9)">$${(bbCost-premIn).toFixed(0)} more</strong> to close than you collected. Hold if price may recover, or close now to cap the loss.</span></div>
       </div>`
       :'<div style="margin:8px 0;padding:7px 10px;background:rgba(255,181,71,0.05);border:1px solid rgba(255,181,71,0.15);border-radius:7px;font-size:11px;color:rgba(255,181,71,0.7);display:flex;align-items:center;gap:7px"><span>⏱</span><span>Let time decay work — target <strong>50–80%</strong> capture before closing</span></div>'}
 
