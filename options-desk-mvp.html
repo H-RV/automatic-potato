@@ -234,7 +234,10 @@ tbody td{padding:10px 14px;vertical-align:middle}
 
   /* Dashboard header */
   .sec-hdr{flex-direction:column;align-items:center;gap:10px;text-align:center}
-  .grid-selector{display:none} /* hide grid selector on mobile — always 1 col */
+  .sec-hdr>div{justify-content:center;width:100%}
+  .grid-selector{display:none}
+  .scan-again-btn{width:100%;text-align:center;justify-content:center}
+  .port-bar{border-radius:12px}
 
   /* Cards — always 1 column on mobile */
   .cards{grid-template-columns:1fr !important}
@@ -1755,8 +1758,8 @@ function buildCard(t,idx){
 // ══════════════════════════════════════════════════════
 function buildChart(t,b,be,T,sig,accent,isPut,isShort){
   // Canvas dimensions with strict padding to prevent overflow
-  const W=560, H=220;
-  const PL=44, PR=16, PT=32, PB=36; // left/right/top/bottom padding
+  const W=560, H=200;
+  const PL=40, PR=14, PT=24, PB=28; // left/right/top/bottom padding
   const PW=W-PL-PR, PH=H-PT-PB;    // plot width/height
 
   // Price range — stock ± 30%
@@ -1853,24 +1856,21 @@ function buildChart(t,b,be,T,sig,accent,isPut,isShort){
     return {...kp,x,y,pnl};
   }).filter(kp=>kp.x>=PL&&kp.x<=W-PR);
 
-  // Assign label positions with minimum 32px separation
+  // Assign label positions — alternate above/below to prevent overlap
   labelItems.sort((a,b)=>a.x-b.x);
   const labelYPositions=[];
   const labelElements=labelItems.map((kp,i)=>{
-    // Clamp x so text never goes outside chart
     const labelW=kp.label==='STRIKE'?34:kp.label==='NOW'?22:16;
-    const lx=Math.max(PL+labelW/2,Math.min(W-PR-labelW/2,kp.x));
-    
-    // Place label above or below dot, avoiding overlap with zero line and boundaries
-    let ly=kp.y-12;
-    if(ly<PT+10)ly=kp.y+18;
-    if(ly>H-PB-4)ly=kp.y-12;
-    
-    // Check collision with previously placed labels — push apart more aggressively
+    const lx=Math.max(PL+labelW/2+2,Math.min(W-PR-labelW/2-2,kp.x));
+    // Alternate above/below by index to prevent stacking
+    let ly=i%2===0?kp.y-14:kp.y+22;
+    if(ly<PT+8)ly=kp.y+22;
+    if(ly>H-PB-8)ly=kp.y-14;
+    // Secondary collision check
     for(let prev of labelYPositions){
-      if(Math.abs(lx-prev.x)<52&&Math.abs(ly-prev.y)<18){
-        ly=prev.y+(ly>prev.y?20:-20);
-        ly=Math.max(PT+10,Math.min(H-PB-10,ly));
+      if(Math.abs(lx-prev.x)<48&&Math.abs(ly-prev.y)<16){
+        ly=prev.y+(ly>prev.y?22:-22);
+        ly=Math.max(PT+8,Math.min(H-PB-8,ly));
       }
     }
     labelYPositions.push({x:lx,y:ly});
