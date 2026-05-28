@@ -1762,10 +1762,12 @@ function buildChart(t,b,be,T,sig,accent,isPut,isShort){
   const PL=40, PR=14, PT=24, PB=28; // left/right/top/bottom padding
   const PW=W-PL-PR, PH=H-PT-PB;    // plot width/height
 
-  // Price range — stock ± 30%
+  // Price range — tighter focus on the interesting zone
   const S=t.stock, K=t.strike;
-  const lo=Math.min(S*0.70, K*0.80);
-  const hi=Math.max(S*1.30, K*1.20);
+  const spread=Math.abs(S-K);
+  const padding=Math.max(spread*1.5, S*0.15);
+  const lo=Math.max(0.01, Math.min(S,K) - padding);
+  const hi=Math.max(S,K) + padding;
   const range=hi-lo;
 
   // Helper: price → x pixel
