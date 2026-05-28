@@ -89,8 +89,14 @@ app.post('/api/analyse', (req, res) => {
     apiRes.on('data', chunk => data += chunk);
     apiRes.on('end', () => {
       console.log('Anthropic status:', apiRes.statusCode);
-      try { res.status(apiRes.statusCode).json(JSON.parse(data)); }
-      catch(e) { res.status(500).json({ error: 'Bad response from Anthropic' }); }
+      try {
+        const parsed = JSON.parse(data);
+        res.status(apiRes.statusCode).json(parsed);
+      } catch(e) {
+        console.log('Anthropic parse error:', e.message);
+        console.log('Raw (first 300):', data.substring(0,300));
+        res.status(200).json({ content: [{ type: 'text', text: data }] });
+      }
     });
   });
   apiReq.on('error', err => res.status(500).json({ error: err.message }));
