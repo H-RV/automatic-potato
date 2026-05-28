@@ -62,7 +62,7 @@ app.post('/api/analyse', (req, res) => {
 
   const body = JSON.stringify({
     model: 'claude-sonnet-4-5',
-    max_tokens: 2000,
+    max_tokens: 4000,
     messages: [{
       role: 'user',
       content: [
@@ -86,20 +86,29 @@ app.post('/api/analyse', (req, res) => {
 
   const apiReq = https.request(options, apiRes => {
     let data = '';
-    apiRes.on('data', chunk => data += chunk);
+    apiRes.on('data', chunk => { data += chunk; });
     apiRes.on('end', () => {
       console.log('Anthropic status:', apiRes.statusCode);
+      console.log('Response length:', data.length);
       try {
         const parsed = JSON.parse(data);
         res.status(apiRes.statusCode).json(parsed);
       } catch(e) {
         console.log('Anthropic parse error:', e.message);
-        console.log('Raw (first 300):', data.substring(0,300));
-        res.status(200).json({ content: [{ type: 'text', text: data }] });
+        console.log('Raw response (first 500):', data.substring(0, 500));
+        res.status(500).json({ error: 'Failed to parse Anthropic response: ' + e.message });
       }
     });
   });
-  apiReq.on('error', err => res.status(500).json({ error: err.message }));
+  apiReq.on('error', err => {
+    console.log('Anthropic request error:', err.message);
+    res.status(500).json({ error: err.message });
+  });
+  apiReq.setTimeout(60000, () => {
+    console.log('Anthropic request timed out');
+    apiReq.destroy();
+    res.status(500).json({ error: 'Request timed out' });
+  });
   apiReq.write(body);
   apiReq.end();
 });
