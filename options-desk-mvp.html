@@ -923,7 +923,7 @@ Final letter P = PUT, C = CALL. This is definitive.
 
 Robinhood activity (screenshot of spreadsheet):
 - Description: "HOOD 3/13/2026 Call $84.00" = ticker HOOD, expiry Mar 13 2026, Call type, $84 strike
-- Trans Code: STO = Sell to Open (action=open, direction=short), BTC = Buy to Close (action=close), OEXP = Expired worthless (action=close, premium=0)
+- Trans Code: STO = Sell to Open (action="open", direction="short"), BTC = Buy to Close (action="close", direction="long" — this is a closing trade not a new position), OEXP = Expired worthless (action="close", premium=0, direction="short")
 - Price column = premium per share already (use directly, no calculation needed)
 - Ignore rows with Trans Code: Buy, CFIR, MTCH, ACAT — not options trades
 - For OEXP: the option expired worthless, close price = 0
@@ -1276,7 +1276,7 @@ function getReviewTrades(){
       strike:parseFloat(inputs[3].value)||0,
       stock:parseFloat(inputs[4].value)||parseFloat(inputs[3].value)||100,
       premium:parseFloat(inputs[5].value)||0,
-      dte:parseInt(inputs[6].value)||1,
+      dte:Math.max(1,parseInt(inputs[6].value)||1),
       contracts:parseInt(inputs[7].value)||1,
       iv:parseFloat(inputs[8].value)||30,
       volume:0,
