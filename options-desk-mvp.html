@@ -937,12 +937,13 @@ Return ONLY the JSON array starting with [ and ending with ]. All numeric fields
     });
 
     clearInterval(timer);
-    const data=await res.json();
+    const raw = await res.text();
+    console.log('RAW SERVER RESPONSE:', raw.substring(0, 800));
+    const data = JSON.parse(raw);
 
     if(data.error){throw new Error(data.error)}
 
     let text=data.content[0].text.trim().replace(/```json|```/g,'').trim();
-    // Log raw response for debugging
     console.log('RAW AI RESPONSE:', text.substring(0, 500));
     // Sanitise common AI number formatting issues
     text = text
