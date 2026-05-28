@@ -235,12 +235,16 @@ tbody td{padding:10px 14px;vertical-align:middle}
   /* Dashboard header */
   .sec-hdr{flex-direction:column;align-items:center;gap:10px;text-align:center}
   .sec-hdr>div{justify-content:center;width:100%}
-  .grid-selector{display:none}
+  .grid-selector{display:none !important}
   .scan-again-btn{width:100%;text-align:center;justify-content:center}
   .port-bar{border-radius:12px}
 
   /* Cards — always 1 column on mobile */
   .cards{grid-template-columns:1fr !important}
+
+  /* Card header mobile */
+  .card-hdr{flex-wrap:wrap;gap:8px}
+  .card-badges{flex-direction:row;gap:4px;align-items:center}
 
   /* Card internals */
   .card-sym{font-size:26px}
@@ -1757,169 +1761,165 @@ function buildCard(t,idx){
 // CHART
 // ══════════════════════════════════════════════════════
 function buildChart(t,b,be,T,sig,accent,isPut,isShort){
-  // Canvas dimensions with strict padding to prevent overflow
-  const W=560, H=200;
-  const PL=40, PR=14, PT=24, PB=28; // left/right/top/bottom padding
-  const PW=W-PL-PR, PH=H-PT-PB;    // plot width/height
+  const W=560, H=220;
+  const PL=56, PR=16, PT=20, PB=32;
+  const PW=W-PL-PR, PH=H-PT-PB;
 
-  // Price range — tighter focus on the interesting zone
+  // Tighter price range focused on action zone
   const S=t.stock, K=t.strike;
   const spread=Math.abs(S-K);
-  const padding=Math.max(spread*1.5, S*0.15);
-  const lo=Math.max(0.01, Math.min(S,K) - padding);
-  const hi=Math.max(S,K) + padding;
+  const padding=Math.max(spread*1.8, S*0.12);
+  const lo=Math.max(0.01, Math.min(S,K)-padding);
+  const hi=Math.max(S,K)+padding;
   const range=hi-lo;
 
-  // Helper: price → x pixel
   const px=p=>PL+((p-lo)/range)*PW;
-  // Helper: pnl → y pixel (clamped within plot area)
-  let allPnls=[];
-  const nPts=60;
-  for(let i=0;i<=nPts;i++){
-    const price=lo+(hi-lo)*(i/nPts);
-    const opt=bsc(price,t.strike,T,sig,t.type).price;
-    const pnl=isShort?(t.premium-opt)*100*t.contracts:(opt-t.premium)*100*t.contracts;
-    allPnls.push(pnl);
-  }
-  const maxPnl=Math.max(...allPnls);
-  const minPnl=Math.min(...allPnls);
-  const pnlRange=Math.max(Math.abs(maxPnl),Math.abs(minPnl),50)*2.2;
-  const midPnl=(maxPnl+minPnl)/2;
-  const py=p=>PT+PH/2-(p-midPnl)/pnlRange*PH;
-  const pyClamped=p=>Math.max(PT+2,Math.min(PT+PH-2,py(p)));
 
-  // Build path points
+  // Build P&L curve
+  const nPts=80;
   const pts=[];
   for(let i=0;i<=nPts;i++){
     const price=lo+(hi-lo)*(i/nPts);
     const opt=bsc(price,t.strike,T,sig,t.type).price;
     const pnl=isShort?(t.premium-opt)*100*t.contracts:(opt-t.premium)*100*t.contracts;
-    pts.push({price,pnl,x:px(price),y:pyClamped(pnl)});
+    pts.push({price,pnl,x:px(price)});
   }
 
-  // Split path at breakeven into profit (green) and loss (red) segments
-  function buildPath(points){return points.map((p,i)=>(i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`)).join(' ');}
+  // P&L range for y axis
+  const allPnls=pts.map(p=>p.pnl);
+  const maxP=Math.max(...allPnls);
+  const minP=Math.min(...allPnls);
+  const pad=(maxP-minP)*0.15;
+  const yHi=maxP+pad, yLo=minP-pad;
+  const yRange=yHi-yLo;
 
-  const profitPts=[], lossPts=[];
-  let inProfit=pts[0].pnl>=0;
-  let currentProfit=[],currentLoss=[];
+  const py=p=>PT+PH-(( p-yLo)/yRange)*PH;
+  const pyC=p=>Math.max(PT+1,Math.min(PT+PH-1,py(p)));
 
+  // Add y to pts
+  pts.forEach(p=>p.y=pyC(p.pnl));
+
+  // Zero line y
+  const zeroY=pyC(0);
+
+  // Build profit/loss path segments
+  function pathStr(arr){return arr.map((p,i)=>(i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`)).join(' ')}
+
+  const profitSegs=[], lossSegs=[];
+  let curProfit=[], curLoss=[];
   for(let i=0;i<pts.length;i++){
     const p=pts[i];
-    const wasProfit=i>0?pts[i-1].pnl>=0:inProfit;
-    const isP=p.pnl>=0;
-    if(wasProfit!==isP&&i>0){
-      // Interpolate crossover point
+    if(i>0&&((pts[i-1].pnl>=0)!==(p.pnl>=0))){
       const prev=pts[i-1];
       const frac=Math.abs(prev.pnl)/(Math.abs(prev.pnl)+Math.abs(p.pnl));
       const cx=prev.x+(p.x-prev.x)*frac;
-      const cy=prev.y+(p.y-prev.y)*frac;
-      const cross={x:cx,y:cy,pnl:0,price:prev.price+(p.price-prev.price)*frac};
-      if(wasProfit){currentProfit.push(cross);profitPts.push(currentProfit);currentProfit=[];currentLoss=[cross];}
-      else{currentLoss.push(cross);lossPts.push(currentLoss);currentLoss=[];currentProfit=[cross];}
+      const cy=zeroY;
+      const cross={x:cx,y:cy,pnl:0};
+      if(prev.pnl>=0){curProfit.push(cross);profitSegs.push(curProfit);curProfit=[];curLoss=[cross];}
+      else{curLoss.push(cross);lossSegs.push(curLoss);curLoss=[];curProfit=[cross];}
     }
-    if(isP)currentProfit.push(p);else currentLoss.push(p);
+    p.pnl>=0?curProfit.push(p):curLoss.push(p);
   }
-  if(currentProfit.length)profitPts.push(currentProfit);
-  if(currentLoss.length)lossPts.push(currentLoss);
+  if(curProfit.length)profitSegs.push(curProfit);
+  if(curLoss.length)lossSegs.push(curLoss);
 
-  const profitPath=profitPts.map(seg=>`<path d="${buildPath(seg)}" fill="none" stroke="rgba(0,229,160,0.85)" stroke-width="2.5" stroke-linecap="round"/>`).join('');
-  const lossPath=lossPts.map(seg=>`<path d="${buildPath(seg)}" fill="none" stroke="rgba(255,58,92,0.85)" stroke-width="2.5" stroke-linecap="round"/>`).join('');
-
-  // Fill areas
-  const zeroY=pyClamped(0);
-  const profitFill=profitPts.map(seg=>{
+  // Fill zones
+  const fillPath=(seg,col)=>{
     if(seg.length<2)return '';
-    const d=buildPath(seg)+` L${seg[seg.length-1].x.toFixed(1)},${zeroY.toFixed(1)} L${seg[0].x.toFixed(1)},${zeroY.toFixed(1)} Z`;
-    return `<path d="${d}" fill="rgba(0,229,160,0.06)" stroke="none"/>`;
-  }).join('');
-  const lossFill=lossPts.map(seg=>{
-    if(seg.length<2)return '';
-    const d=buildPath(seg)+` L${seg[seg.length-1].x.toFixed(1)},${zeroY.toFixed(1)} L${seg[0].x.toFixed(1)},${zeroY.toFixed(1)} Z`;
-    return `<path d="${d}" fill="rgba(255,58,92,0.06)" stroke="none"/>`;
+    const d=pathStr(seg)+` L${seg[seg.length-1].x.toFixed(1)},${zeroY.toFixed(1)} L${seg[0].x.toFixed(1)},${zeroY.toFixed(1)} Z`;
+    return `<path d="${d}" fill="${col}" stroke="none"/>`;
+  };
+  const fills=profitSegs.map(s=>fillPath(s,'rgba(0,229,160,0.12)')).join('')
+    +lossSegs.map(s=>fillPath(s,'rgba(255,58,92,0.12)')).join('');
+
+  // Paths
+  const profitPaths=profitSegs.map(s=>`<path d="${pathStr(s)}" fill="none" stroke="rgba(0,229,160,0.9)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+  const lossPaths=lossSegs.map(s=>`<path d="${pathStr(s)}" fill="none" stroke="rgba(255,58,92,0.9)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+
+  // Zero dashed line
+  const zeroLine=`<line x1="${PL}" y1="${zeroY.toFixed(1)}" x2="${W-PR}" y2="${zeroY.toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="5,4"/>`;
+
+  // Left Y axis — P&L values (not MAX labels)
+  const yAxisVals=[maxP, 0, minP].filter((v,i,a)=>a.indexOf(v)===i);
+  const yAxis=yAxisVals.map(v=>{
+    const vy=pyC(v);
+    const label=v===0?'$0':(v>0?'+$'+Math.abs(v).toFixed(0):'-$'+Math.abs(v).toFixed(0));
+    const col=v>0?'rgba(0,229,160,0.6)':v<0?'rgba(255,58,92,0.5)':'rgba(255,255,255,0.2)';
+    return `<text x="${PL-6}" y="${vy.toFixed(1)}" fill="${col}" font-size="10" font-family="monospace" text-anchor="end" dominant-baseline="middle">${label}</text>
+    <line x1="${PL-2}" y1="${vy.toFixed(1)}" x2="${PL}" y2="${vy.toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
   }).join('');
 
-  // Zero line
-  const zeroLine=`<line x1="${PL}" y1="${zeroY.toFixed(1)}" x2="${W-PR}" y2="${zeroY.toFixed(1)}" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4,4"/>`;
-
-  // Key price points — with collision-safe label placement
-  const keyPrices=[
-    {price:S, label:'NOW', color:'#00e5a0', r:5, labelAbove:false},
-    {price:K, label:'STRIKE', color:'rgba(255,180,0,0.8)', r:4, labelAbove:true},
-    {price:be, label:'B/E', color:'rgba(255,255,255,0.5)', r:3, labelAbove:false},
+  // Key price dots with labels — bigger, more readable
+  const keyPts=[
+    {price:S, label:'NOW', col:'#00e5a0', r:6, priority:0},
+    {price:K, label:'STRIKE', col:'rgba(255,180,0,0.9)', r:5, priority:1},
+    {price:be, label:'B/E', col:'rgba(255,255,255,0.6)', r:4, priority:2},
   ];
 
-  // Sort by x position for collision detection
-  const labelItems=keyPrices.map(kp=>{
+  // Calculate positions
+  const dotItems=keyPts.map(kp=>{
     const opt=bsc(kp.price,t.strike,T,sig,t.type).price;
     const pnl=isShort?(t.premium-opt)*100*t.contracts:(opt-t.premium)*100*t.contracts;
-    const x=px(kp.price);
-    const y=pyClamped(pnl);
-    return {...kp,x,y,pnl};
-  }).filter(kp=>kp.x>=PL&&kp.x<=W-PR);
+    const x=Math.max(PL+2,Math.min(W-PR-2,px(kp.price)));
+    const y=pyC(pnl);
+    const pnlStr=(pnl>=0?'+':'')+' $'+Math.abs(pnl).toFixed(0);
+    const pnlCol=pnl>=0?'rgba(0,229,160,0.95)':'rgba(255,58,92,0.95)';
+    return {...kp,x,y,pnl,pnlStr,pnlCol};
+  }).filter(d=>d.x>=PL&&d.x<=W-PR);
 
-  // Assign label positions — alternate above/below to prevent overlap
-  labelItems.sort((a,b)=>a.x-b.x);
-  const labelYPositions=[];
-  const labelElements=labelItems.map((kp,i)=>{
-    const labelW=kp.label==='STRIKE'?34:kp.label==='NOW'?22:16;
-    const lx=Math.max(PL+labelW/2+2,Math.min(W-PR-labelW/2-2,kp.x));
-    // Alternate above/below by index to prevent stacking
-    let ly=i%2===0?kp.y-14:kp.y+22;
-    if(ly<PT+8)ly=kp.y+22;
-    if(ly>H-PB-8)ly=kp.y-14;
-    // Secondary collision check
-    for(let prev of labelYPositions){
-      if(Math.abs(lx-prev.x)<48&&Math.abs(ly-prev.y)<16){
-        ly=prev.y+(ly>prev.y?22:-22);
-        ly=Math.max(PT+8,Math.min(H-PB-8,ly));
+  // Place labels — alternate above/below, collision-safe
+  const placed=[];
+  const dotSVG=dotItems.map((d,i)=>{
+    // Label x — clamp to chart bounds
+    const lw=d.label==='STRIKE'?38:d.label==='NOW'?26:18;
+    const lx=Math.max(PL+lw/2+2,Math.min(W-PR-lw/2-2,d.x));
+    // Alternate above/below
+    let ly=i%2===0?d.y-18:d.y+28;
+    if(ly<PT+10)ly=d.y+28;
+    if(ly>H-PB-14)ly=d.y-18;
+    // Collision push
+    for(const p of placed){
+      if(Math.abs(lx-p.x)<50&&Math.abs(ly-p.y)<22){
+        ly=p.y+(ly>p.y?26:-26);
+        ly=Math.max(PT+10,Math.min(H-PB-14,ly));
       }
     }
-    labelYPositions.push({x:lx,y:ly});
-
-    const pnlStr=(kp.pnl>=0?'+':'')+' $'+Math.abs(kp.pnl).toFixed(0);
-    const pnlColor=kp.pnl>=0?'rgba(0,229,160,0.9)':'rgba(255,58,92,0.9)';
-
+    placed.push({x:lx,y:ly});
+    // Connector line from dot to label
+    const connY=ly>d.y?d.y+d.r:d.y-d.r;
     return `
-      <circle cx="${kp.x.toFixed(1)}" cy="${kp.y.toFixed(1)}" r="${kp.r}" fill="${kp.color}"/>
-      <text x="${lx.toFixed(1)}" y="${(ly-2).toFixed(1)}" fill="${kp.color}" font-size="8" font-family="monospace" font-weight="600" text-anchor="middle" dominant-baseline="auto">${kp.label}</text>
-      <text x="${lx.toFixed(1)}" y="${(ly+8).toFixed(1)}" fill="${pnlColor}" font-size="9" font-family="monospace" font-weight="700" text-anchor="middle" dominant-baseline="auto">${pnlStr}</text>`;
+    <line x1="${d.x.toFixed(1)}" y1="${connY.toFixed(1)}" x2="${lx.toFixed(1)}" y2="${(ly-9).toFixed(1)}" stroke="${d.col}" stroke-width="1" stroke-opacity="0.3"/>
+    <circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="${d.r}" fill="${d.col}" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>
+    <text x="${lx.toFixed(1)}" y="${(ly-5).toFixed(1)}" fill="${d.col}" font-size="10" font-weight="bold" font-family="monospace" text-anchor="middle">${d.label}</text>
+    <text x="${lx.toFixed(1)}" y="${(ly+7).toFixed(1)}" fill="${d.pnlCol}" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">${d.pnlStr}</text>`;
   }).join('');
 
-  // Bottom price axis — only 3 labels: lo, stock, hi — clamped
-  const axisLabels=[
-    {price:lo+range*0.1,label:'$'+Math.round(lo+range*0.1)},
-    {price:S,label:'$'+S.toFixed(0)},
-    {price:hi-range*0.1,label:'$'+Math.round(hi-range*0.1)},
+  // Bottom price axis — 3 labels
+  const axisItems=[
+    {price:lo+range*0.1},
+    {price:S},
+    {price:hi-range*0.1}
   ];
-  const axisEl=axisLabels.map(a=>{
+  const axisEl=axisItems.map(a=>{
     const ax=Math.max(PL+10,Math.min(W-PR-10,px(a.price)));
-    return `<text x="${ax.toFixed(1)}" y="${(H-6).toFixed(1)}" fill="rgba(255,255,255,0.2)" font-size="9" font-family="monospace" text-anchor="middle">${a.label}</text>`;
+    return `<text x="${ax.toFixed(1)}" y="${H-6}" fill="rgba(255,255,255,0.25)" font-size="10" font-family="monospace" text-anchor="middle">$${Math.round(a.price)}</text>`;
   }).join('');
 
-  // Left P&L axis — only 2 labels: max and min, clamped inside
-  const maxLabelY=Math.max(PT+10,Math.min(PT+PH/2-8,pyClamped(maxPnl)));
-  const minLabelY=Math.max(PT+PH/2+8,Math.min(PT+PH-10,pyClamped(minPnl)));
-  const pnlAxis=`
-    <text x="${PL-4}" y="${maxLabelY.toFixed(1)}" fill="rgba(0,229,160,0.5)" font-size="8" font-family="monospace" text-anchor="end" dominant-baseline="middle">MAX</text>
-    <text x="${PL-4}" y="${minLabelY.toFixed(1)}" fill="rgba(255,58,92,0.4)" font-size="8" font-family="monospace" text-anchor="end" dominant-baseline="middle">MAX<tspan fill="rgba(255,58,92,0.4)">↓</tspan></text>`;
-
-  // Legend — bottom right, inside chart
-  const legendX=W-PR-4;
-  const legendY=H-PB-4;
+  // Legend — bottom right
+  const lgx=W-PR-4, lgy=H-PB+16;
   const legend=`
-    <circle cx="${legendX-54}" cy="${legendY}" r="3" fill="rgba(0,229,160,0.8)"/>
-    <text x="${legendX-49}" y="${legendY}" fill="rgba(255,255,255,0.3)" font-size="8" font-family="monospace" dominant-baseline="middle">PROFIT</text>
-    <circle cx="${legendX-10}" cy="${legendY}" r="3" fill="rgba(255,58,92,0.8)"/>
-    <text x="${legendX-5}" y="${legendY}" fill="rgba(255,255,255,0.3)" font-size="8" font-family="monospace" dominant-baseline="middle" text-anchor="start">LOSS</text>`;
+    <circle cx="${lgx-58}" cy="${lgy}" r="4" fill="rgba(0,229,160,0.8)"/>
+    <text x="${lgx-52}" y="${lgy}" fill="rgba(255,255,255,0.3)" font-size="9" font-family="monospace" dominant-baseline="middle">PROFIT</text>
+    <circle cx="${lgx-8}" cy="${lgy}" r="4" fill="rgba(255,58,92,0.8)"/>
+    <text x="${lgx-2}" y="${lgy}" fill="rgba(255,255,255,0.3)" font-size="9" font-family="monospace" dominant-baseline="middle" text-anchor="start">LOSS</text>`;
 
   return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="height:auto;min-height:160px">
-  <rect width="${W}" height="${H}" fill="rgba(0,0,0,0.25)" rx="10"/>
-  ${profitFill}${lossFill}
+  <rect width="${W}" height="${H}" fill="rgba(0,0,0,0.3)" rx="10"/>
+  ${fills}
   ${zeroLine}
-  ${profitPath}${lossPath}
-  ${pnlAxis}
-  ${labelElements}
+  ${profitPaths}${lossPaths}
+  ${yAxis}
+  ${dotSVG}
   ${axisEl}
   ${legend}
 </svg>`;
