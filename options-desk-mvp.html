@@ -942,15 +942,18 @@ Return ONLY the JSON array starting with [ and ending with ]. All numeric fields
     if(data.error){throw new Error(data.error)}
 
     let text=data.content[0].text.trim().replace(/```json|```/g,'').trim();
+    // Log raw response for debugging
+    console.log('RAW AI RESPONSE:', text.substring(0, 500));
     // Sanitise common AI number formatting issues
     text = text
-      .replace(/:\s*\$([0-9.]+)/g, ': $1')       // "$1.02" → 1.02
-      .replace(/:\s*"([0-9.]+)"/g, ': $1')          // "1.02" string → number
-      .replace(/:\s*NaN/g, ': 0')                   // NaN → 0
-      .replace(/:\s*undefined/g, ': 0')             // undefined → 0
-      .replace(/:\s*null,/g, ': 0,')                // null mid-object → 0
-      .replace(/,\s*}/g, '}')                       // trailing commas
-      .replace(/,\s*]/g, ']');                      // trailing commas in arrays
+      .replace(/:\s*\$([0-9.]+)/g, ': $1')
+      .replace(/:\s*"(\d+\.?\d*)"/g, ': $1')
+      .replace(/:\s*NaN/g, ': 0')
+      .replace(/:\s*undefined/g, ': 0')
+      .replace(/:\s*null([,}])/g, ': 0$1')
+      .replace(/,\s*}/g, '}')
+      .replace(/,\s*]/g, ']');
+    console.log('SANITISED:', text.substring(0, 500));
     const trades=JSON.parse(text);
     showReviewTable(trades);
 
