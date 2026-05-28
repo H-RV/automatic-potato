@@ -483,6 +483,43 @@ tbody td{padding:10px 14px;vertical-align:middle}
 .cf-btn.close-btn{background:var(--g10);border-color:rgba(0,229,160,0.3);color:var(--g)}
 .cf-btn.close-btn:hover{background:var(--g20)}
 
+/* ── CLOSE TRADE MODAL ── */
+.close-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.close-modal-overlay.show{display:flex}
+.close-modal{background:#161b2e;border:1px solid var(--border2);border-radius:20px;
+  width:100%;max-width:420px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.5)}
+.close-modal-hdr{padding:20px 24px 16px;border-bottom:1px solid var(--border)}
+.close-modal-sym{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.04em;
+  color:var(--accent,var(--g))}
+.close-modal-meta{font-size:12px;color:var(--muted);margin-top:2px;font-weight:300}
+.close-modal-body{padding:20px 24px}
+.close-modal-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;
+  color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+.close-modal-input{width:100%;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:10px;padding:14px 16px;font-size:22px;font-family:'DM Mono',monospace;
+  font-weight:600;color:var(--text);text-align:center;outline:none;transition:border 0.15s;
+  box-sizing:border-box}
+.close-modal-input:focus{border-color:var(--g)}
+.close-modal-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;
+  font-weight:300}
+.close-modal-preview{margin-top:16px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:14px 16px}
+.close-modal-preview-row{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:8px;font-size:13px}
+.close-modal-preview-row:last-child{margin-bottom:0;padding-top:10px;
+  border-top:1px solid var(--border);font-weight:600}
+.close-modal-footer{padding:16px 24px 20px;display:flex;gap:10px}
+.close-modal-cancel{flex:1;padding:13px;border-radius:10px;border:1px solid var(--border2);
+  background:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:0.1em;cursor:pointer;transition:all 0.15s}
+.close-modal-cancel:hover{border-color:var(--border);color:var(--text)}
+.close-modal-confirm{flex:2;padding:13px;border-radius:10px;border:none;
+  background:var(--g);color:#000;font-family:'DM Mono',monospace;font-size:11px;
+  font-weight:700;letter-spacing:0.1em;cursor:pointer;transition:all 0.15s}
+.close-modal-confirm:hover{background:#00ffb3}
+.close-modal-confirm:disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
+
 /* ── EDIT MODAL ── */
 .modal-overlay{display:none;position:fixed;inset:0;z-index:500;
   background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);
@@ -2009,26 +2046,70 @@ document.getElementById('edit-modal').addEventListener('click',e=>{
 // ══════════════════════════════════════════════════════
 // CLOSE TRADE
 // ══════════════════════════════════════════════════════
+// ── CLOSE TRADE MODAL ──────────────────────────────
+let _closeTradeId = null;
+
 function closeTrade(id){
   const t=savedTrades.find(x=>String(x.id)===String(id));
   if(!t)return;
-  const price=prompt(`Close ${t.symbol} — enter the price you closed at (per share):\n\nYou collected $${t.premium.toFixed(2)}`);
-  if(price===null||price==='')return;
-  const cp=parseFloat(price);
-  if(isNaN(cp)){alert('Please enter a valid price.');return;}
+  _closeTradeId = id;
+
+  // Populate modal
+  const isPut=t.type==='put';
+  const accent=isPut?'#ff9500':'#4d9fff';
+  document.getElementById('cm-sym').textContent=t.symbol;
+  document.getElementById('cm-sym').style.color=accent;
+  document.getElementById('cm-meta').textContent=`$${t.strike} ${t.type.toUpperCase()} · ${t.direction.toUpperCase()} · ${t.contracts} contract${t.contracts>1?'s':''}`;
+  document.getElementById('cm-collected').textContent='$'+t.premium.toFixed(2);
+  document.getElementById('cm-prem').textContent='+$'+(t.premium*100*t.contracts).toFixed(0);
+  document.getElementById('cm-price').value='';
+  document.getElementById('cm-cost').textContent='-$0';
+  document.getElementById('cm-pnl').textContent='$0';
+  document.getElementById('cm-pnl').style.color='var(--muted)';
+
+  document.getElementById('close-modal-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('cm-price').focus(),100);
+}
+
+function updateClosePreview(){
+  const t=savedTrades.find(x=>String(x.id)===String(_closeTradeId));
+  if(!t)return;
+  const cp=parseFloat(document.getElementById('cm-price').value)||0;
+  const cost=cp*100*t.contracts;
+  const pnl=(t.direction==='short'?t.premium-cp:cp-t.premium)*100*t.contracts;
+  document.getElementById('cm-cost').textContent='-$'+cost.toFixed(0);
+  document.getElementById('cm-cost').style.color=cost>0?'var(--r)':'var(--muted)';
+  document.getElementById('cm-pnl').textContent=(pnl>=0?'+ ':'')+' $'+Math.abs(pnl).toFixed(0);
+  document.getElementById('cm-pnl').style.color=pnl>=0?'var(--g)':'var(--r)';
+  document.getElementById('cm-pnl').style.fontSize=Math.abs(pnl)>999?'16px':'20px';
+}
+
+function closeTradeModal(){
+  document.getElementById('close-modal-overlay').classList.remove('show');
+  _closeTradeId=null;
+}
+
+function confirmCloseTrade(){
+  const t=savedTrades.find(x=>String(x.id)===String(_closeTradeId));
+  if(!t)return;
+  const cp=parseFloat(document.getElementById('cm-price').value);
+  if(isNaN(cp)||cp<0){
+    document.getElementById('cm-price').style.borderColor='var(--r)';
+    setTimeout(()=>document.getElementById('cm-price').style.borderColor='',1000);
+    return;
+  }
   const pnl=(t.direction==='short'?t.premium-cp:cp-t.premium)*100*t.contracts;
   const pct=t.premium>0?((t.premium-cp)/t.premium*100):0;
-  const msg=`Trade closed!\n\n${t.symbol} ${t.type.toUpperCase()} $${t.strike}\nClosed at: $${cp.toFixed(2)}\nP&L: ${pnl>=0?'+':''}$${pnl.toFixed(2)}\nPremium captured: ${pct.toFixed(0)}%\n\n${pnl>=0?'WIN ✓':'LOSS ✗'}`;
-  alert(msg);
-  // Archive to closed trades with timestamp
-  const closed={...t,closePrice:cp,closeTimestamp:Date.now(),
-    realisedPnl:pnl,capturedPct:t.premium>0?((t.premium-cp)/t.premium*100):0};
+  const closed={...t,closePrice:cp,closeDate:new Date().toISOString().slice(0,10),
+    closeTimestamp:Date.now(),realisedPnl:pnl,capturedPct:pct};
   closedTrades.push(closed);
   localStorage.setItem('smt_v1_closed',JSON.stringify(closedTrades));
-  savedTrades=savedTrades.filter(x=>String(x.id)!==String(id));
+  savedTrades=savedTrades.filter(x=>String(x.id)!==String(_closeTradeId));
   localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
+  closeTradeModal();
   renderAll(savedTrades);
   document.getElementById('trade-count').textContent=savedTrades.length+' OPEN';
+  showToast(`${t.symbol} closed · ${pnl>=0?'WIN':'LOSS'} · ${pnl>=0?'+':''} $${Math.abs(pnl).toFixed(0)}`);
 }
 
 // ══════════════════════════════════════════════════════
@@ -2355,6 +2436,40 @@ if(savedTrades.length){
   showDashboard();
 }
 </script>
+  <!-- CLOSE TRADE MODAL -->
+  <div class="close-modal-overlay" id="close-modal-overlay" onclick="if(event.target===this)closeTradeModal()">
+    <div class="close-modal" id="close-modal">
+      <div class="close-modal-hdr">
+        <div class="close-modal-sym" id="cm-sym">TSLA</div>
+        <div class="close-modal-meta" id="cm-meta">$440 CALL · SHORT · 1 contract</div>
+      </div>
+      <div class="close-modal-body">
+        <div class="close-modal-label">What price did you close at? (per share)</div>
+        <input class="close-modal-input" id="cm-price" type="number" step="0.01" min="0"
+          placeholder="0.00" oninput="updateClosePreview()">
+        <div class="close-modal-hint" id="cm-hint">You collected <span id="cm-collected">$0.00</span>/share</div>
+        <div class="close-modal-preview">
+          <div class="close-modal-preview-row">
+            <span style="color:var(--muted)">Premium collected</span>
+            <span id="cm-prem" style="color:var(--g)">+$0</span>
+          </div>
+          <div class="close-modal-preview-row">
+            <span style="color:var(--muted)">Cost to close</span>
+            <span id="cm-cost" style="color:var(--muted)">-$0</span>
+          </div>
+          <div class="close-modal-preview-row">
+            <span>Your P&L</span>
+            <span id="cm-pnl" style="font-size:20px">$0</span>
+          </div>
+        </div>
+      </div>
+      <div class="close-modal-footer">
+        <button class="close-modal-cancel" onclick="closeTradeModal()">CANCEL</button>
+        <button class="close-modal-confirm" id="cm-confirm" onclick="confirmCloseTrade()">◆ CONFIRM CLOSE</button>
+      </div>
+    </div>
+  </div>
+
   <!-- LIGHTBOX -->
   <div class="ss-lightbox" id="ss-lightbox" onclick="closeLightbox()">
     <img id="lightbox-img" src="" alt="Screenshot">
