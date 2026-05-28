@@ -1483,15 +1483,38 @@ function buildCard(t,idx){
         <span class="bb-label">Buy back now costs</span>
         <span class="bb-value" style="color:${bbCost>premIn?'var(--r)':'var(--muted)'}">-$${bbCost.toFixed(0)}</span>
       </div>
-      <div class="bb-bar-wrap">
-        <div class="bb-bar-fill" style="width:${Math.max(0,Math.min(100,pctCap))}%;background:${pctCap>=80?'var(--g)':pctCap>=50?'var(--b)':'var(--y)'}"></div>
+
+      <!-- Progress bar with 50% and 80% markers -->
+      <div style="position:relative;margin:12px 0 6px">
+        <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:visible;position:relative">
+          <div style="height:100%;border-radius:4px;width:${Math.max(0,Math.min(100,pctCap))}%;background:${pctCap>=80?'var(--g)':pctCap>=50?'var(--b)':pctCap>=0?'var(--y)':'var(--r)'};transition:width 0.6s ease;position:relative"></div>
+          <!-- 50% marker -->
+          <div style="position:absolute;top:-3px;left:50%;width:2px;height:14px;background:rgba(255,255,255,0.15);border-radius:1px;transform:translateX(-50%)"></div>
+          <!-- 80% marker -->
+          <div style="position:absolute;top:-3px;left:80%;width:2px;height:14px;background:rgba(255,255,255,0.15);border-radius:1px;transform:translateX(-50%)"></div>
+        </div>
+        <!-- Marker labels -->
+        <div style="display:flex;justify-content:space-between;margin-top:5px;position:relative">
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--dim)">0%</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(77,159,255,0.5);position:absolute;left:50%;transform:translateX(-50%)">50%</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(0,229,160,0.5);position:absolute;left:80%;transform:translateX(-50%)">80%</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--dim)">100%</span>
+        </div>
       </div>
-      <div class="bb-pct-row">
-        <span>0%</span>
-        <span style="color:${pctCap>=80?'var(--g)':pctCap>=50?'var(--b)':'var(--y)'}">▲ ${pctCap.toFixed(0)}% captured</span>
-        <span>100%</span>
-      </div>
-      <div class="bb-row">
+
+      <!-- Action prompt based on capture % -->
+      ${pctCap>=80&&pctCap<100?`<div style="margin:8px 0;padding:7px 10px;background:rgba(0,229,160,0.07);border:1px solid rgba(0,229,160,0.2);border-radius:7px;font-size:11px;color:rgba(0,229,160,0.85);display:flex;align-items:center;gap:7px">
+        <span>✓</span><span><strong>80%+ captured</strong> — consider closing to lock in profit</span>
+      </div>`
+      :pctCap>=50?`<div style="margin:8px 0;padding:7px 10px;background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-radius:7px;font-size:11px;color:rgba(77,159,255,0.8);display:flex;align-items:center;gap:7px">
+        <span>◈</span><span><strong>50%+ captured</strong> — good progress, monitor closely</span>
+      </div>`
+      :pctCap<0?`<div style="margin:8px 0;padding:7px 10px;background:rgba(255,58,92,0.06);border:1px solid rgba(255,58,92,0.2);border-radius:7px;font-size:11px;color:rgba(255,58,92,0.8);display:flex;align-items:center;gap:7px">
+        <span>⚠</span><span><strong>Trade is underwater</strong> — buyback costs more than premium collected</span>
+      </div>`
+      :'<div style="margin:8px 0;padding:7px 10px;background:rgba(255,181,71,0.05);border:1px solid rgba(255,181,71,0.15);border-radius:7px;font-size:11px;color:rgba(255,181,71,0.7);display:flex;align-items:center;gap:7px"><span>⏱</span><span>Let time decay work — target <strong>50–80%</strong> capture before closing</span></div>'}
+
+      <div class="bb-row" style="margin-top:10px">
         <span class="bb-label" style="font-weight:500;color:var(--text)">You keep right now</span>
         <span class="bb-keep" style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</span>
       </div>
