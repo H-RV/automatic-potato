@@ -1698,37 +1698,33 @@ function buildCard(t,idx){
         <span class="bb-value" style="color:${bbCost>premIn?'var(--r)':'var(--muted)'}">-$${bbCost.toFixed(0)}</span>
       </div>
 
-      <!-- Progress bar with 50% and 80% markers -->
+      <!-- Single unified bar — zero centred, profit right, loss left -->
       <div style="position:relative;margin:12px 0 6px">
-        ${pctCap>=0?`
-        <!-- Positive bar: fills left to right -->
-        <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:visible;position:relative">
-          <div style="height:100%;border-radius:4px;width:${Math.max(0,Math.min(100,pctCap))}%;background:${pctCap>=80?'var(--g)':pctCap>=50?'var(--b)':'var(--y)'};transition:width 0.6s ease"></div>
-          <div style="position:absolute;top:-3px;left:50%;width:2px;height:14px;background:rgba(255,255,255,0.15);border-radius:1px;transform:translateX(-50%)"></div>
-          <div style="position:absolute;top:-3px;left:80%;width:2px;height:14px;background:rgba(255,255,255,0.15);border-radius:1px;transform:translateX(-50%)"></div>
+        <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;position:relative;overflow:hidden">
+          ${pctCap>=0
+            ? `<!-- Profit: fills right from centre -->
+               <div style="position:absolute;top:0;left:50%;height:100%;width:${Math.min(50,pctCap/2)}%;background:${pctCap>=80?'var(--g)':pctCap>=50?'var(--b)':'var(--y)'};border-radius:0 4px 4px 0;transition:width 0.6s ease"></div>`
+            : `<!-- Loss: fills left from centre -->
+               <div style="position:absolute;top:0;right:50%;height:100%;width:${Math.min(50,Math.abs(pctCap)/2)}%;background:linear-gradient(270deg,rgba(255,181,71,0.7),rgba(255,58,92,0.9));border-radius:4px 0 0 4px;transition:width 0.6s ease"></div>`
+          }
+          <!-- Centre marker (zero / break even) -->
+          <div style="position:absolute;top:-2px;left:50%;width:2px;height:12px;background:rgba(255,255,255,0.25);transform:translateX(-50%)"></div>
+          <!-- 50% profit marker -->
+          <div style="position:absolute;top:-2px;left:75%;width:1.5px;height:12px;background:rgba(77,159,255,0.3);transform:translateX(-50%)"></div>
+          <!-- 80% profit marker -->
+          <div style="position:absolute;top:-2px;left:90%;width:1.5px;height:12px;background:rgba(0,229,160,0.3);transform:translateX(-50%)"></div>
         </div>
-        <div style="display:flex;justify-content:space-between;margin-top:5px;position:relative">
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--dim)">0%</span>
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(77,159,255,0.5);position:absolute;left:50%;transform:translateX(-50%)">50%</span>
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(0,229,160,0.5);position:absolute;left:80%;transform:translateX(-50%)">80%</span>
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--dim)">100%</span>
-        </div>`
-        :`
-        <!-- Negative bar: shows loss beyond premium collected -->
-        <div style="margin-bottom:5px;font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,58,92,0.7)">
-          LOSS vs PREMIUM COLLECTED
-        </div>
-        <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;position:relative">
-          <!-- Premium collected marker at 50% of bar -->
-          <div style="position:absolute;top:0;left:0;height:100%;width:50%;background:rgba(255,255,255,0.04);border-right:2px solid rgba(255,255,255,0.15)"></div>
-          <!-- Loss bar fills from center rightward -->
-          <div style="position:absolute;top:0;left:50%;height:100%;width:${Math.min(50,Math.abs(pctCap)/2)}%;background:linear-gradient(90deg,rgba(255,181,71,0.6),rgba(255,58,92,0.9));transition:width 0.6s ease;border-radius:0 4px 4px 0"></div>
-        </div>
+        <!-- Labels -->
         <div style="display:flex;justify-content:space-between;margin-top:5px">
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--dim)">MAX LOSS</span>
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(255,255,255,0.2)">BREAK EVEN</span>
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--dim)">SAFE ZONE →</span>
-        </div>`}
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(255,58,92,0.4)">← MAX LOSS</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(255,255,255,0.2)">0%</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(0,229,160,0.4)">100% →</span>
+        </div>
+        <!-- Current capture label -->
+        <div style="text-align:center;margin-top:4px;font-family:'DM Mono',monospace;font-size:9px;
+          color:${pctCap>=80?'var(--g)':pctCap>=50?'var(--b)':pctCap>=0?'var(--y)':'rgba(255,58,92,0.8)'}">
+          ${pctCap>=0?`▲ ${pctCap.toFixed(0)}% captured`:`▼ ${Math.abs(pctCap).toFixed(0)}% underwater`}
+        </div>
       </div>
 
       <!-- Action prompt based on capture % -->
