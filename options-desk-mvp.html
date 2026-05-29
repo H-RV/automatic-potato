@@ -383,106 +383,165 @@ tbody td{padding:10px 14px;vertical-align:middle}
 @media(max-width:960px){.cards{grid-template-columns:1fr}}
 
 /* ── TRADE CARD ── */
-.card{background:var(--surface);border-radius:20px;border:1px solid var(--border);
-  border-top:3px solid var(--accent,var(--g));overflow:hidden;animation:cardIn 0.35s ease both;
-  font-family:'DM Sans',sans-serif}
-@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+/* Collapsed card */
+.card{background:var(--surface);border-radius:14px;border:1px solid var(--border);
+  border-left:3px solid var(--accent,var(--g));overflow:hidden;
+  animation:cardIn 0.3s ease both;cursor:pointer;transition:border-color 0.2s}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card:hover{border-color:var(--border2)}
 
-/* Card header */
-.card-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:flex-start}
-.card-sym{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:0.03em;line-height:1;color:var(--accent,var(--g))}
-.card-price{font-family:'DM Sans',sans-serif;font-size:20px;font-weight:300;color:var(--text);opacity:0.65;margin-left:8px}
-.card-sym-row{display:flex;align-items:baseline}
-.card-meta{font-size:11px;color:var(--muted);line-height:1.7;margin-top:4px;font-weight:300}
-.card-badges{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
-.badge{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;
-  padding:3px 8px;border-radius:4px;border:1px solid currentColor}
+/* Collapsed header */
+.card-hdr{display:grid;grid-template-columns:1fr auto;gap:10px;padding:13px 16px 9px;align-items:start}
+.card-sym{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.03em;line-height:1;color:var(--accent,var(--g))}
+.card-stock-price{font-size:15px;color:var(--muted);font-weight:300;margin-top:1px}
+.card-detail{font-size:11px;color:var(--muted);margin-top:2px;font-weight:300}
+.card-dte{font-size:11px;color:var(--muted);margin-top:1px;font-weight:300}
+.card-right{text-align:right}
+.card-pnl{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.02em;line-height:1;margin-bottom:1px}
+.card-pnl-of{font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:300}
+.card-badges{display:flex;gap:4px;justify-content:flex-end}
+.badge{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;
+  padding:2px 7px;border-radius:4px;border:1px solid currentColor}
 
-/* IV + Volume — slim single row */
-.iv-vol-row{display:flex;gap:16px;padding:7px 20px;border-bottom:1px solid var(--border);
-  background:rgba(0,0,0,0.12);align-items:center}
-.iv-item{display:flex;align-items:center;gap:8px}
+/* Protection line */
+.card-protection{padding:0 16px 9px;font-size:12px;color:var(--muted);
+  line-height:1.6;border-bottom:1px solid var(--border)}
+
+/* Tracker pill — collapsed version */
+.card-tracker{margin:9px 16px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px}
+.tracker-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.tracker-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;color:var(--muted)}
+.tracker-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
+  font-family:'DM Mono',monospace;letter-spacing:0.04em}
+.tracker-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.05);
+  position:relative;overflow:hidden;margin-bottom:4px}
+.tracker-bar-fill{height:100%;border-radius:3px;position:absolute;top:0}
+.tracker-bar-tick{position:absolute;top:-2px;width:1.5px;height:10px;transform:translateX(-50%)}
+.tracker-bar-labels{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;
+  font-size:8px;color:var(--dim);margin-bottom:7px}
+.tracker-stats{display:flex;justify-content:space-between;font-size:11px;
+  padding-top:7px;border-top:1px solid var(--border)}
+.tracker-action{margin-top:8px;padding:8px 10px;border-radius:7px;font-size:11px;
+  line-height:1.6;display:flex;gap:7px;align-items:flex-start}
+
+/* Price scenarios — 2 chips */
+.card-scenarios{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 16px 9px}
+.sc-chip{border-radius:8px;padding:9px 10px;border:1px solid var(--border)}
+.sc-chip-dir{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;
+  text-transform:uppercase;margin-bottom:4px;font-weight:500}
+.sc-chip-result{font-size:13px;font-weight:600;margin-bottom:3px;letter-spacing:0.01em}
+.sc-chip-note{font-size:10px;color:var(--muted);line-height:1.4;font-weight:300}
+
+/* Collapsed footer */
+.card-foot-collapsed{display:flex;justify-content:space-between;align-items:center;
+  padding:7px 16px 11px;font-size:11px;color:var(--muted)}
+.card-expand-btn{display:flex;align-items:center;gap:3px;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;
+  color:var(--muted);transition:color 0.15s}
+.card-expand-btn:hover{color:var(--text)}
+
+/* ── EXPANDED SECTION ── */
+.card-expanded{border-top:1px solid var(--border);cursor:default}
+
+/* IV row */
+.iv-vol-row{display:flex;gap:14px;padding:7px 16px;border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,0.15);align-items:center}
+.ivv-item{display:flex;align-items:center;gap:7px}
 .ivv-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;color:var(--dim)}
-.ivv-val{font-size:12px;font-weight:600;letter-spacing:0.02em}
-.ivv-bar{width:48px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.ivv-val{font-size:12px;font-weight:600}
+.ivv-bar{width:40px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
 .ivv-bar-fill{height:100%;border-radius:2px}
 .iv-divider{width:1px;height:14px;background:var(--border);flex-shrink:0}
 
-/* Big goal headline */
-.goal-banner{padding:18px 20px 14px}
-.goal-headline{font-size:17px;font-weight:600;line-height:1.4;letter-spacing:-0.01em}
-.goal-headline .goal-price{font-size:20px;font-weight:700}
-
 /* Three stat boxes */
-.stat-boxes{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
-  background:var(--border);margin:0 0 0;border-top:1px solid var(--border)}
-.stat-box{background:var(--surface);padding:12px 14px}
-.stat-box-label{font-size:9px;color:var(--muted);letter-spacing:0.1em;
-  font-family:'DM Mono',monospace;margin-bottom:5px}
-.stat-box-icon{font-size:18px;margin-bottom:4px;display:block}
-.stat-box-val{font-size:15px;font-weight:600;line-height:1.2}
-.stat-box-sub{font-size:10px;color:var(--muted);margin-top:2px;font-weight:300}
+.stat-boxes{display:grid;grid-template-columns:repeat(3,1fr);
+  border-bottom:1px solid var(--border);background:var(--border)}
+.stat-box{background:var(--surface);padding:11px 14px}
+.stat-box-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;
+  color:var(--muted);margin-bottom:4px}
+.stat-box-val{font-size:15px;font-weight:600;line-height:1.2;margin-bottom:2px}
+.stat-box-sub{font-size:9px;color:var(--muted);font-weight:300}
 
-/* Buyback panel — cleaner */
-.buyback{margin:16px 20px 0;background:var(--surface2);border:1px solid var(--border);
-  border-radius:12px;padding:14px 16px}
-.bb-title{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.16em;
-  color:var(--muted);margin-bottom:12px;text-transform:uppercase}
-.bb-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.bb-row:last-child{margin-bottom:0;padding-top:10px;border-top:1px solid var(--border)}
-.bb-label{font-size:12px;color:var(--muted);font-weight:300}
-.bb-value{font-size:16px;font-weight:600;letter-spacing:0.02em}
-.bb-keep{font-size:24px;font-weight:700;letter-spacing:-0.01em}
-.bb-bar-wrap{margin:10px 0 4px;height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden}
-.bb-bar-fill{height:100%;border-radius:3px;transition:width 0.6s ease}
-.bb-pct-row{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;
-  font-size:9px;color:var(--muted)}
+/* Expanded tracker */
+.exp-tracker{margin:12px 16px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:12px 14px}
+.exp-tracker-rows{margin-bottom:10px}
+.exp-tracker-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px}
+.exp-tracker-row:last-child{margin-bottom:0}
+.exp-tracker-label{color:var(--muted);font-weight:300}
+.exp-tracker-keep{display:flex;justify-content:space-between;font-size:14px;
+  font-weight:600;padding-top:9px;border-top:1px solid var(--border);margin-top:8px}
 
 /* Chart */
-.chart-section{padding:16px 20px 0}
-.chart-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;
-  color:var(--muted);margin-bottom:10px;text-transform:uppercase}
-.chart-svg{width:100%;display:block;border-radius:10px;overflow:hidden}
-
-/* Scenarios */
-.scenarios{padding:14px 20px 0}
-.sc-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;
+.chart-section{padding:12px 16px 4px}
+.chart-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;
   color:var(--muted);margin-bottom:8px;text-transform:uppercase}
-.sc-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
-  margin-bottom:6px;border:1px solid var(--border);background:rgba(255,255,255,0.012);
-  transition:all 0.15s}
-.sc-row:hover{border-color:var(--border2);background:rgba(255,255,255,0.025)}
-.sc-icon{font-size:16px;flex-shrink:0;width:28px;text-align:center}
-.sc-body{flex:1}
-.sc-title{font-size:12px;font-weight:500;margin-bottom:1px}
-.sc-detail{font-size:11px;color:var(--muted);line-height:1.4;font-weight:300}
-.sc-right{text-align:right;flex-shrink:0}
-.sc-price{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:2px}
-.sc-outcome{font-size:16px;font-weight:700;letter-spacing:0.01em}
+.chart-svg{width:100%;display:block;border-radius:8px}
+
+/* Price chips — 5 key prices */
+.price-chips{padding:10px 16px}
+.price-chips-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;
+  color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+.price-chips-row{display:flex;gap:5px}
+.price-chip{flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--border);
+  text-align:center;background:rgba(255,255,255,0.02);transition:all 0.15s;cursor:default}
+.price-chip-price{font-size:11px;font-weight:600;margin-bottom:2px;
+  font-family:'DM Mono',monospace;color:var(--text)}
+.price-chip-label{font-size:8px;color:var(--muted);margin-bottom:3px;
+  font-family:'DM Mono',monospace;letter-spacing:0.06em}
+.price-chip-outcome{font-size:12px;font-weight:600;font-family:'DM Mono',monospace}
+.price-chip.g{border-color:rgba(0,229,160,0.2);background:rgba(0,229,160,0.04)}
+.price-chip.g .price-chip-outcome{color:var(--g)}
+.price-chip.r{border-color:rgba(255,58,92,0.2);background:rgba(255,58,92,0.04)}
+.price-chip.r .price-chip-outcome{color:var(--r)}
+.price-chip.y{border-color:rgba(255,181,71,0.2);background:rgba(255,181,71,0.03)}
+.price-chip.y .price-chip-outcome{color:var(--y)}
 
 /* Plain English */
-.pe-section{padding:14px 20px 16px;border-top:1px solid var(--border);margin-top:14px}
-.pe-text{font-size:13px;line-height:1.8;color:rgba(232,234,242,0.75);font-weight:300}
-.pe-text strong{color:var(--text);font-weight:500}
+.pe-section{margin:0 16px 12px;padding:11px 13px;background:var(--surface2);
+  border-radius:8px;font-size:12px;color:rgba(232,234,242,0.7);
+  line-height:1.8;font-weight:300;border:1px solid var(--border)}
+.pe-section strong{color:var(--text);font-weight:500}
 .hl-g{color:var(--g);font-weight:500}
 .hl-r{color:var(--r);font-weight:500}
 .hl-b{color:var(--b);font-weight:500}
 .hl-y{color:var(--y);font-weight:500}
 
-/* Card footer */
-.card-footer{display:flex;justify-content:space-between;align-items:center;
-  padding:11px 20px;border-top:1px solid var(--border);background:rgba(0,0,0,0.15)}
-.cf-theta{font-size:11px;color:var(--muted);font-weight:300}
-.cf-theta strong{font-weight:600}
-.cf-btns{display:flex;gap:6px}
-.cf-btn{padding:6px 12px;border-radius:7px;font-family:'DM Mono',monospace;
-  font-size:9px;letter-spacing:0.08em;cursor:pointer;border:1px solid var(--border);
-  background:none;color:var(--muted);transition:all 0.15s;font-weight:500}
-.cf-btn:hover{border-color:var(--border2);color:var(--text)}
-.cf-btn.close-btn{background:var(--g10);border-color:rgba(0,229,160,0.3);color:var(--g)}
-.cf-btn.close-btn:hover{background:var(--g20)}
+/* Expanded footer */
+.card-foot-expanded{display:flex;justify-content:space-between;align-items:center;
+  padding:9px 16px 11px;border-top:1px solid var(--border);background:rgba(0,0,0,0.15)}
+.foot-theta{font-size:11px;color:var(--muted)}
+.foot-theta strong{font-weight:600}
+.foot-right{display:flex;align-items:center;gap:10px}
+.foot-btn-group{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.foot-btn{padding:5px 11px;font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:0.06em;cursor:pointer;background:none;
+  border:none;border-right:1px solid var(--border);color:var(--muted);
+  white-space:nowrap;transition:all 0.15s}
+.foot-btn:last-child{border-right:none}
+.foot-btn:hover{background:rgba(255,255,255,0.04);color:var(--text)}
+.foot-btn.remove-btn{color:rgba(255,181,71,0.6)}
+.foot-btn.remove-btn:hover{background:rgba(255,181,71,0.06)}
+.foot-btn.close-btn{color:rgba(0,229,160,0.75)}
+.foot-btn.close-btn:hover{background:rgba(0,229,160,0.06)}
+.foot-collapse{display:flex;align-items:center;gap:3px;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;
+  color:var(--muted);padding-left:10px;border-left:1px solid var(--border);
+  white-space:nowrap;transition:color 0.15s}
+.foot-collapse:hover{color:var(--text)}
 
+@media(max-width:600px){
+  .card-hdr{gap:8px}
+  .card-sym{font-size:22px}
+  .card-pnl{font-size:22px}
+  .stat-boxes{grid-template-columns:repeat(3,1fr)}
+  .price-chips-row{gap:3px}
+  .price-chip{padding:6px 2px}
+  .price-chip-price{font-size:10px}
+  .price-chip-outcome{font-size:11px}
+  .foot-btn{padding:5px 8px;font-size:8px}
+}
 /* ── CLOSE TRADE MODAL ── */
 .close-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
   z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
@@ -1582,6 +1641,25 @@ function renderAll(trades){
   });
 }
 
+function toggleCard(id,event){
+  if(event&&event.target.closest('button,.foot-btn,.foot-collapse,.card-expand-btn'))return;
+  const expanded=document.getElementById('expanded-'+id);
+  const expandBtn=document.getElementById('expand-btn-'+id);
+  if(!expanded)return;
+  const isOpen=expanded.style.display!=='none';
+  if(isOpen){
+    expanded.style.display='none';
+    if(expandBtn)expandBtn.textContent='full details ▼';
+  } else {
+    expanded.style.display='block';
+    if(expandBtn)expandBtn.textContent='full details ▲';
+    setTimeout(()=>{
+      const card=document.getElementById('card-'+id);
+      if(card){const r=card.getBoundingClientRect();if(r.top<60)card.scrollIntoView({behavior:'smooth',block:'start'});}
+    },50);
+  }
+}
+
 function updatePortBar(trades){
   let totalPrem=0,totalBB=0,totalCap=0,capCount=0;
   trades.forEach(t=>{
@@ -1603,15 +1681,14 @@ function updatePortBar(trades){
 // ══════════════════════════════════════════════════════
 // BUILD CARD
 // ══════════════════════════════════════════════════════
+
 function buildCard(t,idx){
   const isPut=t.type==='put';
   const isShort=t.direction==='short';
-  const T=Math.max((t.dte===0?0.5:t.dte)/365,.0001); // Use 0.5 days on expiry day to keep BS stable
+  const T=Math.max((t.dte===0?0.5:t.dte)/365,.0001);
   const sig=Math.max(t.iv/100,0.01);
   const b=bsc(t.stock,t.strike,T,sig,t.type);
-  // SHORT PUT=amber, SHORT CALL=blue, LONG any=purple
   const accent=!isShort?'#a78bfa':isPut?'#ff9500':'#4d9fff';
-
   const be=isPut?t.strike-t.premium:t.strike+t.premium;
   const beBreached=isPut?t.stock<be:t.stock>be;
   const premIn=t.premium*100*t.contracts;
@@ -1619,249 +1696,295 @@ function buildCard(t,idx){
   const keep=premIn-bbCost;
   const pctCap=premIn>0?Math.min(150,Math.max(-50,keep/premIn*100)):0;
   const dailyTheta=Math.abs(b.theta)*100*t.contracts;
-  const isExpired=t.dte<0; // 0 = expiry day (still live), negative = already expired
+  const cardId='card-'+t.id;
 
-  // IV + Volume
-  const ivColor=t.iv<25?'var(--g)':t.iv<50?'var(--y)':'var(--r)';
-  const ivPct=Math.min(100,t.iv/80*100);
-  const fmtVol=v=>v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'K':v>0?v.toString():'—';
-  const volColor=t.volume>50000?'var(--g)':t.volume>10000?'var(--y)':'var(--muted)';
-  const volLabel=t.volume>50000?'HIGH':t.volume>10000?'NORMAL':'LOW';
+  // Protection line text
+  const dist=Math.abs(t.stock-be);
+  const distStr='$'+dist.toFixed(2);
+  const safeDir=isPut?(t.stock>be?'above':'below'):(t.stock<be?'below':'above');
+  const safCol=isPut?(t.stock>be?'var(--g)':'var(--r)'):(t.stock<be?'var(--g)':'var(--r)');
+  const protLine=isShort
+    ?`Protection line <strong style="color:${accent}">${isPut?'$'+be.toFixed(2):'$'+be.toFixed(2)}</strong> · stock is <strong style="color:${safCol}">${distStr} ${safeDir}</strong> your risk zone${beBreached?' — <span style="color:var(--r)">breached</span>':''}`
+    :`Profit if stock ${isPut?'falls below':'rises above'} <strong style="color:${accent}">$${be.toFixed(2)}</strong> · currently <strong style="color:${safCol}">${distStr} ${isPut?t.stock<be?'below':'above':t.stock>be?'above':'below'}</strong>`;
 
-  // Goal
-  const goalColor=isShort?'var(--g)':'var(--b)';
-  const goalText=isShort&&isPut
-    ?`You make money if <span style="color:${goalColor};font-weight:700" class="goal-price">${t.symbol} stays above $${be.toFixed(2)}</span>`
-    :isShort&&!isPut
-    ?`You make money if <span style="color:${goalColor};font-weight:700" class="goal-price">${t.symbol} stays below $${be.toFixed(2)}</span>`
-    :isPut?`You profit if <span style="color:var(--r);font-weight:700" class="goal-price">${t.symbol} falls below $${be.toFixed(2)}</span>`
-    :`You profit if <span style="color:var(--b);font-weight:700" class="goal-price">${t.symbol} rises above $${be.toFixed(2)}</span>`;
+  // Tracker pill
+  const pillColor=pctCap>=80?'var(--g)':pctCap>=50?'var(--y)':pctCap>=0?'rgba(255,181,71,0.7)':'var(--r)';
+  const pillBg=pctCap>=80?'rgba(0,229,160,0.1)':pctCap>=50?'rgba(255,181,71,0.1)':pctCap>=0?'rgba(255,181,71,0.07)':'rgba(255,58,92,0.1)';
+  const pillBorder=pctCap>=80?'rgba(0,229,160,0.25)':pctCap>=50?'rgba(255,181,71,0.25)':pctCap>=0?'rgba(255,181,71,0.2)':'rgba(255,58,92,0.25)';
+  const pillText=pctCap>=0?`▲ ${pctCap.toFixed(0)}% captured`:`▼ ${Math.abs(pctCap).toFixed(0)}% underwater`;
 
-  // Max risk
-  const maxRisk=isShort&&isPut?(t.strike-t.premium)*100*t.contracts
-    :isShort?'Unlimited':premIn;
+  // Bar fill
+  const barFill=pctCap>=0
+    ?`<div class="tracker-bar-fill" style="left:50%;width:${Math.min(50,pctCap/2)}%;background:var(--g)"></div>`
+    :`<div class="tracker-bar-fill" style="right:50%;width:${Math.min(50,Math.abs(pctCap)/2)}%;background:linear-gradient(270deg,rgba(255,181,71,0.7),rgba(255,58,92,0.9));position:absolute;right:50%;left:auto;border-radius:3px 0 0 3px"></div>`;
 
-  // Scenarios
+  // Action message
+  const urgency=t.dte<=3&&t.dte>=0;
+  let actionColor,actionBg,actionBorder,actionIcon,actionText;
+  if(pctCap>=80&&pctCap<100){
+    actionColor='rgba(0,229,160,0.85)';actionBg='rgba(0,229,160,0.05)';actionBorder='rgba(0,229,160,0.18)';actionIcon='✓';
+    actionText=`<strong>${pctCap.toFixed(0)}% captured</strong> — consider closing or rolling. Buy back costs just $${bbCost.toFixed(0)}. Most traders act above 80%.`;
+  } else if(pctCap>=100){
+    actionColor='rgba(0,229,160,0.85)';actionBg='rgba(0,229,160,0.05)';actionBorder='rgba(0,229,160,0.18)';actionIcon='✓';
+    actionText=`<strong>Fully captured</strong> — premium is yours. Close now for full profit or roll to collect more.`;
+  } else if(pctCap>=50){
+    actionColor='rgba(255,181,71,0.85)';actionBg='rgba(255,181,71,0.05)';actionBorder='rgba(255,181,71,0.2)';actionIcon='◈';
+    actionText=`<strong>Target 80% before acting</strong> — ${t.dte} days of decay still ahead.${beBreached?' Stock is near your strike — watch closely.':''}`;
+  } else if(pctCap>=0){
+    actionColor='rgba(255,181,71,0.7)';actionBg='rgba(255,181,71,0.04)';actionBorder='rgba(255,181,71,0.15)';actionIcon='⏱';
+    actionText=`<strong>Let time work</strong> — target 50–80% capture before closing or rolling.`;
+  } else {
+    actionColor='rgba(255,58,92,0.9)';actionBg='rgba(255,58,92,0.06)';actionBorder='rgba(255,58,92,0.25)';actionIcon='⚠';
+    actionText=`<div style="font-weight:600;margin-bottom:3px">${urgency?'Act today':'Trade is underwater'} — close or roll</div><span style="font-size:10px;color:rgba(255,255,255,0.5)">Closing now costs <strong style="color:rgba(255,58,92,0.85)">$${(bbCost-premIn).toFixed(0)} more</strong> than you collected. ${urgency?'Expires soon — decide before close.':'Rolling to next expiry buys time and new premium.'}</span>`;
+  }
+  if(urgency&&pctCap>=0){
+    actionColor='rgba(255,181,71,0.9)';actionBg='rgba(255,181,71,0.06)';actionBorder='rgba(255,181,71,0.25)';actionIcon='⚠';
+    actionText=`<strong>${t.dte===0?'Expires today':'Expires in '+t.dte+' day'+(t.dte>1?'s':'')}</strong> — decide now. ${pctCap>=80?'You\'re at '+pctCap.toFixed(0)+'% — close or let expire.':'Close to lock in $'+keep.toFixed(0)+' or let it expire.'}`;
+  }
+
+  // Scenario chips (2)
   const upPrice=+(t.stock*1.10).toFixed(2);
   const downPrice=+(t.stock*0.90).toFixed(2);
   function sPnl(S){const o=bsc(S,t.strike,T,sig,t.type).price;return isShort?(t.premium-o)*100*t.contracts:(o-t.premium)*100*t.contracts;}
-  const upPnl=sPnl(upPrice),downPnl=sPnl(downPrice),flatPnl=sPnl(t.stock);
-  const fmtPnl=v=>(v>=0?'+ ':'')+'$'+Math.abs(v).toFixed(0);
-  const pnlCol=v=>v>=0?'var(--g)':'var(--r)';
+  const scGood=isPut?downPrice:upPrice; // direction that helps
+  const scBad=isPut?upPrice:downPrice;  // direction that hurts
+  const scGoodPnl=sPnl(scGood),scBadPnl=sPnl(scBad);
+  const fmtPnl=v=>(v>=0?'+':'')+' $'+Math.abs(v).toFixed(0);
+  const goodDir=isPut?'drops 10%':'rises 10%';
+  const badDir=isPut?'rises 10%':'drops 10%';
+  const goodNote=isPut?'Moving away from strike — safer':'Moving away from strike — safer';
+  const badNote=isPut?'Closer to strike — watch closely':'Closer to strike — watch closely';
 
-  const scenarios=[
-    {icon:'📈',title:`If ${t.symbol} goes UP 10%`,price:`→ $${upPrice.toFixed(2)}`,
-     detail:isShort&&isPut?'Further from strike — safer zone'
-           :isShort&&!isPut?'Closer to strike — watch closely'
-           :isPut?'Wrong direction for this trade':'Moving your way',pnl:upPnl},
-    {icon:'📉',title:`If ${t.symbol} goes DOWN 10%`,price:`→ $${downPrice.toFixed(2)}`,
-     detail:isShort&&isPut?'Closer to strike — monitor closely'
-           :isShort&&!isPut?'Moving away from strike — safer'
-           :isPut?'Moving your way':'Wrong direction',pnl:downPnl},
-    {icon:'⏱',title:`If ${t.symbol} stays flat`,price:`→ $${t.stock.toFixed(2)}`,
-     detail:`Time decay earns you +$${dailyTheta.toFixed(2)}/day`,pnl:flatPnl}
+  // Five price chips for expanded view
+  const maxLossPrice=isPut?Math.max(0.01,t.strike*0.7):t.strike*1.3;
+  const chipPrices=[
+    {price:maxLossPrice,label:isPut?'-30%':'+30%'},
+    {price:be,label:'B/E'},
+    {price:t.strike,label:'STRIKE'},
+    {price:t.stock,label:'NOW'},
+    {price:isPut?t.stock*1.15:t.stock*0.85,label:isPut?'+15%':'-15%'},
   ];
+  const chips=chipPrices.map(cp=>{
+    const pnl=sPnl(cp.price);
+    const cls=pnl>5?'g':pnl<-5?'r':'y';
+    return `<div class="price-chip ${cls}">
+      <div class="price-chip-price">$${cp.price.toFixed(0)}</div>
+      <div class="price-chip-label">${cp.label}</div>
+      <div class="price-chip-outcome">${fmtPnl(pnl)}</div>
+    </div>`;
+  }).join('');
 
   const pe=buildPE(t,b,premIn,bbCost,keep,pctCap,be,beBreached,dailyTheta,isPut,isShort);
   const chartSVG=buildChart(t,b,be,T,sig,accent,isPut,isShort);
 
-  return `
-<div class="card" style="--accent:${accent};animation-delay:${idx*0.07}s" id="card-${t.id}">
+  // IV/vol
+  const ivColor=t.iv<25?'var(--g)':t.iv<50?'var(--y)':'var(--r)';
+  const ivPct=Math.min(100,t.iv/80*100);
+  const fmtVol=v=>v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'K':v>0?v.toString():'—';
 
-  <!-- HEADER: Symbol + price + badges -->
+  return `
+<div class="card" style="--accent:${accent};animation-delay:${idx*0.06}s" id="${cardId}" onclick="toggleCard('${t.id}',event)">
+
+  <!-- COLLAPSED HEADER — always visible -->
   <div class="card-hdr">
     <div>
-      <div class="card-sym-row">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">
         <span class="card-sym">${t.symbol}</span>
-        <span class="card-price">$${t.stock.toFixed(2)}</span>
+        <span class="card-stock-price">$${t.stock.toFixed(2)}</span>
       </div>
-      <div class="card-meta">
-        $${t.strike} ${t.type.toUpperCase()} · ${isShort?'SELLING':'BUYING'} · ${t.contracts} contract${t.contracts>1?'s':''} · ${t.dte===0?'<span style="color:var(--y)">expires today</span>':t.dte+'d left'}
-      </div>
+      <div class="card-detail">$${t.strike} ${t.type.toUpperCase()} · ${isShort?'SHORT':'LONG'} · ${t.contracts} contract${t.contracts>1?'s':''}</div>
+      <div class="card-dte">${t.dte===0?'<span style="color:var(--y)">expires today</span>':t.dte+'d left'} · opened $${t.premium.toFixed(2)}/share</div>
     </div>
-    <div class="card-badges">
-      <span class="badge" style="color:${accent}">${t.type.toUpperCase()}</span>
-      <span class="badge" style="color:var(--muted);border-color:var(--border)">${isShort?'SHORT':'LONG'}</span>
-      ${beBreached?`<span class="badge" style="color:var(--r);border-color:var(--r)">⚠ B/E HIT</span>`:''}
+    <div class="card-right">
+      <div class="card-pnl" style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</div>
+      <div class="card-pnl-of">of $${premIn.toFixed(0)} ${isShort?'collected':'paid'}</div>
+      <div class="card-badges">
+        <span class="badge" style="color:${accent}">${t.type.toUpperCase()}</span>
+        <span class="badge" style="color:var(--muted);border-color:var(--border)">${isShort?'SHORT':'LONG'}</span>
+        ${beBreached?'<span class="badge" style="color:var(--r);border-color:var(--r)">⚠ B/E</span>':''}
+      </div>
     </div>
   </div>
 
-  <!-- IV + VOLUME slim row -->
-  <div class="iv-vol-row">
-    <div class="iv-item">
-      <span class="ivv-label">IV</span>
-      <span class="ivv-val" style="color:${ivColor}">${t.iv}%</span>
-      <div class="ivv-bar"><div class="ivv-bar-fill" style="width:${ivPct}%;background:${ivColor}"></div></div>
+  <!-- PROTECTION LINE -->
+  <div class="card-protection">${protLine}</div>
+
+  <!-- TRACKER — always visible -->
+  <div class="card-tracker">
+    <div class="tracker-top">
+      <span class="tracker-label">PREMIUM CAPTURED</span>
+      <span class="tracker-pill" style="background:${pillBg};color:${pillColor};border:1px solid ${pillBorder}">${pillText}</span>
     </div>
-    <div class="iv-divider"></div>
-    <div class="iv-item">
-      <span class="ivv-label">VOL</span>
-      <span class="ivv-val" style="color:${volColor}">${fmtVol(t.volume)}</span>
-      <span style="font-size:9px;color:var(--dim);font-family:'DM Mono',monospace">${volLabel}</span>
+    <div class="tracker-bar">
+      ${barFill}
+      <div class="tracker-bar-tick" style="left:50%;background:rgba(255,255,255,0.2)"></div>
+      <div class="tracker-bar-tick" style="left:75%;background:rgba(255,255,255,0.12)"></div>
+      <div class="tracker-bar-tick" style="left:90%;background:rgba(255,255,255,0.12)"></div>
     </div>
-    <div class="iv-divider"></div>
-    <div class="iv-item">
-      <span class="ivv-label">OPENED</span>
-      <span style="font-size:11px;color:var(--muted);font-weight:300">$${t.premium.toFixed(2)}/share</span>
+    <div class="tracker-bar-labels">
+      <span style="color:rgba(255,58,92,0.45)">← max loss</span>
+      <span>0%</span>
+      <span style="color:rgba(0,229,160,0.45)">100% →</span>
+    </div>
+    <div class="tracker-stats">
+      <span style="color:var(--muted)">Buy back: <strong style="color:var(--text)">$${bbCost.toFixed(0)}</strong></span>
+      <span style="color:var(--muted)">Close now, keep: <strong style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</strong></span>
+    </div>
+    <div class="tracker-action" style="background:${actionBg};border:1px solid ${actionBorder}">
+      <span style="color:${actionColor};font-size:13px;flex-shrink:0">${actionIcon}</span>
+      <span style="color:${actionColor};font-size:11px">${actionText}</span>
     </div>
   </div>
 
-  ${isExpired?`<div style="background:rgba(255,181,71,0.08);border-bottom:1px solid rgba(255,181,71,0.3);padding:10px 20px;display:flex;align-items:center;gap:10px;font-size:12px;color:rgba(255,181,71,0.9)">
-    <span>⚠️</span><div><strong>This trade may have expired</strong> — DTE is 0. Close at $0.00 if expired worthless.</div>
-  </div>`:''}
-
-  <!-- BIG GOAL HEADLINE -->
-  <div class="goal-banner">
-    <div style="font-size:9px;font-family:'DM Mono',monospace;letter-spacing:0.15em;color:var(--muted);margin-bottom:6px">YOUR GOAL</div>
-    <div class="goal-headline">${goalText}</div>
-  </div>
-
-  <!-- THREE STAT BOXES -->
-  <div class="stat-boxes">
-    <div class="stat-box">
-      <div class="stat-box-label">YOU KEEP NOW</div>
-      <div class="stat-box-val" style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</div>
-      <div class="stat-box-sub">${pctCap.toFixed(0)}% captured</div>
+  <!-- 2 SCENARIO CHIPS — always visible -->
+  <div class="card-scenarios">
+    <div class="sc-chip" style="background:rgba(0,229,160,0.03);border-color:rgba(0,229,160,0.15)">
+      <div class="sc-chip-dir" style="color:rgba(0,229,160,0.7)">if ${t.symbol} ${goodDir}</div>
+      <div class="sc-chip-result" style="color:${scGoodPnl>=0?'var(--g)':'var(--r)'}">${fmtPnl(scGoodPnl)}</div>
+      <div class="sc-chip-note">${goodNote}</div>
     </div>
-    <div class="stat-box" style="border-left:1px solid var(--border)">
-      <div class="stat-box-label">TIME LEFT</div>
-      <div class="stat-box-val" style="color:${t.dte===0?'var(--y)':t.dte<=7?'var(--r)':t.dte<=21?'var(--y)':'var(--text)'}">${t.dte===0?'TODAY':t.dte+' days'}</div>
-      <div class="stat-box-sub">${t.dte===0?'⚠ expires at close':t.dte<=7?'⚠ expiring soon':t.dte<=21?'watch closely':'time cushion ok'}</div>
-    </div>
-    <div class="stat-box" style="border-left:1px solid var(--border)">
-      <div class="stat-box-label">MAX RISK</div>
-      <div class="stat-box-val" style="color:var(--r)">${typeof maxRisk==='number'?'-$'+maxRisk.toFixed(0):maxRisk}</div>
-      <div class="stat-box-sub">${isShort&&isPut?'if stock hits $0':isShort?'if called away':'premium paid'}</div>
+    <div class="sc-chip" style="background:rgba(255,58,92,0.03);border-color:rgba(255,58,92,0.15)">
+      <div class="sc-chip-dir" style="color:rgba(255,58,92,0.7)">if ${t.symbol} ${badDir}</div>
+      <div class="sc-chip-result" style="color:${scBadPnl>=0?'var(--g)':'var(--r)'}">${fmtPnl(scBadPnl)}</div>
+      <div class="sc-chip-note">${badNote}</div>
     </div>
   </div>
 
-  <!-- BUYBACK PANEL -->
-  <div style="padding:14px 20px 0">
-    <div class="buyback">
-      <div class="bb-title">LIVE PREMIUM TRACKER</div>
-      <div class="bb-row">
-        <span class="bb-label">${isShort?'Premium you collected':'Premium you paid'}</span>
-        <span class="bb-value" style="color:${isShort?'var(--g)':'var(--muted)'}">
-          ${isShort?'+$':'-$'}${premIn.toFixed(0)}
-        </span>
+  <!-- COLLAPSED FOOTER -->
+  <div class="card-foot-collapsed">
+    <span style="color:var(--muted);font-size:11px">theta ${isShort?'+':'-'} $${dailyTheta.toFixed(2)}/day</span>
+    <span class="card-expand-btn" id="expand-btn-${t.id}">full details ▼</span>
+  </div>
+
+  <!-- ── EXPANDED SECTION (hidden by default) ── -->
+  <div class="card-expanded" id="expanded-${t.id}" style="display:none">
+
+    <!-- IV row -->
+    <div class="iv-vol-row">
+      <div class="ivv-item">
+        <span class="ivv-label">IV</span>
+        <span class="ivv-val" style="color:${ivColor}">${t.iv}%</span>
+        <div class="ivv-bar"><div class="ivv-bar-fill" style="width:${ivPct}%;background:${ivColor}"></div></div>
       </div>
-      <div class="bb-row">
-        <span class="bb-label">${isShort?'Buy back now costs':'Current value'}</span>
-        <span class="bb-value" style="color:${isShort?(bbCost>premIn?'var(--r)':'var(--muted)'):'var(--g)'}">
-          ${isShort?'-':'+ '}$${bbCost.toFixed(0)}
-        </span>
+      <div class="iv-divider"></div>
+      <div class="ivv-item">
+        <span class="ivv-label">VOL</span>
+        <span class="ivv-val" style="color:var(--muted)">${fmtVol(t.volume)}</span>
       </div>
+      <div class="iv-divider"></div>
+      <div class="ivv-item">
+        <span class="ivv-label">THETA</span>
+        <span class="ivv-val" style="color:${isShort?'var(--g)':'var(--r)'}"> ${isShort?'+':'-'} $${dailyTheta.toFixed(2)}/day</span>
+      </div>
+    </div>
 
-      <!-- Single unified bar — zero centred, profit right, loss left -->
-      <div style="position:relative;margin:12px 0 6px">
-        <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;position:relative;overflow:hidden">
-          ${pctCap>=0
-            ? `<!-- Profit: fills right from centre -->
-               <div style="position:absolute;top:0;left:50%;height:100%;width:${Math.min(50,pctCap/2)}%;background:${pctCap>=80?'var(--g)':pctCap>=50?'var(--b)':'var(--y)'};border-radius:0 4px 4px 0;transition:width 0.6s ease"></div>`
-            : `<!-- Loss: fills left from centre -->
-               <div style="position:absolute;top:0;right:50%;height:100%;width:${Math.min(50,Math.abs(pctCap)/2)}%;background:linear-gradient(270deg,rgba(255,181,71,0.7),rgba(255,58,92,0.9));border-radius:4px 0 0 4px;transition:width 0.6s ease"></div>`
-          }
-          <!-- Centre marker (zero / break even) -->
-          <div style="position:absolute;top:-2px;left:50%;width:2px;height:12px;background:rgba(255,255,255,0.25);transform:translateX(-50%)"></div>
-          <!-- 50% profit marker -->
-          <div style="position:absolute;top:-2px;left:75%;width:1.5px;height:12px;background:rgba(77,159,255,0.3);transform:translateX(-50%)"></div>
-          <!-- 80% profit marker -->
-          <div style="position:absolute;top:-2px;left:90%;width:1.5px;height:12px;background:rgba(0,229,160,0.3);transform:translateX(-50%)"></div>
+    <!-- Three stat boxes -->
+    <div class="stat-boxes">
+      <div class="stat-box">
+        <div class="stat-box-label">YOU KEEP NOW</div>
+        <div class="stat-box-val" style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</div>
+        <div class="stat-box-sub">${pctCap.toFixed(0)}% captured</div>
+      </div>
+      <div class="stat-box" style="border-left:1px solid var(--border)">
+        <div class="stat-box-label">TIME LEFT</div>
+        <div class="stat-box-val" style="color:${t.dte===0?'var(--y)':t.dte<=7?'var(--r)':t.dte<=21?'var(--y)':'var(--text)'}">${t.dte===0?'TODAY':t.dte+' days'}</div>
+        <div class="stat-box-sub">${t.dte===0?'⚠ expires at close':t.dte<=7?'⚠ expiring soon':t.dte<=21?'watch closely':'time cushion ok'}</div>
+      </div>
+      <div class="stat-box" style="border-left:1px solid var(--border)">
+        <div class="stat-box-label">MAX RISK</div>
+        <div class="stat-box-val" style="color:var(--r)">${isShort&&isPut?'-$'+(t.strike-t.premium).toFixed(0)+'00':isShort?'Unlimited':'-$'+premIn.toFixed(0)}</div>
+        <div class="stat-box-sub">${isShort&&isPut?'if stock hits $0':isShort?'if called away':'premium paid'}</div>
+      </div>
+    </div>
+
+    <!-- Expanded tracker with rows -->
+    <div class="exp-tracker">
+      <div class="tracker-top" style="margin-bottom:10px">
+        <span class="tracker-label">LIVE PREMIUM TRACKER</span>
+        <span class="tracker-pill" style="background:${pillBg};color:${pillColor};border:1px solid ${pillBorder}">${pillText}</span>
+      </div>
+      <div class="exp-tracker-rows">
+        <div class="exp-tracker-row">
+          <span class="exp-tracker-label">${isShort?'Premium collected':'Premium paid'}</span>
+          <span style="color:${isShort?'var(--g)':'var(--muted)'}">  ${isShort?'+$':'-$'}${premIn.toFixed(0)}</span>
         </div>
-        <!-- Labels -->
-        <div style="display:flex;justify-content:space-between;margin-top:5px">
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(255,58,92,0.4)">← MAX LOSS</span>
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(255,255,255,0.2)">0%</span>
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:rgba(0,229,160,0.4)">100% →</span>
-        </div>
-        <!-- Current capture label -->
-        <div style="text-align:center;margin-top:4px;font-family:'DM Mono',monospace;font-size:9px;
-          color:${pctCap>=80?'var(--g)':pctCap>=50?'var(--b)':pctCap>=0?'var(--y)':'rgba(255,58,92,0.8)'}">
-          ${pctCap>=0?`▲ ${pctCap.toFixed(0)}% captured`:`▼ ${Math.abs(pctCap).toFixed(0)}% underwater`}
+        <div class="exp-tracker-row">
+          <span class="exp-tracker-label">${isShort?'Buy back now costs':'Current value'}</span>
+          <span style="color:${bbCost>premIn&&isShort?'var(--r)':'var(--muted)'}">-$${bbCost.toFixed(0)}</span>
         </div>
       </div>
-
-      <!-- Action prompt based on capture % -->
-      ${isShort?(
-        pctCap>=80&&pctCap<100?`<div style="margin:8px 0;padding:7px 10px;background:rgba(0,229,160,0.07);border:1px solid rgba(0,229,160,0.2);border-radius:7px;font-size:11px;color:rgba(0,229,160,0.85);display:flex;align-items:center;gap:7px"><span>✓</span><span><strong>80%+ captured</strong> — consider closing to lock in profit</span></div>`
-        :pctCap>=50?`<div style="margin:8px 0;padding:7px 10px;background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-radius:7px;font-size:11px;color:rgba(77,159,255,0.8);display:flex;align-items:center;gap:7px"><span>◈</span><span><strong>50%+ captured</strong> — good progress, monitor closely</span></div>`
-        :pctCap<0?`<div style="margin:8px 0;padding:9px 12px;background:rgba(255,58,92,0.07);border:1px solid rgba(255,58,92,0.25);border-radius:7px;font-size:11px;color:rgba(255,58,92,0.9)"><div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span>⚠</span><strong>Trade is underwater</strong></div><div style="color:rgba(255,255,255,0.5);font-size:10px;line-height:1.6">You'd pay <strong style="color:rgba(255,58,92,0.9)">$${(bbCost-premIn).toFixed(0)} more</strong> to close than you collected. Hold if price may recover, or close now to cap the loss.</div></div>`
-        :'<div style="margin:8px 0;padding:7px 10px;background:rgba(255,181,71,0.05);border:1px solid rgba(255,181,71,0.15);border-radius:7px;font-size:11px;color:rgba(255,181,71,0.7);display:flex;align-items:center;gap:7px"><span>⏱</span><span>Let time decay work — target <strong>50–80%</strong> capture before closing</span></div>'
-      ):(
-        bbCost>premIn?`<div style="margin:8px 0;padding:7px 10px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:7px;font-size:11px;color:rgba(167,139,250,0.85);display:flex;align-items:center;gap:7px"><span>📈</span><span><strong>Long position in profit</strong> — worth more than you paid</span></div>`
-        :`<div style="margin:8px 0;padding:7px 10px;background:rgba(255,181,71,0.05);border:1px solid rgba(255,181,71,0.15);border-radius:7px;font-size:11px;color:rgba(255,181,71,0.7);display:flex;align-items:center;gap:7px"><span>⏱</span><span><strong>Long position</strong> — waiting for the move. Close if taking profit or cutting loss.</span></div>`
-      )}
-
-      <div class="bb-row" style="margin-top:10px">
-        <span class="bb-label" style="font-weight:500;color:var(--text)">You keep right now</span>
-        <span class="bb-keep" style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</span>
+      <div class="tracker-bar">
+        ${barFill}
+        <div class="tracker-bar-tick" style="left:50%;background:rgba(255,255,255,0.2)"></div>
+        <div class="tracker-bar-tick" style="left:75%;background:rgba(255,255,255,0.12)"></div>
+        <div class="tracker-bar-tick" style="left:90%;background:rgba(255,255,255,0.12)"></div>
+      </div>
+      <div class="tracker-bar-labels">
+        <span style="color:rgba(255,58,92,0.45)">← max loss</span>
+        <span>0%</span>
+        <span style="color:rgba(0,229,160,0.45)">100% →</span>
+      </div>
+      <div class="tracker-action" style="background:${actionBg};border:1px solid ${actionBorder};margin-top:8px">
+        <span style="color:${actionColor};font-size:13px;flex-shrink:0">${actionIcon}</span>
+        <span style="color:${actionColor};font-size:11px">${actionText}</span>
+      </div>
+      <div class="exp-tracker-keep">
+        <span>You keep right now</span>
+        <span style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</span>
       </div>
     </div>
-  </div>
 
-  <!-- CHART -->
-  <div class="chart-section">
-    <div class="chart-label">PROFIT MAP — WHAT HAPPENS AT EVERY PRICE</div>
-    ${chartSVG}
-  </div>
-
-  <!-- SCENARIOS -->
-  <div class="scenarios">
-    <div class="sc-label">WHAT HAPPENS NEXT?</div>
-    ${scenarios.map(s=>`
-    <div class="sc-row" style="background:${s.pnl>=0?'rgba(0,229,160,0.03)':'rgba(255,58,92,0.03)'}">
-      <div class="sc-icon">${s.icon}</div>
-      <div class="sc-body">
-        <div class="sc-title">${s.title}</div>
-        <div class="sc-detail">${s.detail}</div>
-      </div>
-      <div class="sc-right">
-        <div class="sc-price">${s.price}</div>
-        <div class="sc-outcome" style="color:${pnlCol(s.pnl)}">${fmtPnl(s.pnl)}</div>
-      </div>
-    </div>`).join('')}
-  </div>
-
-  <!-- PLAIN ENGLISH -->
-  <div class="pe-section">
-    <div class="pe-text">${pe}</div>
-  </div>
-
-  <!-- FOOTER -->
-  <div class="card-footer">
-    <div class="cf-theta">
-      Time decay: <strong style="color:${isShort?'var(--g)':'var(--r)'}">${isShort?'+':''} $${dailyTheta.toFixed(2)}/day</strong>
-      <span style="font-size:10px"> ${isShort?'✓ working for you':'✗ working against you'}</span>
+    <!-- Chart -->
+    <div class="chart-section">
+      <div class="chart-label">PROFIT MAP — WHAT HAPPENS AT EVERY PRICE</div>
+      ${chartSVG}
     </div>
-    <div class="cf-btns">
-      <button class="cf-btn" onclick="openEditModal('${t.id}')">✎ EDIT</button>
-      <button class="cf-btn" onclick="expireWorthless('${t.id}')" style="border-color:rgba(255,181,71,0.3);color:rgba(255,181,71,0.7)">✕ REMOVE</button>
-      <button class="cf-btn close-btn" onclick="closeTrade('${t.id}')">◆ CLOSE TRADE</button>
-    </div>
-  </div>
 
+    <!-- 5 Price chips -->
+    <div class="price-chips">
+      <div class="price-chips-label">WHAT HAPPENS AT THESE PRICES?</div>
+      <div class="price-chips-row">${chips}</div>
+    </div>
+
+    <!-- Plain English -->
+    <div class="pe-section">${pe}</div>
+
+    <!-- Expanded footer — small boxed actions -->
+    <div class="card-foot-expanded">
+      <div class="foot-theta">Theta <strong style="color:${isShort?'var(--g)':'var(--r)'}">${isShort?'+':'-'} $${dailyTheta.toFixed(2)}/day</strong> ${isShort?'working for you':'working against you'}</div>
+      <div class="foot-right">
+        <div class="foot-btn-group">
+          <button class="foot-btn" onclick="openEditModal('${t.id}')">edit</button>
+          <button class="foot-btn remove-btn" onclick="expireWorthless('${t.id}')">remove</button>
+          <button class="foot-btn close-btn" onclick="closeTrade('${t.id}')">close trade</button>
+        </div>
+        <span class="foot-collapse" onclick="toggleCard('${t.id}',event)">collapse ▲</span>
+      </div>
+    </div>
+
+  </div>
 </div>`;
 }
+
 
 // ══════════════════════════════════════════════════════
 // CHART
 // ══════════════════════════════════════════════════════
 function buildChart(t,b,be,T,sig,accent,isPut,isShort){
-  const W=560, H=220;
-  const PL=56, PR=16, PT=20, PB=32;
+  const W=560, H=120;
+  const PL=44, PR=12, PT=18, PB=28; // bottom 28 = axis labels(10) + legend row(10) + gap(8)
   const PW=W-PL-PR, PH=H-PT-PB;
 
-  // Tighter price range focused on action zone
   const S=t.stock, K=t.strike;
   const spread=Math.abs(S-K);
-  const padding=Math.max(spread*1.8, S*0.12);
-  const lo=Math.max(0.01, Math.min(S,K)-padding);
+  const padding=Math.max(spread*1.8,S*0.12);
+  const lo=Math.max(0.01,Math.min(S,K)-padding);
   const hi=Math.max(S,K)+padding;
   const range=hi-lo;
 
   const px=p=>PL+((p-lo)/range)*PW;
 
-  // Build P&L curve
+  // Build P&L points
   const nPts=80;
   const pts=[];
   for(let i=0;i<=nPts;i++){
@@ -1871,139 +1994,118 @@ function buildChart(t,b,be,T,sig,accent,isPut,isShort){
     pts.push({price,pnl,x:px(price)});
   }
 
-  // P&L range for y axis
   const allPnls=pts.map(p=>p.pnl);
-  const maxP=Math.max(...allPnls);
-  const minP=Math.min(...allPnls);
-  const pad=(maxP-minP)*0.15;
+  const maxP=Math.max(...allPnls), minP=Math.min(...allPnls);
+  const pad=(maxP-minP)*0.18;
   const yHi=maxP+pad, yLo=minP-pad;
   const yRange=yHi-yLo;
-
-  const py=p=>PT+PH-(( p-yLo)/yRange)*PH;
+  const py=p=>PT+PH-((p-yLo)/yRange)*PH;
   const pyC=p=>Math.max(PT+1,Math.min(PT+PH-1,py(p)));
-
-  // Add y to pts
   pts.forEach(p=>p.y=pyC(p.pnl));
 
-  // Zero line y
   const zeroY=pyC(0);
 
-  // Build profit/loss path segments
+  // Split into profit/loss segments
   function pathStr(arr){return arr.map((p,i)=>(i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`)).join(' ')}
-
-  const profitSegs=[], lossSegs=[];
-  let curProfit=[], curLoss=[];
+  const profitSegs=[],lossSegs=[];
+  let curP=[],curL=[];
   for(let i=0;i<pts.length;i++){
     const p=pts[i];
     if(i>0&&((pts[i-1].pnl>=0)!==(p.pnl>=0))){
       const prev=pts[i-1];
       const frac=Math.abs(prev.pnl)/(Math.abs(prev.pnl)+Math.abs(p.pnl));
-      const cx=prev.x+(p.x-prev.x)*frac;
-      const cy=zeroY;
-      const cross={x:cx,y:cy,pnl:0};
-      if(prev.pnl>=0){curProfit.push(cross);profitSegs.push(curProfit);curProfit=[];curLoss=[cross];}
-      else{curLoss.push(cross);lossSegs.push(curLoss);curLoss=[];curProfit=[cross];}
+      const cross={x:prev.x+(p.x-prev.x)*frac,y:zeroY,pnl:0};
+      if(prev.pnl>=0){curP.push(cross);profitSegs.push(curP);curP=[];curL=[cross];}
+      else{curL.push(cross);lossSegs.push(curL);curL=[];curP=[cross];}
     }
-    p.pnl>=0?curProfit.push(p):curLoss.push(p);
+    p.pnl>=0?curP.push(p):curL.push(p);
   }
-  if(curProfit.length)profitSegs.push(curProfit);
-  if(curLoss.length)lossSegs.push(curLoss);
+  if(curP.length)profitSegs.push(curP);
+  if(curL.length)lossSegs.push(curL);
 
-  // Fill zones
-  const fillPath=(seg,col)=>{
-    if(seg.length<2)return '';
-    const d=pathStr(seg)+` L${seg[seg.length-1].x.toFixed(1)},${zeroY.toFixed(1)} L${seg[0].x.toFixed(1)},${zeroY.toFixed(1)} Z`;
-    return `<path d="${d}" fill="${col}" stroke="none"/>`;
-  };
-  const fills=profitSegs.map(s=>fillPath(s,'rgba(0,229,160,0.12)')).join('')
-    +lossSegs.map(s=>fillPath(s,'rgba(255,58,92,0.12)')).join('');
+  const fillP=profitSegs.map(s=>{if(s.length<2)return'';const d=pathStr(s)+` L${s[s.length-1].x.toFixed(1)},${zeroY.toFixed(1)} L${s[0].x.toFixed(1)},${zeroY.toFixed(1)} Z`;return`<path d="${d}" fill="rgba(0,229,160,0.08)" stroke="none"/>`;}).join('');
+  const fillL=lossSegs.map(s=>{if(s.length<2)return'';const d=pathStr(s)+` L${s[s.length-1].x.toFixed(1)},${zeroY.toFixed(1)} L${s[0].x.toFixed(1)},${zeroY.toFixed(1)} Z`;return`<path d="${d}" fill="rgba(255,58,92,0.08)" stroke="none"/>`;}).join('');
+  const pathP=profitSegs.map(s=>`<path d="${pathStr(s)}" fill="none" stroke="rgba(0,229,160,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+  const pathL=lossSegs.map(s=>`<path d="${pathStr(s)}" fill="none" stroke="rgba(255,58,92,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
 
-  // Paths
-  const profitPaths=profitSegs.map(s=>`<path d="${pathStr(s)}" fill="none" stroke="rgba(0,229,160,0.9)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
-  const lossPaths=lossSegs.map(s=>`<path d="${pathStr(s)}" fill="none" stroke="rgba(255,58,92,0.9)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+  const zeroLine=`<line x1="${PL}" y1="${zeroY.toFixed(1)}" x2="${W-PR}" y2="${zeroY.toFixed(1)}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="4,4"/>`;
 
-  // Zero dashed line
-  const zeroLine=`<line x1="${PL}" y1="${zeroY.toFixed(1)}" x2="${W-PR}" y2="${zeroY.toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="5,4"/>`;
-
-  // Left Y axis — P&L values (not MAX labels)
-  const yAxisVals=[maxP, 0, minP].filter((v,i,a)=>a.indexOf(v)===i);
-  const yAxis=yAxisVals.map(v=>{
-    const vy=pyC(v);
-    const label=v===0?'$0':(v>0?'+$'+Math.abs(v).toFixed(0):'-$'+Math.abs(v).toFixed(0));
-    const col=v>0?'rgba(0,229,160,0.6)':v<0?'rgba(255,58,92,0.5)':'rgba(255,255,255,0.2)';
-    return `<text x="${PL-6}" y="${vy.toFixed(1)}" fill="${col}" font-size="10" font-family="monospace" text-anchor="end" dominant-baseline="middle">${label}</text>
-    <line x1="${PL-2}" y1="${vy.toFixed(1)}" x2="${PL}" y2="${vy.toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
+  // Y axis — 3 labels left-aligned, right-justified to PL-4
+  const yLabels=[
+    {val:maxP,col:'rgba(0,229,160,0.45)'},
+    {val:0,col:'rgba(255,255,255,0.2)'},
+    {val:minP,col:'rgba(255,58,92,0.45)'}
+  ];
+  const yAxis=yLabels.map(({val,col})=>{
+    const y=pyC(val);
+    const label=val===0?'$0':val>0?'+$'+Math.abs(val).toFixed(0):'-$'+Math.abs(val).toFixed(0);
+    return`<text x="${PL-4}" y="${y.toFixed(1)}" fill="${col}" font-size="9" font-family="monospace" text-anchor="end" dominant-baseline="middle">${label}</text>`;
   }).join('');
 
-  // Key price dots with labels — bigger, more readable
-  const keyPts=[
-    {price:S, label:'NOW', col:'#00e5a0', r:6, priority:0},
-    {price:K, label:'STRIKE', col:'rgba(255,180,0,0.9)', r:5, priority:1},
-    {price:be, label:'B/E', col:'rgba(255,255,255,0.6)', r:4, priority:2},
+  // Key dots — NOW, STRIKE, B/E — with collision-safe labels
+  const keyDots=[
+    {price:S,label:'NOW',col:'#00e5a0',r:5,priority:0},
+    {price:K,label:'STRIKE',col:'rgba(255,180,0,0.9)',r:4,priority:1},
+    {price:be,label:'B/E',col:'rgba(255,255,255,0.55)',r:3.5,priority:2},
   ];
-
-  // Calculate positions
-  const dotItems=keyPts.map(kp=>{
+  const dotItems=keyDots.map(kp=>{
     const opt=bsc(kp.price,t.strike,T,sig,t.type).price;
     const pnl=isShort?(t.premium-opt)*100*t.contracts:(opt-t.premium)*100*t.contracts;
     const x=Math.max(PL+2,Math.min(W-PR-2,px(kp.price)));
     const y=pyC(pnl);
-    const pnlStr=(pnl>=0?'+':'')+' $'+Math.abs(pnl).toFixed(0);
+    const pnlStr=(pnl>=0?'+ ':'')+' $'+Math.abs(pnl).toFixed(0);
     const pnlCol=pnl>=0?'rgba(0,229,160,0.95)':'rgba(255,58,92,0.95)';
-    return {...kp,x,y,pnl,pnlStr,pnlCol};
+    return{...kp,x,y,pnl,pnlStr,pnlCol};
   }).filter(d=>d.x>=PL&&d.x<=W-PR);
 
-  // Place labels — alternate above/below, collision-safe
+  // Alternate labels above/below with collision detection
   const placed=[];
   const dotSVG=dotItems.map((d,i)=>{
-    // Label x — clamp to chart bounds
-    const lw=d.label==='STRIKE'?38:d.label==='NOW'?26:18;
+    const lw=d.label==='STRIKE'?36:d.label==='NOW'?24:18;
     const lx=Math.max(PL+lw/2+2,Math.min(W-PR-lw/2-2,d.x));
-    // Alternate above/below
-    let ly=i%2===0?d.y-18:d.y+28;
-    if(ly<PT+10)ly=d.y+28;
-    if(ly>H-PB-14)ly=d.y-18;
-    // Collision push
+    let ly=i%2===0?d.y-16:d.y+24;
+    if(ly<PT+8)ly=d.y+24;
+    if(ly>PT+PH-12)ly=d.y-16;
     for(const p of placed){
-      if(Math.abs(lx-p.x)<50&&Math.abs(ly-p.y)<22){
-        ly=p.y+(ly>p.y?26:-26);
-        ly=Math.max(PT+10,Math.min(H-PB-14,ly));
+      if(Math.abs(lx-p.x)<48&&Math.abs(ly-p.y)<16){
+        ly=p.y+(ly>p.y?20:-20);
+        ly=Math.max(PT+8,Math.min(PT+PH-12,ly));
       }
     }
     placed.push({x:lx,y:ly});
-    // Connector line from dot to label
     const connY=ly>d.y?d.y+d.r:d.y-d.r;
-    return `
-    <line x1="${d.x.toFixed(1)}" y1="${connY.toFixed(1)}" x2="${lx.toFixed(1)}" y2="${(ly-9).toFixed(1)}" stroke="${d.col}" stroke-width="1" stroke-opacity="0.3"/>
+    return`
+    <line x1="${d.x.toFixed(1)}" y1="${connY.toFixed(1)}" x2="${lx.toFixed(1)}" y2="${(ly-7).toFixed(1)}" stroke="${d.col}" stroke-width="1" opacity="0.3"/>
     <circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="${d.r}" fill="${d.col}" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>
-    <text x="${lx.toFixed(1)}" y="${(ly-5).toFixed(1)}" fill="${d.col}" font-size="10" font-weight="bold" font-family="monospace" text-anchor="middle">${d.label}</text>
-    <text x="${lx.toFixed(1)}" y="${(ly+7).toFixed(1)}" fill="${d.pnlCol}" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">${d.pnlStr}</text>`;
+    <text x="${lx.toFixed(1)}" y="${(ly-3).toFixed(1)}" fill="${d.col}" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">${d.label}</text>
+    <text x="${lx.toFixed(1)}" y="${(ly+7).toFixed(1)}" fill="${d.pnlCol}" font-size="10" font-weight="bold" font-family="monospace" text-anchor="middle">${d.pnlStr}</text>`;
   }).join('');
 
-  // Bottom price axis — 3 labels
+  // X axis — 3 price labels, bottom of PH area (not legend row)
+  const axisY=PT+PH+10;
   const axisItems=[
     {price:lo+range*0.1},
     {price:S},
     {price:hi-range*0.1}
   ];
   const axisEl=axisItems.map(a=>{
-    const ax=Math.max(PL+10,Math.min(W-PR-10,px(a.price)));
-    return `<text x="${ax.toFixed(1)}" y="${H-6}" fill="rgba(255,255,255,0.25)" font-size="10" font-family="monospace" text-anchor="middle">$${Math.round(a.price)}</text>`;
+    const ax=Math.max(PL+12,Math.min(W-PR-12,px(a.price)));
+    return`<text x="${ax.toFixed(1)}" y="${axisY}" fill="rgba(255,255,255,0.22)" font-size="9" font-family="monospace" text-anchor="middle">$${Math.round(a.price)}</text>`;
   }).join('');
 
-  // Legend — bottom right
-  const lgx=W-PR-4, lgy=H-PB+16;
+  // Legend — own row at very bottom, clear of axis labels
+  const legendY=H-4;
   const legend=`
-    <circle cx="${lgx-58}" cy="${lgy}" r="4" fill="rgba(0,229,160,0.8)"/>
-    <text x="${lgx-52}" y="${lgy}" fill="rgba(255,255,255,0.3)" font-size="9" font-family="monospace" dominant-baseline="middle">PROFIT</text>
-    <circle cx="${lgx-8}" cy="${lgy}" r="4" fill="rgba(255,58,92,0.8)"/>
-    <text x="${lgx-2}" y="${lgy}" fill="rgba(255,255,255,0.3)" font-size="9" font-family="monospace" dominant-baseline="middle" text-anchor="start">LOSS</text>`;
+    <circle cx="${W-PR-72}" cy="${legendY}" r="3.5" fill="rgba(0,229,160,0.75)"/>
+    <text x="${W-PR-66}" y="${legendY}" fill="rgba(255,255,255,0.25)" font-size="8" font-family="monospace" dominant-baseline="middle">profit</text>
+    <circle cx="${W-PR-30}" cy="${legendY}" r="3.5" fill="rgba(255,58,92,0.75)"/>
+    <text x="${W-PR-24}" y="${legendY}" fill="rgba(255,255,255,0.25)" font-size="8" font-family="monospace" dominant-baseline="middle">loss</text>`;
 
-  return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="height:auto;min-height:160px">
-  <rect width="${W}" height="${H}" fill="rgba(0,0,0,0.3)" rx="10"/>
-  ${fills}
+  return`<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="height:auto;display:block;width:100%">
+  <rect width="${W}" height="${H}" fill="rgba(0,0,0,0.28)" rx="8"/>
+  ${fillP}${fillL}
   ${zeroLine}
-  ${profitPaths}${lossPaths}
+  ${pathP}${pathL}
   ${yAxis}
   ${dotSVG}
   ${axisEl}
