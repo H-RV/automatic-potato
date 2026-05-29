@@ -1644,7 +1644,7 @@ function renderAll(trades){
 }
 
 function toggleCard(id,event){
-  if(event&&event.target.closest('button,.foot-btn,.foot-collapse,.card-expand-btn'))return;
+  if(event&&event.target.closest('button,.foot-btn,.foot-collapse'))return;
   const expanded=document.getElementById('expanded-'+id);
   const expandBtn=document.getElementById('expand-btn-'+id);
   if(!expanded)return;
@@ -1809,7 +1809,7 @@ function buildCard(t,idx){
   const fmtVol=v=>v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'K':v>0?v.toString():'—';
 
   return `
-<div class="card" style="--accent:${accent};animation-delay:${idx*0.06}s" id="${cardId}" onclick="toggleCard('${t.id}',event)">
+<div class="card" style="--accent:${accent};animation-delay:${idx*0.06}s" id="${cardId}" >
 
   <!-- COLLAPSED HEADER — always visible -->
   <div class="card-hdr">
@@ -1879,7 +1879,7 @@ function buildCard(t,idx){
   <!-- COLLAPSED FOOTER -->
   <div class="card-foot-collapsed">
     <span style="color:var(--muted);font-size:11px">theta ${isShort?'+':'-'} $${dailyTheta.toFixed(2)}/day</span>
-    <span class="card-expand-btn" id="expand-btn-${t.id}">full details ▼</span>
+    <span class="card-expand-btn" id="expand-btn-${t.id}" onclick="toggleCard('${t.id}',event)">full details ▼</span>
   </div>
 
   <!-- ── EXPANDED SECTION (hidden by default) ── -->
