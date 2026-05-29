@@ -1694,7 +1694,9 @@ function buildCard(t,idx){
     <div class="stat-box" style="border-left:1px solid var(--border)">
       <div class="stat-box-label">TIME LEFT</div>
       <div class="stat-box-val" style="color:${t.dte===0?'var(--y)':t.dte<=7?'var(--r)':t.dte<=21?'var(--y)':'var(--text)'}">${t.dte===0?'TODAY':t.dte+' days'}</div>
-      <div class="stat-box-sub">${t.dte===0?'⚠ expires at close':t.dte<=7?'⚠ expiring soon':t.dte<=21?'watch closely':'time cushion ok'}</div>er-left:1px solid var(--border)">
+      <div class="stat-box-sub">${t.dte===0?'⚠ expires at close':t.dte<=7?'⚠ expiring soon':t.dte<=21?'watch closely':'time cushion ok'}</div>
+    </div>
+    <div class="stat-box" style="border-left:1px solid var(--border)">
       <div class="stat-box-label">MAX RISK</div>
       <div class="stat-box-val" style="color:var(--r)">${typeof maxRisk==='number'?'-$'+maxRisk.toFixed(0):maxRisk}</div>
       <div class="stat-box-sub">${isShort&&isPut?'if stock hits $0':isShort?'if called away':'premium paid'}</div>
