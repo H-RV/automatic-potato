@@ -1578,7 +1578,8 @@ function buildCard(t,idx){
   const T=Math.max((t.dte===0?0.5:t.dte)/365,.0001); // Use 0.5 days on expiry day to keep BS stable
   const sig=Math.max(t.iv/100,0.01);
   const b=bsc(t.stock,t.strike,T,sig,t.type);
-  const accent=isPut?(isShort?'#ff9500':'#ff6b35'):(isShort?'#4d9fff':'#a78bfa');
+  // SHORT PUT=amber, SHORT CALL=blue, LONG any=purple
+  const accent=!isShort?'#a78bfa':isPut?'#ff9500':'#4d9fff';
 
   const be=isPut?t.strike-t.premium:t.strike+t.premium;
   const beBreached=isPut?t.stock<be:t.stock>be;
@@ -1708,12 +1709,16 @@ function buildCard(t,idx){
     <div class="buyback">
       <div class="bb-title">LIVE PREMIUM TRACKER</div>
       <div class="bb-row">
-        <span class="bb-label">Premium you collected</span>
-        <span class="bb-value" style="color:var(--g)">+$${premIn.toFixed(0)}</span>
+        <span class="bb-label">${isShort?'Premium you collected':'Premium you paid'}</span>
+        <span class="bb-value" style="color:${isShort?'var(--g)':'var(--muted)'}">
+          ${isShort?'+':''}-$${premIn.toFixed(0)}
+        </span>
       </div>
       <div class="bb-row">
-        <span class="bb-label">Buy back now costs</span>
-        <span class="bb-value" style="color:${bbCost>premIn?'var(--r)':'var(--muted)'}">-$${bbCost.toFixed(0)}</span>
+        <span class="bb-label">${isShort?'Buy back now costs':'Current value'}</span>
+        <span class="bb-value" style="color:${isShort?(bbCost>premIn?'var(--r)':'var(--muted)'):'var(--g)'}">
+          ${isShort?'-':'+ '}$${bbCost.toFixed(0)}
+        </span>
       </div>
 
       <!-- Single unified bar — zero centred, profit right, loss left -->
@@ -1746,16 +1751,15 @@ function buildCard(t,idx){
       </div>
 
       <!-- Action prompt based on capture % -->
-      ${pctCap>=80&&pctCap<100?`<div style="margin:8px 0;padding:7px 10px;background:rgba(0,229,160,0.07);border:1px solid rgba(0,229,160,0.2);border-radius:7px;font-size:11px;color:rgba(0,229,160,0.85);display:flex;align-items:center;gap:7px">
-        <span>✓</span><span><strong>80%+ captured</strong> — consider closing to lock in profit</span>
-      </div>`
-      :pctCap>=50?`<div style="margin:8px 0;padding:7px 10px;background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-radius:7px;font-size:11px;color:rgba(77,159,255,0.8);display:flex;align-items:center;gap:7px">
-        <span>◈</span><span><strong>50%+ captured</strong> — good progress, monitor closely</span>
-      </div>`
-      :pctCap<0?`<div style="margin:8px 0;padding:7px 10px;background:rgba(255,58,92,0.06);border:1px solid rgba(255,58,92,0.2);border-radius:7px;font-size:11px;color:rgba(255,58,92,0.8);display:flex;align-items:center;gap:7px">
-        <span>⚠</span><div><strong>Trade is underwater</strong><br><span style="font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6">You'd pay <strong style="color:rgba(255,58,92,0.9)">$${(bbCost-premIn).toFixed(0)} more</strong> to close than you collected. Hold if price may recover, or close now to cap the loss.</span></div>
-      </div>`
-      :'<div style="margin:8px 0;padding:7px 10px;background:rgba(255,181,71,0.05);border:1px solid rgba(255,181,71,0.15);border-radius:7px;font-size:11px;color:rgba(255,181,71,0.7);display:flex;align-items:center;gap:7px"><span>⏱</span><span>Let time decay work — target <strong>50–80%</strong> capture before closing</span></div>'}
+      ${isShort?(
+        pctCap>=80&&pctCap<100?`<div style="margin:8px 0;padding:7px 10px;background:rgba(0,229,160,0.07);border:1px solid rgba(0,229,160,0.2);border-radius:7px;font-size:11px;color:rgba(0,229,160,0.85);display:flex;align-items:center;gap:7px"><span>✓</span><span><strong>80%+ captured</strong> — consider closing to lock in profit</span></div>`
+        :pctCap>=50?`<div style="margin:8px 0;padding:7px 10px;background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-radius:7px;font-size:11px;color:rgba(77,159,255,0.8);display:flex;align-items:center;gap:7px"><span>◈</span><span><strong>50%+ captured</strong> — good progress, monitor closely</span></div>`
+        :pctCap<0?`<div style="margin:8px 0;padding:9px 12px;background:rgba(255,58,92,0.07);border:1px solid rgba(255,58,92,0.25);border-radius:7px;font-size:11px;color:rgba(255,58,92,0.9)"><div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span>⚠</span><strong>Trade is underwater</strong></div><div style="color:rgba(255,255,255,0.5);font-size:10px;line-height:1.6">You'd pay <strong style="color:rgba(255,58,92,0.9)">$${(bbCost-premIn).toFixed(0)} more</strong> to close than you collected. Hold if price may recover, or close now to cap the loss.</div></div>`
+        :'<div style="margin:8px 0;padding:7px 10px;background:rgba(255,181,71,0.05);border:1px solid rgba(255,181,71,0.15);border-radius:7px;font-size:11px;color:rgba(255,181,71,0.7);display:flex;align-items:center;gap:7px"><span>⏱</span><span>Let time decay work — target <strong>50–80%</strong> capture before closing</span></div>'
+      ):(
+        bbCost>premIn?`<div style="margin:8px 0;padding:7px 10px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:7px;font-size:11px;color:rgba(167,139,250,0.85);display:flex;align-items:center;gap:7px"><span>📈</span><span><strong>Long position in profit</strong> — worth more than you paid</span></div>`
+        :`<div style="margin:8px 0;padding:7px 10px;background:rgba(255,181,71,0.05);border:1px solid rgba(255,181,71,0.15);border-radius:7px;font-size:11px;color:rgba(255,181,71,0.7);display:flex;align-items:center;gap:7px"><span>⏱</span><span><strong>Long position</strong> — waiting for the move. Close if taking profit or cutting loss.</span></div>`
+      )}
 
       <div class="bb-row" style="margin-top:10px">
         <span class="bb-label" style="font-weight:500;color:var(--text)">You keep right now</span>
