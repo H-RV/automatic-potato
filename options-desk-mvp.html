@@ -1490,14 +1490,45 @@ function confirmTrades(){
     }
   }
 
-  // Process opening trades
+  // Process opening trades — filter out LONG legs that are part of a spread
   if(openingTrades.length){
     const issues=openingTrades.filter(t=>!t.strike||!t.premium);
     if(issues.length){
       const names=issues.map(t=>t.symbol).join(', ');
       if(!confirm(`Some trades are missing strike or premium data (${names}). Build cards anyway?`))return;
     }
-    savedTrades=[...savedTrades,...openingTrades];
+    // Suppress LONG legs that match a SHORT leg (same ticker + type + expiry = spread)
+    const shortLegs=openingTrades.filter(t=>t.direction==='short');
+    const filteredTrades=openingTrades.filter(t=>{
+      if(t.direction!=='long')return true; // keep all shorts
+      // Check if a matching short exists (same symbol + type)
+      const matchingShort=shortLegs.find(s=>
+        s.symbol===t.symbol &&
+        s.type===t.type &&
+        Math.abs(s.dte-(t.dte||0))<7 // same expiry ± 7 days
+      );
+      if(matchingShort){
+        console.log('Spread detected — suppressing LONG leg:',t.symbol,t.type,'$'+t.strike);
+        return false;
+      }
+      return true;
+    });
+    // Also check against existing saved trades
+    const finalTrades=filteredTrades.filter(t=>{
+      if(t.direction!=='long')return true;
+      const matchingShort=savedTrades.find(s=>
+        s.symbol===t.symbol &&
+        s.type===t.type &&
+        s.direction==='short' &&
+        Math.abs(s.dte-(t.dte||0))<7
+      );
+      if(matchingShort){
+        console.log('Spread detected vs existing — suppressing LONG leg:',t.symbol,t.type,'$'+t.strike);
+        return false;
+      }
+      return true;
+    });
+    savedTrades=[...savedTrades,...finalTrades];
     localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
   }
 
