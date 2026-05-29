@@ -1030,11 +1030,13 @@ DTE CALCULATION EXAMPLES (today is ${today}):
 - If DTE column shows directly (e.g. "16d") use that number
 - DTE must ALWAYS be positive (minimum 1) unless the option literally expired today
 - Do NOT use the Trade Date or Settlement Date to calculate DTE — use the EXPIRY date in the symbol
-- "IREN 29MAY26 57 C" expiry is 29MAY26 = May 29 2026, NOT the trade date shown in the row
-- If calculated DTE is negative, you used the wrong date — use the date in the SYMBOL string
-- Tastytrade shows a "DTE" column and a "D'sOpn" column. D'sOpn = days the position has been OPEN (ignore this). DTE = days until expiry (use this if shown). If DTE column shows 232d use 232, not the D'sOpn value.
-- For LEAPS (long-dated options expiring 1-2 years out): DTE will be 200-500+ days. This is correct. Do not reduce it.
-- Always use the expiry date in the symbol string to verify: count days from today (${today}) to that date
+- IBKR symbol format: "IREN 26JUN26 55 P" — expiry is 26JUN26 = June 26 2026. Count days from ${today} to June 26 2026.
+- "26JUN26" = June 26 2026. "12JUN26" = June 12 2026. "17JUN27" = June 17 2027.
+- Today is ${today}. Count carefully — do not confuse trade date with expiry date.
+- If DTE comes out as 0 or negative, you used the wrong date. Recount from the expiry date in the SYMBOL.
+- Tastytrade DTE column = days to expiry (use this). D'sOpn = days position has been open (ignore).
+- LEAPS expiring in 2027 will have DTE of 300-500+ days. This is correct.
+- Always verify: parse the expiry from the symbol string and count days from ${today}
 
 TYPE DETERMINATION — READ CAREFULLY:
 - Last letter of option symbol = type. P = PUT. C = CALL. This is definitive.
@@ -1061,6 +1063,7 @@ TASTYTRADE PREMIUM — READ THIS CAREFULLY:
 BROKER FORMATS:
 
 IBKR positions: "IWM 12JUN26 265 P" = IWM, June 12 2026, $265 strike, PUT. Final letter = type (P=put, C=call).
+IBKR symbol parsing: The ticker is EVERYTHING before the date. "F 17JUN27 15 C" = ticker "F", expiry Jun 17 2027, strike $15, call. "IF 17JUN27 15 C" = ticker "IF". Do NOT confuse single-letter tickers (F, C, X) with the option type — the type is ONLY the very last letter after the strike price.
 IBKR activity report: Code O = open (direction=short if Qty negative), C/C;Ep/A;C = close. T.Price = premium per share.
 
 Tastytrade positions: Sub-rows "-1 May 22 16d 566 P" = short 1, May 22, 16 days, $566 strike, PUT.
@@ -1544,7 +1547,7 @@ function renderAll(trades){
 function updatePortBar(trades){
   let totalPrem=0,totalBB=0,totalCap=0,capCount=0;
   trades.forEach(t=>{
-    const T=Math.max(t.dte/365,.0001);
+    const T=Math.max((t.dte===0?0.5:t.dte)/365,.0001); // Use 0.5 days on expiry day to keep BS stable
     const b=bsc(t.stock,t.strike,T,t.iv/100,t.type);
     const bbCost=b.price*100*t.contracts;
     const premIn=t.premium*100*t.contracts;
@@ -1565,7 +1568,7 @@ function updatePortBar(trades){
 function buildCard(t,idx){
   const isPut=t.type==='put';
   const isShort=t.direction==='short';
-  const T=Math.max(t.dte/365,.0001);
+  const T=Math.max((t.dte===0?0.5:t.dte)/365,.0001); // Use 0.5 days on expiry day to keep BS stable
   const sig=Math.max(t.iv/100,0.01);
   const b=bsc(t.stock,t.strike,T,sig,t.type);
   const accent=isPut?(isShort?'#ff9500':'#ff6b35'):(isShort?'#4d9fff':'#a78bfa');
@@ -1577,7 +1580,7 @@ function buildCard(t,idx){
   const keep=premIn-bbCost;
   const pctCap=premIn>0?Math.min(150,Math.max(-50,keep/premIn*100)):0;
   const dailyTheta=Math.abs(b.theta)*100*t.contracts;
-  const isExpired=t.dte<=0;
+  const isExpired=t.dte<0; // 0 = expiry day (still live), negative = already expired
 
   // IV + Volume
   const ivColor=t.iv<25?'var(--g)':t.iv<50?'var(--y)':'var(--r)';
@@ -1634,7 +1637,7 @@ function buildCard(t,idx){
         <span class="card-price">$${t.stock.toFixed(2)}</span>
       </div>
       <div class="card-meta">
-        $${t.strike} ${t.type.toUpperCase()} · ${isShort?'SELLING':'BUYING'} · ${t.contracts} contract${t.contracts>1?'s':''} · ${t.dte}d left
+        $${t.strike} ${t.type.toUpperCase()} · ${isShort?'SELLING':'BUYING'} · ${t.contracts} contract${t.contracts>1?'s':''} · ${t.dte===0?'<span style="color:var(--y)">expires today</span>':t.dte+'d left'}
       </div>
     </div>
     <div class="card-badges">
@@ -1683,10 +1686,8 @@ function buildCard(t,idx){
     </div>
     <div class="stat-box" style="border-left:1px solid var(--border)">
       <div class="stat-box-label">TIME LEFT</div>
-      <div class="stat-box-val" style="color:${t.dte<=7?'var(--r)':t.dte<=21?'var(--y)':'var(--text)'}">${t.dte} days</div>
-      <div class="stat-box-sub">${t.dte<=7?'⚠ expiring soon':t.dte<=21?'watch closely':'time cushion ok'}</div>
-    </div>
-    <div class="stat-box" style="border-left:1px solid var(--border)">
+      <div class="stat-box-val" style="color:${t.dte===0?'var(--y)':t.dte<=7?'var(--r)':t.dte<=21?'var(--y)':'var(--text)'}">${t.dte===0?'TODAY':t.dte+' days'}</div>
+      <div class="stat-box-sub">${t.dte===0?'⚠ expires at close':t.dte<=7?'⚠ expiring soon':t.dte<=21?'watch closely':'time cushion ok'}</div>er-left:1px solid var(--border)">
       <div class="stat-box-label">MAX RISK</div>
       <div class="stat-box-val" style="color:var(--r)">${typeof maxRisk==='number'?'-$'+maxRisk.toFixed(0):maxRisk}</div>
       <div class="stat-box-sub">${isShort&&isPut?'if stock hits $0':isShort?'if called away':'premium paid'}</div>
