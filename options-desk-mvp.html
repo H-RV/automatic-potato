@@ -1711,7 +1711,7 @@ function buildCard(t,idx){
       <div class="bb-row">
         <span class="bb-label">${isShort?'Premium you collected':'Premium you paid'}</span>
         <span class="bb-value" style="color:${isShort?'var(--g)':'var(--muted)'}">
-          ${isShort?'+':''}-$${premIn.toFixed(0)}
+          ${isShort?'+$':'-$'}${premIn.toFixed(0)}
         </span>
       </div>
       <div class="bb-row">
