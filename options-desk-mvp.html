@@ -1064,7 +1064,14 @@ BROKER FORMATS:
 
 IBKR positions: "IWM 12JUN26 265 P" = IWM, June 12 2026, $265 strike, PUT. Final letter = type (P=put, C=call).
 IBKR symbol parsing: The ticker is EVERYTHING before the date. "F 17JUN27 15 C" = ticker "F", expiry Jun 17 2027, strike $15, call. "IF 17JUN27 15 C" = ticker "IF". Do NOT confuse single-letter tickers (F, C, X) with the option type — the type is ONLY the very last letter after the strike price.
-IBKR activity report: Code O = open (direction=short if Qty negative), C/C;Ep/A;C = close. T.Price = premium per share.
+IBKR activity report: Code O = open, C = close, C;Ep = expired, A;C = assigned, O;P = open partial.
+- SELL + Code O = new short position (action="open", direction="short") ← ADD THIS
+- BUY + Code C = buying back to close (action="close") ← DO NOT add as new trade
+- BUY + Code O = new long position (action="open", direction="long") ← only if genuinely opening
+- The key distinction: BUY rows that correspond to closing an existing short = action "close", NOT a new opening trade
+- If you see a BUY row for the same symbol/strike as a previous SELL row in the same report, it is a closing trade
+- Total rows (e.g. "Total IREN 260626P00055000") are summary rows — IGNORE THEM, do not extract as trades
+- T.Price = premium per share for individual rows
 
 Tastytrade positions: Sub-rows "-1 May 22 16d 566 P" = short 1, May 22, 16 days, $566 strike, PUT.
 Premium = Cst ÷ (|contracts| × 100). DTE column = days to expiry (not D'sOpn column).
