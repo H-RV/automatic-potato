@@ -438,10 +438,13 @@ tbody td{padding:10px 14px;vertical-align:middle}
 /* Collapsed footer */
 .card-foot-collapsed{display:flex;justify-content:space-between;align-items:center;
   padding:7px 16px 11px;font-size:11px;color:var(--muted)}
-.card-expand-btn{display:flex;align-items:center;gap:3px;cursor:pointer;
-  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;
-  color:var(--muted);transition:color 0.15s}
-.card-expand-btn:hover{color:var(--text)}
+.card-expand-btn{display:inline-flex;align-items:center;gap:5px;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;
+  color:var(--accent,var(--g));background:rgba(255,255,255,0.04);
+  border:1px solid var(--border2);border-radius:6px;
+  padding:5px 12px;transition:all 0.15s;user-select:none}
+.card-expand-btn:hover{background:rgba(255,255,255,0.07);color:var(--text);border-color:var(--border)}
+.card-expand-btn.expanded{color:var(--g);border-color:rgba(0,229,160,0.3);background:rgba(0,229,160,0.06)}
 
 /* ── EXPANDED SECTION ── */
 .card-expanded{border-top:1px solid var(--border);cursor:default}
@@ -527,11 +530,12 @@ tbody td{padding:10px 14px;vertical-align:middle}
 .foot-btn.remove-btn:hover{background:rgba(255,181,71,0.06)}
 .foot-btn.close-btn{color:rgba(0,229,160,0.75)}
 .foot-btn.close-btn:hover{background:rgba(0,229,160,0.06)}
-.foot-collapse{display:flex;align-items:center;gap:3px;cursor:pointer;
-  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;
-  color:var(--muted);padding-left:10px;border-left:1px solid var(--border);
-  white-space:nowrap;transition:color 0.15s}
-.foot-collapse:hover{color:var(--text)}
+.foot-collapse{display:inline-flex;align-items:center;gap:5px;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em;
+  color:var(--g);padding:5px 12px;margin-left:4px;
+  background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.25);
+  border-radius:6px;white-space:nowrap;transition:all 0.15s;user-select:none}
+.foot-collapse:hover{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.4)}
 
 @media(max-width:600px){
   .card-hdr{gap:8px}
@@ -1644,43 +1648,38 @@ function renderAll(trades){
 }
 
 function toggleCard(id,event){
-  if(event&&event.target.closest('button,.foot-btn,.foot-collapse'))return;
+  if(event&&event.target.closest('button,.foot-btn'))return;
   const expanded=document.getElementById('expanded-'+id);
   const expandBtn=document.getElementById('expand-btn-'+id);
+  const card=document.getElementById('card-'+id);
   if(!expanded)return;
   const isOpen=expanded.style.display!=='none';
   const cardsEl=document.getElementById('cards');
 
   if(isOpen){
-    // Collapse
     expanded.style.display='none';
-    if(expandBtn)expandBtn.textContent='full details ▼';
-    // Check if any other card is still expanded
-    const anyOpen=document.querySelectorAll('.card-expanded:not([style*="display: none"])').length>0;
-    if(!anyOpen&&cardsEl){
-      cardsEl.classList.remove('single-col');
-      cardsEl.style.gridTemplateColumns='';
-    }
+    if(expandBtn){expandBtn.innerHTML='▼ full details';expandBtn.classList.remove('expanded');}
+    if(card)card.style.borderTopWidth='';
+    const anyOpen=[...document.querySelectorAll('[id^="expanded-"]')].some(el=>el.style.display!=='none');
+    if(!anyOpen&&cardsEl){cardsEl.classList.remove('single-col');cardsEl.style.gridTemplateColumns='';}
   } else {
-    // Collapse any currently open card first
+    // Collapse all others first
     document.querySelectorAll('[id^="expanded-"]').forEach(el=>{
       if(el.style.display!=='none'){
         el.style.display='none';
-        const otherId=el.id.replace('expanded-','');
-        const otherBtn=document.getElementById('expand-btn-'+otherId);
-        if(otherBtn)otherBtn.textContent='full details ▼';
+        const oid=el.id.replace('expanded-','');
+        const ob=document.getElementById('expand-btn-'+oid);
+        if(ob){ob.innerHTML='▼ full details';ob.classList.remove('expanded');}
+        const oc=document.getElementById('card-'+oid);
+        if(oc)oc.style.borderTopWidth='';
       }
     });
     // Expand this card
     expanded.style.display='block';
-    if(expandBtn)expandBtn.textContent='full details ▲';
-    // Switch grid to single column, max-width centred
-    if(cardsEl){
-      cardsEl.classList.add('single-col');
-      cardsEl.style.gridTemplateColumns='1fr';
-    }
+    if(expandBtn){expandBtn.innerHTML='▲ expanded';expandBtn.classList.add('expanded');}
+    if(card)card.style.borderTopWidth='3px';
+    if(cardsEl){cardsEl.classList.add('single-col');cardsEl.style.gridTemplateColumns='1fr';}
     setTimeout(()=>{
-      const card=document.getElementById('card-'+id);
       if(card)card.scrollIntoView({behavior:'smooth',block:'start'});
     },60);
   }
@@ -1879,7 +1878,7 @@ function buildCard(t,idx){
   <!-- COLLAPSED FOOTER -->
   <div class="card-foot-collapsed">
     <span style="color:var(--muted);font-size:11px">theta ${isShort?'+':'-'} $${dailyTheta.toFixed(2)}/day</span>
-    <span class="card-expand-btn" id="expand-btn-${t.id}" onclick="toggleCard('${t.id}',event)">full details ▼</span>
+    <span class="card-expand-btn" id="expand-btn-${t.id}" data-tid="${t.id}" onclick="toggleCard(this.dataset.tid,event)">▼ full details</span>
   </div>
 
   <!-- ── EXPANDED SECTION (hidden by default) ── -->
@@ -1984,7 +1983,7 @@ function buildCard(t,idx){
           <button class="foot-btn remove-btn" onclick="expireWorthless('${t.id}')">remove</button>
           <button class="foot-btn close-btn" onclick="closeTrade('${t.id}')">close trade</button>
         </div>
-        <span class="foot-collapse" onclick="toggleCard('${t.id}',event)">collapse ▲</span>
+        <span class="foot-collapse" data-tid="${t.id}" onclick="toggleCard(this.dataset.tid,event)">▲ collapse</span>
       </div>
     </div>
 
