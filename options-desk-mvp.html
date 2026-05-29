@@ -379,7 +379,9 @@ tbody td{padding:10px 14px;vertical-align:middle}
 .j-empty-sub{font-size:12px}
 
 /* ── CARDS GRID ── */
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:22px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:16px;
+  transition:grid-template-columns 0.3s ease}
+.cards.single-col{grid-template-columns:1fr !important;max-width:760px;margin:0 auto}
 @media(max-width:960px){.cards{grid-template-columns:1fr}}
 
 /* ── TRADE CARD ── */
@@ -1647,16 +1649,40 @@ function toggleCard(id,event){
   const expandBtn=document.getElementById('expand-btn-'+id);
   if(!expanded)return;
   const isOpen=expanded.style.display!=='none';
+  const cardsEl=document.getElementById('cards');
+
   if(isOpen){
+    // Collapse
     expanded.style.display='none';
     if(expandBtn)expandBtn.textContent='full details ▼';
+    // Check if any other card is still expanded
+    const anyOpen=document.querySelectorAll('.card-expanded:not([style*="display: none"])').length>0;
+    if(!anyOpen&&cardsEl){
+      cardsEl.classList.remove('single-col');
+      cardsEl.style.gridTemplateColumns='';
+    }
   } else {
+    // Collapse any currently open card first
+    document.querySelectorAll('[id^="expanded-"]').forEach(el=>{
+      if(el.style.display!=='none'){
+        el.style.display='none';
+        const otherId=el.id.replace('expanded-','');
+        const otherBtn=document.getElementById('expand-btn-'+otherId);
+        if(otherBtn)otherBtn.textContent='full details ▼';
+      }
+    });
+    // Expand this card
     expanded.style.display='block';
     if(expandBtn)expandBtn.textContent='full details ▲';
+    // Switch grid to single column, max-width centred
+    if(cardsEl){
+      cardsEl.classList.add('single-col');
+      cardsEl.style.gridTemplateColumns='1fr';
+    }
     setTimeout(()=>{
       const card=document.getElementById('card-'+id);
-      if(card){const r=card.getBoundingClientRect();if(r.top<60)card.scrollIntoView({behavior:'smooth',block:'start'});}
-    },50);
+      if(card)card.scrollIntoView({behavior:'smooth',block:'start'});
+    },60);
   }
 }
 
