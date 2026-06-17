@@ -484,6 +484,19 @@ tbody td{padding:10px 14px;vertical-align:middle}
   color:var(--muted);margin-bottom:8px;text-transform:uppercase}
 .chart-svg{width:100%;display:block;border-radius:8px}
 
+/* Interactive profit curve explorer */
+.curve-explorer{padding:12px 16px 14px;border-bottom:1px solid var(--border)}
+.cv-svg{user-select:none;-webkit-user-select:none;border-radius:8px;margin-bottom:2px}
+.cv-slider{width:calc(100% - 44px);margin:4px 0 0 36px;accent-color:var(--g);height:5px;cursor:pointer}
+.cv-stat{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 9px}
+.cv-stat-l{font-family:'DM Mono',monospace;font-size:7.5px;letter-spacing:0.08em;color:var(--muted);margin-bottom:3px;white-space:nowrap}
+.cv-stat-v{font-size:14px;font-weight:600;line-height:1.1}
+@media(max-width:600px){
+  .cv-stat{padding:6px 6px}
+  .cv-stat-v{font-size:12px}
+  .cv-stat-l{font-size:7px}
+}
+
 /* Price chips — 5 key prices */
 .price-chips{padding:10px 16px}
 .price-chips-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;
@@ -1679,11 +1692,170 @@ function toggleCard(id,event){
     if(expandBtn){expandBtn.innerHTML='▲ expanded';expandBtn.classList.add('expanded');}
     if(card)card.style.borderTopWidth='3px';
     if(cardsEl){cardsEl.classList.add('single-col');cardsEl.style.gridTemplateColumns='1fr';}
+    // Build the interactive curve now that the SVG is visible
+    if(typeof curveInit==='function')setTimeout(()=>curveInit(id),20);
     setTimeout(()=>{
       if(card)card.scrollIntoView({behavior:'smooth',block:'start'});
     },60);
   }
 }
+
+// ── INTERACTIVE PROFIT CURVE ──────────────────────────
+const _cvCache={};
+
+function cvBuild(id){
+  const svg=document.getElementById('cv-svg-'+id);
+  if(!svg)return null;
+  const K=+svg.dataset.strike, prem=+svg.dataset.premium, n=+svg.dataset.contracts;
+  const dte=+svg.dataset.dte, iv=+svg.dataset.iv, type=svg.dataset.type, dir=svg.dataset.dir;
+  const stock=+svg.dataset.stock, be=+svg.dataset.be;
+  const isShort=dir==='short', isPut=type==='put';
+  const premIn=prem*100*n;
+  const T=Math.max((dte===0?0.5:dte)/365,.0001), sig=Math.max(iv/100,0.01);
+
+  // Price range — focused on the action
+  const padR=Math.max(Math.abs(stock-K)*1.8, stock*0.14);
+  const lo=Math.max(0.01, Math.min(stock,K)-padR);
+  const hi=Math.max(stock,K)+padR;
+
+  function keepAt(S){const o=bsc(S,K,T,sig,type).price;return isShort?premIn-o*100*n:o*100*n-premIn;}
+
+  // Sample curve
+  const xs=[],keeps=[];
+  for(let i=0;i<=120;i++){const S=lo+(hi-lo)*i/120;xs.push(S);keeps.push(keepAt(S));}
+  const kMax=Math.max(...keeps), kMin=Math.min(...keeps);
+  const span=Math.max(kMax-kMin,1);
+  const yHi=kMax+span*0.30, yLo=kMin-span*0.18;
+
+  const PL=44,PR=584,PT=20,PB=212;
+  const sx=S=>PL+(S-lo)/(hi-lo)*(PR-PL);
+  const sy=v=>PT+(yHi-v)/(yHi-yLo)*(PB-PT);
+  const zeroY=sy(0), xBe=sx(be), xK=sx(K);
+
+  // Zones by trade type (x-position bands)
+  let bands;
+  if(isShort&&isPut) bands=[[PL,xBe,'dangerGrad'],[xBe,xK,'warnGrad'],[xK,PR,'safeGrad']];
+  else if(isShort) bands=[[PL,xK,'safeGrad'],[xK,xBe,'warnGrad'],[xBe,PR,'dangerGrad']];
+  else if(isPut) bands=[[PL,xBe,'safeGrad'],[xBe,PR,'dangerGrad']];
+  else bands=[[PL,xBe,'dangerGrad'],[xBe,PR,'safeGrad']];
+  const bandSvg=bands.map(b=>`<rect x="${b[0].toFixed(1)}" y="${PT}" width="${(b[1]-b[0]).toFixed(1)}" height="${PB-PT}" fill="url(#${b[2]})"/>`).join('');
+
+  // Curve path
+  let d='';
+  xs.forEach((S,i)=>{d+=(i?'L':'M')+sx(S).toFixed(1)+','+sy(keeps[i]).toFixed(1)+' ';});
+  const areaD=d+'L'+sx(hi).toFixed(1)+','+zeroY.toFixed(1)+' L'+sx(lo).toFixed(1)+','+zeroY.toFixed(1)+' Z';
+
+  // Axis labels
+  const yTopY=sy(kMax)+3, yBotY=sy(kMin)+3;
+  const safeLabel=isShort&&!isPut?'← SAFE':'SAFE →';
+  const safeX=isShort&&!isPut?PL+8:PR-8;
+  const safeAnchor=isShort&&!isPut?'start':'end';
+
+  svg.innerHTML=`
+    <defs>
+      <clipPath id="pc-${id}"><rect x="0" y="${PT}" width="600" height="${(zeroY-PT).toFixed(1)}"/></clipPath>
+      <clipPath id="lc-${id}"><rect x="0" y="${zeroY.toFixed(1)}" width="600" height="${(PB-zeroY).toFixed(1)}"/></clipPath>
+      <linearGradient id="safeGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5a0" stop-opacity="0.15"/><stop offset="100%" stop-color="#00e5a0" stop-opacity="0.02"/></linearGradient>
+      <linearGradient id="warnGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffb547" stop-opacity="0.15"/><stop offset="100%" stop-color="#ffb547" stop-opacity="0.02"/></linearGradient>
+      <linearGradient id="dangerGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff3a5c" stop-opacity="0.17"/><stop offset="100%" stop-color="#ff3a5c" stop-opacity="0.03"/></linearGradient>
+    </defs>
+    <rect x="${PL}" y="${PT}" width="${PR-PL}" height="${PB-PT}" rx="8" fill="rgba(0,0,0,0.25)"/>
+    ${bandSvg}
+    <line x1="${PL}" x2="${PR}" y1="${zeroY.toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4 4"/>
+    <path d="${areaD}" fill="#00e5a0" opacity="0.13" clip-path="url(#pc-${id})"/>
+    <path d="${areaD}" fill="#ff3a5c" opacity="0.13" clip-path="url(#lc-${id})"/>
+    <path d="${d}" fill="none" stroke="#ff3a5c" stroke-width="3.5" stroke-linecap="round" clip-path="url(#lc-${id})"/>
+    <path d="${d}" fill="none" stroke="#00e5a0" stroke-width="3.5" stroke-linecap="round" clip-path="url(#pc-${id})"/>
+    <line x1="${xBe.toFixed(1)}" x2="${xBe.toFixed(1)}" y1="${PT}" y2="${PB+12}" stroke="rgba(255,181,71,0.7)" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <line x1="${xK.toFixed(1)}" x2="${xK.toFixed(1)}" y1="${PT}" y2="${PB+12}" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-dasharray="2 3"/>
+    <text x="${xBe.toFixed(1)}" y="${(zeroY-8).toFixed(1)}" font-family="monospace" font-size="10" fill="rgba(255,181,71,0.9)" text-anchor="middle">b/e $${be.toFixed(2)}</text>
+    <text x="${xK.toFixed(1)}" y="${PB+24}" font-family="monospace" font-size="10" fill="rgba(255,255,255,0.4)" text-anchor="middle">strike $${K}</text>
+    <text x="${safeX}" y="${PT+16}" font-family="monospace" font-size="9" fill="#00e5a0" opacity="0.6" text-anchor="${safeAnchor}">${safeLabel}</text>
+    <text x="40" y="${yTopY.toFixed(1)}" font-family="monospace" font-size="9" fill="rgba(0,229,160,0.5)" text-anchor="end">+$${Math.round(kMax)}</text>
+    <text x="40" y="${yBotY.toFixed(1)}" font-family="monospace" font-size="9" fill="rgba(255,58,92,0.5)" text-anchor="end">${kMin<0?'-$':'+$'}${Math.abs(Math.round(kMin))}</text>
+    <text x="${(PL+18)}" y="248" font-family="monospace" font-size="9" fill="rgba(255,255,255,0.22)" text-anchor="middle">$${Math.round(lo)}</text>
+    <text x="${PR-18}" y="248" font-family="monospace" font-size="9" fill="rgba(255,255,255,0.22)" text-anchor="middle">$${Math.round(hi)}</text>
+    <line id="cv-probeline-${id}" x1="0" x2="0" y1="${PT}" y2="${PB+12}" stroke="rgba(255,255,255,0.4)" stroke-width="1" opacity="0.4"/>
+    <circle id="cv-dot-${id}" r="7.5" fill="#e8eaf2" stroke="rgba(0,0,0,0.5)" stroke-width="2.5"/>
+    <text id="cv-dotlabel-${id}" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle"></text>`;
+
+  const cache={K,prem,n,T,sig,type,dir,isShort,isPut,premIn,lo,hi,kMax,kMin,PL,PR,PT,PB,sx,sy,zeroY,keepAt,stock,be};
+  _cvCache[id]=cache;
+  return cache;
+}
+
+function curveUpdate(id, sliderVal){
+  let c=_cvCache[id];
+  if(!c)c=cvBuild(id);
+  if(!c)return;
+  const S=c.lo+(c.hi-c.lo)*(sliderVal/100);
+  const k=c.keepAt(S);
+  const opt=bsc(S,c.K,c.T,c.sig,c.type).price;
+  const cur=opt*100*c.n;
+  const cap=c.premIn>0?Math.round(k/c.premIn*100):0;
+  const x=c.sx(S), y=c.sy(k);
+
+  const dot=document.getElementById('cv-dot-'+id);
+  const pl=document.getElementById('cv-probeline-'+id);
+  const dl=document.getElementById('cv-dotlabel-'+id);
+  if(dot){dot.setAttribute('cx',x.toFixed(1));dot.setAttribute('cy',y.toFixed(1));dot.setAttribute('fill',k>=0?'#00e5a0':'#ff3a5c');}
+  if(pl){pl.setAttribute('x1',x.toFixed(1));pl.setAttribute('x2',x.toFixed(1));}
+  if(dl){
+    dl.setAttribute('x',Math.max(c.PL+26,Math.min(c.PR-26,x)).toFixed(1));
+    dl.setAttribute('y',(y>c.zeroY?y+20:y-13).toFixed(1));
+    dl.setAttribute('fill',k>=0?'#00e5a0':'#ff3a5c');
+    dl.textContent=(k>=0?'+$':'-$')+Math.abs(Math.round(k)).toLocaleString();
+  }
+
+  const pe=document.getElementById('cv-price-'+id);if(pe)pe.textContent='$'+S.toFixed(2);
+  const bb=document.getElementById('cv-bb-'+id);if(bb){bb.textContent=(c.isShort?'-$':'$')+Math.round(cur).toLocaleString();bb.style.color=c.isShort&&cur>c.premIn?'var(--r)':'var(--muted)';}
+  const kp=document.getElementById('cv-keep-'+id);if(kp){kp.textContent=(k>=0?'+$':'-$')+Math.abs(Math.round(k)).toLocaleString();kp.style.color=k>=0?'var(--g)':'var(--r)';}
+  const ce=document.getElementById('cv-cap-'+id);if(ce){ce.textContent=(k>=0?'▲ ':'▼ ')+Math.abs(cap)+'% '+(k>=0?'captured':'underwater');ce.style.color=k<0?'var(--r)':cap>=80?'var(--g)':'var(--y)';}
+
+  const a=document.getElementById('cv-action-'+id);
+  if(a){
+    const itm=(c.type==='put'&&S<c.K)||(c.type==='call'&&S>c.K);
+    let bg,bd,col,html;
+    if(c.isShort){
+      if(k<0){bg='rgba(255,58,92,0.06)';bd='rgba(255,58,92,0.25)';col='rgba(255,58,92,0.9)';html='⚠ <strong>Underwater by $'+Math.abs(Math.round(k)).toLocaleString()+'</strong> at this price — close to cap the loss, or roll for time and new premium.';}
+      else if(itm){bg='rgba(255,181,71,0.06)';bd='rgba(255,181,71,0.25)';col='rgba(255,181,71,0.85)';html='◈ <strong>Past your strike</strong> — still keeping $'+Math.round(k).toLocaleString()+' ('+cap+'%) but assignment risk is real here. Watch closely or roll.';}
+      else if(cap>=80){bg='rgba(0,229,160,0.05)';bd='rgba(0,229,160,0.2)';col='rgba(0,229,160,0.85)';html='✓ <strong>'+Math.min(cap,100)+'% captured</strong> at this price — good capture. Consider closing or rolling here.';}
+      else{bg='rgba(255,181,71,0.05)';bd='rgba(255,181,71,0.18)';col='rgba(255,181,71,0.8)';html='⏱ <strong>'+cap+'% captured</strong> at this price — below the 80% sweet spot. Time decay keeps working if the stock holds.';}
+    } else {
+      if(k>0){bg='rgba(167,139,250,0.06)';bd='rgba(167,139,250,0.2)';col='rgba(167,139,250,0.85)';html='📈 <strong>In profit by $'+Math.round(k).toLocaleString()+'</strong> at this price — worth more than you paid.';}
+      else{bg='rgba(255,181,71,0.05)';bd='rgba(255,181,71,0.18)';col='rgba(255,181,71,0.8)';html='⏱ <strong>Down $'+Math.abs(Math.round(k)).toLocaleString()+'</strong> at this price — close to cut loss or hold for the move.';}
+    }
+    a.style.background=bg;a.style.borderColor=bd;a.style.color=col;a.innerHTML=html;
+  }
+}
+
+function curveInit(id){
+  const c=cvBuild(id);
+  if(!c)return;
+  // Set slider to current stock price position
+  const startPct=Math.max(0,Math.min(100,(c.stock-c.lo)/(c.hi-c.lo)*100));
+  const sl=document.getElementById('cv-slider-'+id);
+  if(sl)sl.value=startPct;
+  curveUpdate(id,startPct);
+  // Drag on SVG
+  const svg=document.getElementById('cv-svg-'+id);
+  if(svg&&!svg.dataset.bound){
+    svg.dataset.bound='1';
+    let drag=false;
+    const fromX=cx=>{
+      const r=svg.getBoundingClientRect();
+      const vx=(cx-r.left)/r.width*600;
+      const pct=Math.max(0,Math.min(100,(vx-c.PL)/(c.PR-c.PL)*100));
+      if(sl)sl.value=pct;
+      curveUpdate(id,pct);
+    };
+    svg.addEventListener('pointerdown',e=>{drag=true;fromX(e.clientX);svg.setPointerCapture(e.pointerId);});
+    svg.addEventListener('pointermove',e=>{if(drag)fromX(e.clientX);});
+    svg.addEventListener('pointerup',()=>drag=false);
+    svg.addEventListener('pointercancel',()=>drag=false);
+  }
+}
+
 
 function updatePortBar(trades){
   let totalPrem=0,totalBB=0,totalCap=0,capCount=0;
@@ -1800,8 +1972,6 @@ function buildCard(t,idx){
   }).join('');
 
   const pe=buildPE(t,b,premIn,bbCost,keep,pctCap,be,beBreached,dailyTheta,isPut,isShort);
-  const chartSVG=buildChart(t,b,be,T,sig,accent,isPut,isShort);
-
   // IV/vol
   const ivColor=t.iv<25?'var(--g)':t.iv<50?'var(--y)':'var(--r)';
   const ivPct=Math.min(100,t.iv/80*100);
@@ -1959,10 +2129,28 @@ function buildCard(t,idx){
       </div>
     </div>
 
-    <!-- Chart -->
-    <div class="chart-section">
-      <div class="chart-label">PROFIT MAP — WHAT HAPPENS AT EVERY PRICE</div>
-      ${chartSVG}
+        <!-- PROFIT MAP — interactive drag curve -->
+    <div class="curve-explorer">
+      <div class="chart-label">PROFIT MAP — DRAG TO TEST ANY PRICE</div>
+      <svg id="cv-svg-${t.id}" class="cv-svg" viewBox="0 0 600 290" data-tid="${t.id}"
+        data-strike="${t.strike}" data-premium="${t.premium}" data-contracts="${t.contracts}"
+        data-dte="${t.dte}" data-iv="${t.iv}" data-type="${t.type}" data-dir="${t.direction}"
+        data-stock="${t.stock}" data-be="${be.toFixed(4)}"
+        style="width:100%;height:auto;display:block;cursor:ew-resize;touch-action:none">
+      </svg>
+      <input type="range" id="cv-slider-${t.id}" min="0" max="100" step="0.5" value="50"
+        class="cv-slider" oninput="curveUpdate('${t.id}', +this.value)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:9px 0 11px">
+        <span id="cv-cap-${t.id}" style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:${pctCap>=80?'var(--g)':pctCap>=0?'var(--y)':'var(--r)'}">${pctCap>=0?'▲':'▼'} ${Math.abs(pctCap).toFixed(0)}% ${pctCap>=0?'captured':'underwater'}</span>
+        <span style="font-size:10px;color:var(--dim)">80%+ = good time to close or roll</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px">
+        <div class="cv-stat"><div class="cv-stat-l">AT PRICE</div><div id="cv-price-${t.id}" class="cv-stat-v">$${t.stock.toFixed(2)}</div></div>
+        <div class="cv-stat"><div class="cv-stat-l">${isShort?'YOU COLLECTED':'YOU PAID'}</div><div class="cv-stat-v" style="color:${isShort?'var(--g)':'var(--muted)'}">${isShort?'+':'-'}$${premIn.toFixed(0)}</div></div>
+        <div class="cv-stat"><div class="cv-stat-l">${isShort?'BUY BACK':'VALUE'}</div><div id="cv-bb-${t.id}" class="cv-stat-v" style="color:var(--muted)">-$${bbCost.toFixed(0)}</div></div>
+        <div class="cv-stat"><div class="cv-stat-l">YOU KEEP</div><div id="cv-keep-${t.id}" class="cv-stat-v" style="color:${keep>=0?'var(--g)':'var(--r)'};font-weight:700">${keep>=0?'+':'-'}$${Math.abs(keep).toFixed(0)}</div></div>
+      </div>
+      <div id="cv-action-${t.id}" style="padding:8px 11px;border-radius:8px;font-size:11px;line-height:1.6;background:${actionBg};border:1px solid ${actionBorder};color:${actionColor}">${typeof actionText==='string'?actionText:''}</div>
     </div>
 
     <!-- 5 Price chips -->
