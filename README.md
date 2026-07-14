@@ -16,6 +16,7 @@ Upload a screenshot of your broker positions. Understand exactly what you own, w
 ### Requirements
 - Node.js 18+
 - Anthropic API key (free at console.anthropic.com)
+- Twelve Data API key (free tier at twelvedata.com) — powers live stock prices
 
 ### Install
 
@@ -29,6 +30,7 @@ Create a `.env` file in the project root:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-your-key-here
+TWELVE_DATA_API_KEY=your-twelve-data-key-here
 ```
 
 ### Run
@@ -52,7 +54,7 @@ Deploy to Railway.app:
 - **Frontend** — Vanilla HTML/CSS/JS, single file
 - **Backend** — Node.js + Express
 - **AI** — Anthropic Claude Vision (screenshot parsing)
-- **Prices** — Yahoo Finance (15-min delayed, no API key needed)
+- **Prices** — Twelve Data API (near real-time, slight delay on free tier, requires `TWELVE_DATA_API_KEY`)
 - **Storage** — localStorage (client-side, no database needed)
 
 ## Supported Brokers

@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScanMyTrade — Understand Your Options Position</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c14;
+  --s1:#0f1421;
+  --s2:#141928;
+  --s3:#1a2030;
+  --border:rgba(255,255,255,0.08);
+  --border2:rgba(255,255,255,0.13);
+  --g:#00e5a0;
+  --r:#ff4560;
+  --y:#f5a623;
+  --b:#4d9fff;
+  --text:#e8eaf2;
+  --muted:rgba(232,234,242,0.42);
+  --dim:rgba(232,234,242,0.22);
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;}
+
+/* NAV */
+nav{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,12,20,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);position:relative;z-index:10}
+.logo{font-size:15px;font-weight:700;letter-spacing:0.08em;color:var(--text)}
+.logo span{color:var(--g)}
+.nav-r{display:flex;align-items:center;gap:10px}
+.nav-hint{font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;letter-spacing:0.06em}
+.nav-pro{font-size:12px;font-weight:600;color:#000;background:var(--g);padding:7px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'Inter',system-ui;letter-spacing:0.02em;transition:opacity .15s}
+.nav-pro:hover{opacity:.85}
+
+/* OUTER WRAPPER — single centred column */
+.page-col{max-width:520px;width:100%;margin:0 auto;padding:0 16px 64px}
+
+/* HERO */
+.hero{text-align:center;padding:48px 0 22px}
+.hero-h{font-size:24px;font-weight:600;color:var(--text);letter-spacing:-0.01em;margin-bottom:7px}
+.hero-h em{color:var(--g);font-style:normal}
+.hero-sub{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.05em}
+
+/* APP — entry form box */
+.app{border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:visible;background:var(--s1);box-shadow:0 0 0 1px rgba(0,0,0,0.4),0 20px 50px rgba(0,0,0,0.5);margin-bottom:14px}
+
+/* ENTRY PANEL */
+.entry{display:flex;flex-direction:column;background:var(--s1)}
+
+/* TICKER + STRATEGY */
+.ticker-row{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.ticker-input{background:transparent;border:none;outline:none;font-size:28px;font-weight:700;color:var(--text);width:130px;font-family:'DM Mono',monospace;letter-spacing:0.04em;caret-color:var(--g)}
+.ticker-input::placeholder{color:rgba(232,234,242,0.12)}
+.ticker-vsep{width:1px;height:28px;background:var(--border);flex-shrink:0}
+.strategy-pills{display:flex;flex-direction:column;gap:5px;flex:1}
+.pill-row{display:flex;gap:5px}
+.pill{font-size:10px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;font-family:'Inter',system-ui;white-space:nowrap;flex:1;text-align:center}
+.pill:hover{border-color:var(--border2);color:var(--text)}
+.pill.on{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.4);color:var(--g);font-weight:500}
+.pill.on:hover{color:var(--g);border-color:rgba(0,229,160,0.55);background:rgba(0,229,160,0.14)}
+
+/* EXPIRY STRIP */
+.expiry-section{padding:11px 18px 0;border-bottom:1px solid var(--border)}
+.section-label{font-size:9px;color:var(--dim);letter-spacing:0.14em;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.section-label span{color:var(--g)}
+.date-strip{display:flex;gap:5px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;-ms-overflow-style:none}
+.date-strip::-webkit-scrollbar{display:none}
+.dc{display:flex;flex-direction:column;align-items:center;padding:6px 8px;border-radius:7px;border:1px solid var(--border);background:var(--s2);cursor:pointer;transition:all .15s;flex-shrink:0;min-width:44px}
+.dc:hover{border-color:var(--border2)}
+.dc.sel{background:rgba(0,229,160,0.12);border-color:rgba(0,229,160,0.45)}
+.dc-mo{font-size:8px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.04em}
+.dc-day{font-size:13px;font-weight:600;color:var(--text);line-height:1.2}
+.dc.sel .dc-mo,.dc.sel .dc-day{color:var(--g)}
+
+/* STRIKE SLIDER */
+.strike-section{padding:12px 18px 14px;border-bottom:1px solid var(--border)}
+.strike-display{display:flex;align-items:baseline;margin-bottom:22px}
+.strike-display .sd-num{font-size:24px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace;min-width:108px;display:inline-block}
+.strike-display small{font-size:11px;color:var(--muted);font-weight:400;margin-left:4px;font-family:'Inter',system-ui}
+.slider-wrap{position:relative;padding-top:24px}
+.slider-pill{position:absolute;top:0;transform:translateX(-50%);background:var(--g);color:#000;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap;font-family:'DM Mono',monospace;pointer-events:none}
+.slider-pill::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--g)}
+/* Native range — styled directly, works everywhere */
+.slider-native{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;outline:none;cursor:pointer;background:var(--s3);display:block}
+.slider-native::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--g);border:3px solid var(--s1);cursor:pointer;box-shadow:0 0 0 2px rgba(0,229,160,0.25)}
+.slider-native::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--g);border:3px solid var(--s1);cursor:pointer;box-shadow:0 0 0 2px rgba(0,229,160,0.25);border-style:solid}
+.tick-row{display:flex;justify-content:space-between;margin-top:6px}
+.tick{font-size:9px;color:var(--dim);font-family:'DM Mono',monospace}
+
+/* BOTTOM INPUTS */
+.inputs-row{padding:12px 18px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.input-group{display:flex;flex-direction:column;gap:4px}
+.input-label{font-size:9px;color:var(--dim);letter-spacing:0.1em;font-family:'DM Mono',monospace;text-transform:uppercase}
+.input-field{background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:14px;font-weight:500;padding:7px 10px;outline:none;font-family:'DM Mono',monospace;transition:border-color .15s;width:100%}
+
+/* Pulsing highlight — tells the eye exactly which field to fill next */
+.input-field.needs-input{border-color:rgba(0,229,160,0.5);animation:needsInputPulse 1.6s ease-in-out infinite}
+@keyframes needsInputPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,0.25)}
+  50%{box-shadow:0 0 0 4px rgba(0,229,160,0)}
+}
+
+/* "Check this next" ring — strike always has a value, it just needs a glance after a ticker change */
+.strike-section.needs-check{animation:needsCheckPulse 1.6s ease-in-out infinite;border-radius:8px}
+@keyframes needsCheckPulse{
+  0%,100%{box-shadow:inset 0 0 0 1px rgba(0,229,160,0.25)}
+  50%{box-shadow:inset 0 0 0 1px rgba(0,229,160,0.6)}
+}
+.input-field:focus{border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.03)}
+.input-field::placeholder{color:var(--dim);font-weight:400}
+
+/* ENTRY FOOTER */
+.entry-foot{padding:10px 18px;margin-top:auto}
+.scan-link{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.scan-link a{color:rgba(77,159,255,0.7);cursor:pointer;text-decoration:none}
+.scan-link a:hover{color:var(--b)}
+
+/* OUTPUT — card below the entry form, same column width */
+.output{padding:0}
+.out-empty{display:none}
+
+/* CARD — standalone box below entry form */
+.card{background:var(--s1);border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,0.4),0 20px 50px rgba(0,0,0,0.5)}
+.card-header{padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.card-ticker{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text)}
+.card-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.card-badges{display:flex;gap:6px}
+.cbadge{font-size:10px;font-weight:600;padding:4px 11px;border-radius:20px;font-family:'DM Mono',monospace;letter-spacing:0.05em}
+
+/* HEADLINE */
+.card-hl{padding:14px 18px 12px;border-bottom:1px solid var(--border)}
+.card-hl h2{font-size:19px;font-weight:500;line-height:1.45;color:var(--text);margin-bottom:10px}
+.card-hl h2 .hg{color:var(--g)}
+.goal-row{display:flex;gap:8px}
+.goal-chip{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:9px 10px;display:flex;align-items:center;gap:8px}
+.gc-icon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+.gc-lbl{font-size:8px;color:var(--dim);letter-spacing:0.1em;font-family:'DM Mono',monospace;text-transform:uppercase}
+.gc-val{font-size:12px;font-weight:500;color:var(--text);margin-top:1px;line-height:1.3}
+
+/* CHART */
+.card-chart{padding:14px 18px 10px;border-bottom:1px solid var(--border)}
+.chart-lbl{font-size:8px;color:var(--dim);letter-spacing:0.12em;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:8px}
+svg.pc{width:100%;display:block;border-radius:6px;cursor:crosshair;touch-action:none}
+.chart-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.chart-now-btn{font-size:9px;color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:0.06em;transition:color .15s,border-color .15s}
+.chart-now-btn:hover{color:var(--text);border-color:var(--border2)}
+
+/* PRO TOAST — honest "coming soon" notice, no fake signup */
+.pro-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#12161d;border:1px solid rgba(0,229,160,0.3);border-radius:10px;padding:12px 20px;font-size:13px;color:var(--text);box-shadow:0 12px 32px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:1000;white-space:nowrap}
+.pro-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.pro-toast strong{color:var(--g)}
+.legend-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);font-family:'DM Mono',monospace}
+
+/* CAPTURE BAR */
+.cap-section{padding:12px 18px;border-bottom:1px solid var(--border)}
+.cap-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.cap-lbl{font-size:8px;color:var(--dim);letter-spacing:0.12em;font-family:'DM Mono',monospace;text-transform:uppercase}
+.cap-pill{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;font-family:'DM Mono',monospace}
+.cap-track{position:relative;height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden}
+.cap-fill{position:absolute;height:100%;border-radius:3px;transition:left .12s,width .12s}
+.cap-zero{position:absolute;left:28%;top:0;width:1px;height:100%;background:rgba(255,255,255,0.2)}
+.cap-axis{display:flex;justify-content:space-between;margin-top:4px}
+.cap-axis span{font-size:8px;color:var(--dim);font-family:'DM Mono',monospace}
+
+/* METRICS */
+.metrics-section{padding:12px 18px;border-bottom:1px solid var(--border)}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.metric{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 10px}
+.metric-lbl{font-size:8px;color:var(--dim);letter-spacing:0.1em;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:3px}
+.metric-val{font-size:18px;font-weight:700;line-height:1;font-family:'DM Mono',monospace}
+.metric-sub{font-size:9px;color:var(--dim);margin-top:3px;font-family:'DM Mono',monospace}
+
+/* ACTION BOX */
+.action-section{padding:0 18px 14px}
+.action-box{border-radius:9px;padding:11px 13px;border:1px solid}
+.action-box .abt{font-size:13px;font-weight:600;margin-bottom:3px}
+.action-box .abd{font-size:11px;color:var(--muted);line-height:1.55;margin-bottom:10px}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.action-opt{background:rgba(0,0,0,0.3);border-radius:7px;padding:8px 10px}
+.action-opt-title{font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px}
+.action-opt-desc{font-size:10px;color:var(--muted);line-height:1.45}
+
+/* SCENARIOS */
+.sc-section{padding:0 18px 14px}
+.sc-lbl{font-size:8px;color:var(--dim);letter-spacing:0.12em;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:8px}
+.sc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.sc-card{border-radius:8px;padding:9px 10px;border:1px solid transparent;cursor:pointer;transition:border-color .15s}
+.sc-card:hover{filter:brightness(1.1)}
+.sc-label{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:2px}
+.sc-val{font-size:17px;font-weight:700;line-height:1;font-family:'DM Mono',monospace}
+.sc-sub{font-size:9px;color:var(--muted);margin-top:2px}
+
+/* PRO NUDGE */
+.pro-nudge{margin:0 18px 18px;background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.14);border-radius:9px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pn-left{}
+.pn-title{font-size:12px;font-weight:500;color:var(--g);margin-bottom:2px}
+.pn-sub{font-size:10px;color:var(--muted);line-height:1.4}
+.pn-btn{font-size:10px;font-weight:700;letter-spacing:0.08em;padding:8px 16px;border-radius:7px;border:1px solid rgba(0,229,160,0.3);background:rgba(0,229,160,0.08);color:var(--g);cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap;transition:background .15s}
+.pn-btn:hover{background:rgba(0,229,160,0.18)}
+
+/* CTA SECTION */
+.cta-section{border-top:1px solid var(--border);padding:14px 18px 16px;position:sticky;bottom:0;background:var(--s1);z-index:50;box-shadow:0 -8px 20px rgba(8,12,20,0.55)}
+.cta-btn{width:100%;padding:14px;background:var(--g);color:#000;font-weight:700;font-size:14px;border:none;cursor:pointer;font-family:'Inter',system-ui;letter-spacing:0.02em;border-radius:10px;margin-bottom:12px;transition:opacity .2s,transform .1s}
+.cta-btn:disabled{opacity:.6;cursor:wait}
+.cta-btn:hover{opacity:.88}
+.cta-btn:active{transform:scale(.99)}
+.cta-btn.glow{animation:ctaGlow 1s ease-out}
+@keyframes ctaGlow{0%{box-shadow:0 0 0 0 rgba(0,229,160,.8)}70%{box-shadow:0 0 0 18px rgba(0,229,160,0)}100%{box-shadow:0 0 0 0 rgba(0,229,160,0)}}
+
+/* CARD CONTROLS */
+.card-controls{display:none;justify-content:space-between;align-items:center;padding:12px 2px 8px}
+.ctrl-btn{font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:7px;padding:5px 13px;cursor:pointer;font-family:'Inter',system-ui;transition:color .15s,border-color .15s}
+.ctrl-btn:hover{color:var(--text);border-color:var(--border2)}
+
+/* CARD REVEAL — clip-path slides card out from under entry form */
+.card-wrap{clip-path:inset(0 0 100% 0);transition:clip-path 4.5s cubic-bezier(.22,.61,.36,1)}
+.card-wrap.revealed{clip-path:inset(0 0 0% 0)}
+.card-slide{transform:translateY(-28px);transition:transform 4.5s cubic-bezier(.22,.61,.36,1)}
+.card-slide.revealed{transform:translateY(0)}
+/* Hide the fake blinking cursor when user clicks into the input */
+#e-ticker:focus + .tw-cursor{display:none}
+
+/* TYPEWRITER CURSOR */
+.tw-cursor{display:inline-block;width:2px;height:26px;background:var(--g);margin-left:3px;vertical-align:middle;animation:twBlink .75s step-end infinite;border-radius:1px}
+@keyframes twBlink{0%,100%{opacity:1}50%{opacity:0}}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">SCAN<span>MY</span>TRADE</span>
+  <div class="nav-r">
+    <span class="nav-hint">FREE TOOL</span>
+    <button class="nav-pro" onclick="showProToast()">Go Pro</button>
+  </div>
+</nav>
+
+<div class="page-col">
+
+  <div class="hero">
+    <h1 class="hero-h">See where your trade <em>stands</em></h1>
+    <div class="hero-sub">Payoff chart · what you keep · what to do next</div>
+  </div>
+
+  <div class="app">
+    <!-- ENTRY FORM -->
+    <div class="entry">
+
+    <div class="ticker-row">
+      <div style="display:flex;align-items:center;flex:0 0 auto">
+        <input class="ticker-input" id="e-ticker" placeholder="" maxlength="6"
+          oninput="this.value=this.value.toUpperCase()"
+          onblur="onTickerBlur(this)"
+          onkeydown="onEnterFocusNext(event,'e-strike-range')"
+          autocomplete="off" spellcheck="false" title="Type any ticker">
+        <span class="tw-cursor" id="e-cursor"></span>
+      </div>
+      <div class="ticker-vsep"></div>
+      <div class="strategy-pills">
+        <div class="pill-row">
+          <button class="pill on" data-v="short-put" onclick="setStrat('short-put')">Cash secured put</button>
+          <button class="pill" data-v="short-call" onclick="setStrat('short-call')">Covered call</button>
+        </div>
+        <div class="pill-row">
+          <button class="pill" data-v="long-call" onclick="setStrat('long-call')">Long call</button>
+          <button class="pill" data-v="long-put" onclick="setStrat('long-put')">Long put</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="expiry-section">
+      <div class="section-label">EXPIRY <span id="e-dte-label">43d</span></div>
+      <div class="date-strip" id="e-strip"></div>
+    </div>
+
+    <div class="strike-section" id="e-strike-section">
+      <div class="section-label">STRIKE</div>
+      <div class="strike-display" id="e-strike-display"><span class="sd-num">$205</span><small>put</small></div>
+      <div class="slider-wrap">
+        <div class="slider-pill" id="e-pill">$205</div>
+        <input type="range" class="slider-native" id="e-strike-range"
+          min="0" max="100" step="0.5" value="50"
+          oninput="onStrikeSlide(this.value)" onkeydown="onEnterFocusNext(event,'e-prem')">
+        <div class="tick-row" id="e-ticks"></div>
+      </div>
+    </div>
+
+    <div class="inputs-row">
+      <div class="input-group">
+        <div class="input-label">Premium / share $</div>
+        <input class="input-field" id="e-prem" type="number" placeholder="3.80" step="0.01"
+          value="" oninput="clearNeedsInput(this)" onkeydown="onEnterFocusNext(event,'e-stock')">
+      </div>
+      <div class="input-group">
+        <div class="input-label">Stock price now $</div>
+        <input class="input-field" id="e-stock" type="number" placeholder="215.40" step="0.01"
+          value="" oninput="" onchange="syncSliderToStock()" onkeydown="onEnterFocusNext(event,'e-contracts')">
+      </div>
+      <div class="input-group">
+        <div class="input-label">Contracts</div>
+        <input class="input-field" id="e-contracts" type="number" placeholder="1" value="" min="1" oninput="" onkeydown="onEnterFocusNext(event,'e-iv')">
+      </div>
+      <div class="input-group">
+        <div class="input-label">IV %</div>
+        <input class="input-field" id="e-iv" type="number" placeholder="22" value="" oninput="clearNeedsInput(this)" onkeydown="onEnterFocusNext(event,null)">
+      </div>
+    </div>
+
+    <div class="cta-section">
+      <button class="cta-btn" id="e-cta" onclick="showCard()">See my trade →</button>
+      <div class="scan-link">
+        <span>Already trading? <a href="/scan">Scan a broker screenshot instead →</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CARD OUTPUT — slides down from behind entry form -->
+  <div class="card-controls" id="e-controls">
+    <button class="ctrl-btn" onclick="newTrade()">← New trade</button>
+    <button class="ctrl-btn" onclick="editTrade()">Edit inputs</button>
+  </div>
+  <div class="card-wrap" id="e-card-wrap">
+    <div class="card-slide" id="e-card-slide">
+      <div id="e-card"></div>
+    </div>
+  </div>
+
+  </div><!-- /.app -->
+
+</div><!-- /.page-col -->
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+var strat = 'short-put';
+var selDate = null;
+var strikeVal = 205;
+var strikeMin = 160, strikeMax = 260; // will be set per stock
+var TODAY = new Date(2026, 6, 9); // July 9 2026
+var lastTickerCommitted = ''; // tracks last ticker so we know when it genuinely changes
+
+// ── EXPIRY DATES ──────────────────────────────────────
+function generateExpiries() {
+  var dates = [];
+  // Weeklies: next 10 Fridays
+  var d = new Date(TODAY);
+  d.setDate(d.getDate() + 1);
+  while (d.getDay() !== 5) d.setDate(d.getDate() + 1);
+  for (var i = 0; i < 10; i++) {
+    dates.push(new Date(d));
+    d.setDate(d.getDate() + 7);
+  }
+  // Monthlies (3rd Friday) for 18 months
+  for (var m = 0; m < 18; m++) {
+    var yr = TODAY.getFullYear() + Math.floor((TODAY.getMonth() + m) / 12);
+    var mo = (TODAY.getMonth() + m) % 12;
+    var f = new Date(yr, mo, 1);
+    while (f.getDay() !== 5) f.setDate(f.getDate() + 1);
+    f.setDate(f.getDate() + 14);
+    var daysOut = Math.round((f - TODAY) / 86400000);
+    if (daysOut > 70 && daysOut <= 800) {
+      if (!dates.some(function(e){return e.toDateString()===f.toDateString();}))
+        dates.push(new Date(f));
+    }
+  }
+  dates.sort(function(a,b){return a-b;});
+  return dates;
+}
+
+var EXPIRIES = generateExpiries();
+var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function buildStrip() {
+  var strip = document.getElementById('e-strip');
+  strip.innerHTML = '';
+  EXPIRIES.forEach(function(d, i) {
+    var daysOut = Math.round((d - TODAY) / 86400000);
+    var chip = document.createElement('div');
+    chip.className = 'dc' + (selDate && d.toDateString()===selDate.toDateString() ? ' sel' : '');
+    chip.innerHTML = '<span class="dc-mo">' + MONTHS[d.getMonth()] + '</span>'
+      + '<span class="dc-day">' + d.getDate() + '</span>';
+    chip.dataset.idx = i;
+    chip.onclick = function() { selectDate(d); };
+    strip.appendChild(chip);
+  });
+  // Scroll selected into view
+  setTimeout(function() {
+    var sel = strip.querySelector('.sel');
+    if (sel) sel.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});
+  }, 50);
+}
+
+function selectDate(d) {
+  selDate = d;
+  var daysOut = Math.round((d - TODAY) / 86400000);
+  document.getElementById('e-dte-label').textContent = daysOut + 'd';
+  buildStrip();
+}
+
+// ── STRIKE SLIDER ──────────────────────────────────────
+function updateStrikeRange(stock) {
+  strikeMin = Math.round(stock * 0.75 / 5) * 5;
+  strikeMax = Math.round(stock * 1.25 / 5) * 5;
+  // Build tick marks
+  var ticks = document.getElementById('e-ticks');
+  ticks.innerHTML = '';
+  var step = Math.round((strikeMax - strikeMin) / 4 / 5) * 5;
+  for (var v = strikeMin; v <= strikeMax; v += step) {
+    var t = document.createElement('span');
+    t.className = 'tick';
+    t.textContent = '$' + v;
+    ticks.appendChild(t);
+  }
+}
+
+function pctFromStrike(s) {
+  return Math.max(0, Math.min(100, (s - strikeMin) / (strikeMax - strikeMin) * 100));
+}
+
+function strikeFromPct(p) {
+  var raw = strikeMin + (strikeMax - strikeMin) * p / 100;
+  return Math.round(raw / 0.5) * 0.5;
+}
+
+function updateSliderUI() {
+  var pct    = pctFromStrike(strikeVal);
+  var slider = document.getElementById('e-strike-range');
+  var pill   = document.getElementById('e-pill');
+  if (slider) {
+    slider.value = pct;
+    slider.style.background =
+      'linear-gradient(to right,#00e5a0 0%,#00e5a0 ' + pct + '%,#1a2030 ' + pct + '%,#1a2030 100%)';
+  }
+  if (pill) {
+    pill.style.left = pct + '%';
+    pill.textContent = '$' + (strikeVal % 1 === 0 ? strikeVal : strikeVal.toFixed(1));
+  }
+  updateStrikeDisplay();
+}
+
+function updateStrikeDisplay() {
+  var isCall = strat.endsWith('call');
+  document.getElementById('e-strike-display').innerHTML =
+    '<span class="sd-num">$' + (strikeVal % 1 === 0 ? strikeVal : strikeVal.toFixed(1)) + '</span>'
+    + '<small>' + (isCall ? 'call' : 'put') + '</small>';
+}
+
+function onStrikeSlide(pct) {
+  strikeVal = strikeFromPct(parseFloat(pct));
+  updateSliderUI();
+  var sec = document.getElementById('e-strike-section');
+  if (sec) sec.classList.remove('needs-check');
+}
+
+function syncSliderToStock() {
+  var stock = parseFloat(document.getElementById('e-stock').value);
+  if (!stock) return;
+  updateStrikeRange(stock);
+  // Keep strike near stock
+  strikeVal = Math.max(strikeMin, Math.min(strikeMax, Math.round(stock * 0.97 / 5) * 5));
+  updateSliderUI();
+}
+
+// ── BLACK-SCHOLES ──────────────────────────────────────
+function erf(x) {
+  var t=1/(1+0.3275911*Math.abs(x));
+  var p=(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return x>=0?1-p:p-1;
+}
+function N(x){return 0.5*(1+erf(x/Math.SQRT2));}
+function bsOpt(S,K,t,iv,isCall){
+  if(t<=1e-6)return isCall?Math.max(0,S-K):Math.max(0,K-S);
+  var d1=(Math.log(S/K)+(0.05+iv*iv/2)*t)/(iv*Math.sqrt(t));
+  var d2=d1-iv*Math.sqrt(t);
+  return isCall?S*N(d1)-K*Math.exp(-0.05*t)*N(d2):K*Math.exp(-0.05*t)*N(-d2)-S*N(-d1);
+}
+function fmt(v){var r=Math.round(v);return(r>=0?'+':'-')+'$'+Math.abs(r).toLocaleString();}
+
+// ── PAYOFF ─────────────────────────────────────────────
+function getPosition() {
+  var ticker = document.getElementById('e-ticker').value.trim() || 'AAPL';
+  var stock = parseFloat(document.getElementById('e-stock').value)||215.40;
+  var prem = parseFloat(document.getElementById('e-prem').value)||3.80;
+  var contracts = parseInt(document.getElementById('e-contracts').value)||1;
+  var iv = parseFloat(document.getElementById('e-iv').value)||22;
+  var dte = selDate ? Math.max(1,Math.round((selDate-TODAY)/86400000)) : 43;
+  var isShort = strat.startsWith('short');
+  var isCall = strat.endsWith('call');
+  var be = isCall ? +(strikeVal + prem).toFixed(2) : +(strikeVal - prem).toFixed(2);
+  return{ticker,stock,strike:strikeVal,prem,contracts,iv,dte,isShort,isCall,be};
+}
+
+function pNow(S,t){
+  var premIn=t.prem*100*t.contracts,T=Math.max(t.dte/365,0.001),sig=Math.max(t.iv/100,0.01);
+  var opt=bsOpt(S,t.strike,T,sig,t.isCall)*100*t.contracts;
+  return t.isShort?premIn-opt:opt-premIn;
+}
+function pExp(S,t){
+  var premIn=t.prem*100*t.contracts;
+  var intr=t.isCall?Math.max(0,S-t.strike):Math.max(0,t.strike-S);
+  return t.isShort?premIn-intr*100*t.contracts:intr*100*t.contracts-premIn;
+}
+
+// ── SVG CHART ──────────────────────────────────────────
+function buildChart(t) {
+  var NS='http://www.w3.org/2000/svg';
+  var W=580,PL=44,PR=572,PT=18,PB=175;
+  var spread=Math.abs(t.stock-t.strike),pad=Math.max(spread*1.9,t.stock*0.14);
+  var xMin=Math.max(0.01,Math.min(t.stock,t.strike)-pad);
+  var xMax=Math.max(t.stock,t.strike)+pad;
+  var ys=[];
+  for(var i=0;i<=100;i++){var S=xMin+(xMax-xMin)*i/100;ys.push(pNow(S,t));ys.push(pExp(S,t));}
+  var yRawMin=Math.min.apply(null,ys),yRawMax=Math.max.apply(null,ys),ySpan=Math.max(yRawMax-yRawMin,1);
+  var yMin=yRawMin-ySpan*0.12,yMax=yRawMax+ySpan*0.12;
+
+  function sx(x){return PL+(x-xMin)/(xMax-xMin)*(PR-PL);}
+  function sy(v){return PT+(yMax-v)/(yMax-yMin)*(PB-PT);}
+
+  var svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('class','pc');
+  svg.setAttribute('viewBox','0 0 '+(PR+24)+' '+(PB+40));
+
+  function el(tag,a){var e=document.createElementNS(NS,tag);for(var k in a)e.setAttribute(k,a[k]);return e;}
+  function txt(text,x,y,opts){
+    var e=document.createElementNS(NS,'text');
+    e.setAttribute('x',x);e.setAttribute('y',y);e.textContent=text;
+    Object.keys(opts||{}).forEach(function(k){e.setAttribute(k,opts[k]);});
+    return e;
+  }
+
+  // Zone backgrounds
+  var stX=sx(t.strike);
+  var lBg=(t.isShort&&t.isCall)||((!t.isShort)&&(!t.isCall))?'rgba(0,229,160,0.06)':'rgba(255,69,96,0.06)';
+  var rBg=(t.isShort&&t.isCall)||((!t.isShort)&&(!t.isCall))?'rgba(255,69,96,0.06)':'rgba(0,229,160,0.06)';
+  svg.appendChild(el('rect',{x:PL,y:PT,width:Math.max(0,stX-PL).toFixed(1),height:PB-PT,fill:lBg}));
+  svg.appendChild(el('rect',{x:stX.toFixed(1),y:PT,width:Math.max(0,PR-stX).toFixed(1),height:PB-PT,fill:rBg}));
+
+  // "Nice" step helper — always targets a small fixed number of divisions,
+  // regardless of how wide the price/P&L range is (prevents 20+ gridlines on wide-range charts)
+  function niceStep(range, targetCount) {
+    var rough = range / targetCount;
+    var mag = Math.pow(10, Math.floor(Math.log10(Math.max(rough,1e-6))));
+    var norm = rough / mag;
+    var niceNorm = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+    return niceNorm * mag;
+  }
+
+  // H-grid — capped at ~5 lines no matter how wide the P&L range is
+  var gStep=niceStep(Math.abs(yMax-yMin), 5);
+  var gBase=Math.ceil(yMin/gStep)*gStep;
+  for(var v=gBase;v<=yMax+gStep*.1;v+=gStep){
+    if(v<yMin)continue;
+    var gy=sy(v);
+    svg.appendChild(el('line',{x1:PL,x2:PR,y1:gy.toFixed(1),y2:gy.toFixed(1),stroke:'rgba(255,255,255,0.045)','stroke-width':'1'}));
+    svg.appendChild(txt((v>=0?'+':'-')+'$'+Math.abs(Math.round(v)),PL-5,gy+3.5,{'text-anchor':'end','font-size':'9','fill':'rgba(255,255,255,0.22)','font-family':'DM Mono,monospace'}));
+  }
+
+  // Zero
+  svg.appendChild(el('line',{x1:PL,x2:PR,y1:sy(0).toFixed(1),y2:sy(0).toFixed(1),stroke:'rgba(255,255,255,0.14)','stroke-width':'1','stroke-dasharray':'3 3'}));
+
+  // X ticks — capped at ~5, and skipped near the strike position so
+  // the "strike $X" label never collides with a regular price tick
+  var xStep=niceStep(xMax-xMin, 5);
+  var xBase=Math.ceil(xMin/xStep)*xStep;
+  var strikeExclusionPx=26; // px radius around strike where regular ticks are suppressed
+  for(var x=xBase;x<=xMax;x+=xStep){
+    if(Math.abs(sx(x)-stX)<strikeExclusionPx)continue;
+    svg.appendChild(txt('$'+Math.round(x),sx(x).toFixed(1),PB+13,{'text-anchor':'middle','font-size':'9','fill':'rgba(255,255,255,0.2)','font-family':'DM Mono,monospace'}));
+  }
+
+  // Vlines
+  var beX=sx(t.be),nowX=sx(t.stock);
+  svg.appendChild(el('line',{x1:stX.toFixed(1),x2:stX.toFixed(1),y1:PT,y2:PB,stroke:'rgba(200,60,60,0.7)','stroke-width':'1.2','stroke-dasharray':'4 3'}));
+  svg.appendChild(el('line',{x1:beX.toFixed(1),x2:beX.toFixed(1),y1:PT,y2:PB,stroke:'rgba(40,180,80,0.7)','stroke-width':'1.2','stroke-dasharray':'4 3'}));
+  svg.appendChild(el('line',{x1:nowX.toFixed(1),x2:nowX.toFixed(1),y1:PT,y2:PB,stroke:'rgba(255,255,255,0.15)','stroke-width':'1','stroke-dasharray':'2 2'}));
+
+  // Labels — strike sits on its own row below the regular x-ticks so the two never overlap
+  svg.appendChild(txt('strike $'+t.strike,stX.toFixed(1),PB+25,{'text-anchor':'middle','font-size':'8','fill':'rgba(200,60,60,0.75)','font-family':'DM Mono,monospace'}));
+  var beAnchor=t.be>t.strike?'start':'end',beDx=t.be>t.strike?4:-4;
+  svg.appendChild(txt('b/e $'+t.be.toFixed(2),(beX+beDx).toFixed(1),(PT+10).toFixed(1),{'text-anchor':beAnchor,'font-size':'8','fill':'rgba(40,180,80,0.7)','font-family':'DM Mono,monospace'}));
+  // No separate "now" text label — the probe dot already sits exactly on the "now" line by
+  // default with its own live value label, so a static "now" caption there was pure redundant
+  // clutter and collided with the probe's floating value on first render.
+
+  // Expiry path
+  var expD='';
+  for(var S=xMin;S<=xMax+(xMax-xMin)/200;S+=(xMax-xMin)/200){
+    var v=Math.max(yMin,Math.min(yMax,pExp(S,t)));
+    expD+=(expD?'L':'M')+sx(S).toFixed(1)+','+sy(v).toFixed(1)+' ';
+  }
+  svg.appendChild(el('path',{d:expD,fill:'none',stroke:'rgba(255,255,255,0.5)','stroke-width':'1.8','stroke-dasharray':'6 4','stroke-linecap':'round'}));
+
+  // T+0 path (cyan)
+  var t0D='';
+  for(var S=xMin;S<=xMax+(xMax-xMin)/200;S+=(xMax-xMin)/200){
+    var v=Math.max(yMin,Math.min(yMax,pNow(S,t)));
+    t0D+=(t0D?'L':'M')+sx(S).toFixed(1)+','+sy(v).toFixed(1)+' ';
+  }
+  svg.appendChild(el('path',{d:t0D,fill:'none',stroke:'rgba(0,200,255,0.9)','stroke-width':'2.5','stroke-linecap':'round','stroke-linejoin':'round'}));
+
+  // Gap line (T+0 to expiry) — shows extrinsic value at probe position
+  var gapLine=el('line',{stroke:'rgba(255,255,255,0.18)','stroke-width':'1.3','stroke-dasharray':'2 2'});
+  svg.appendChild(gapLine);
+
+  // Probe dot + label (draggable)
+  var probe=el('circle',{r:'6',fill:'#00e5a0',stroke:'#080c14','stroke-width':'2.5'});
+  var probeLabel=txt('','','',{'font-size':'11','font-weight':'700','font-family':'DM Mono,monospace'});
+  svg.appendChild(probe);
+  svg.appendChild(probeLabel);
+
+  // Border
+  svg.appendChild(el('rect',{x:PL,y:PT,width:PR-PL,height:PB-PT,fill:'none',stroke:'rgba(255,255,255,0.06)','stroke-width':'1'}));
+
+  // ── LIVE UPDATE FUNCTION ──────────────────────────────
+  function movePriceTo(price) {
+    price = Math.max(xMin, Math.min(xMax, price));
+    var vn = pNow(price, t), ve = pExp(price, t);
+    var probeX = Math.max(PL+7, Math.min(PR-7, sx(price)));
+    var yn = Math.max(PT+7, Math.min(PB-7, sy(vn)));
+    var ye = Math.max(PT+7, Math.min(PB-7, sy(ve)));
+    var pc = vn >= 0 ? '#00e5a0' : '#ff4560';
+
+    probe.setAttribute('cx', probeX.toFixed(1));
+    probe.setAttribute('cy', yn.toFixed(1));
+    probe.setAttribute('fill', pc);
+
+    gapLine.setAttribute('x1', probeX.toFixed(1));
+    gapLine.setAttribute('x2', probeX.toFixed(1));
+    gapLine.setAttribute('y1', Math.min(yn,ye).toFixed(1));
+    gapLine.setAttribute('y2', Math.max(yn,ye).toFixed(1));
+
+    var flip = price > (xMin + 0.7*(xMax-xMin));
+    probeLabel.setAttribute('x', (probeX+(flip?-9:9)).toFixed(1));
+    probeLabel.setAttribute('y', (yn<=PT+22?yn+16:yn-9).toFixed(1));
+    probeLabel.setAttribute('text-anchor', flip?'end':'start');
+    probeLabel.setAttribute('fill', pc);
+    probeLabel.textContent = fmt(vn);
+
+    // ── Live-update everything else on the card ──────────
+    var premIn = t.prem*100*t.contracts;
+    var pct = premIn>0 ? Math.round(vn/premIn*100) : 0;
+    var veC = ve>=0 ? 'var(--g)' : 'var(--r)';
+
+    var keepEl = document.getElementById('m-keep-val');
+    var keepSub = document.getElementById('m-keep-sub');
+    if (keepEl) { keepEl.style.color = pc; keepEl.textContent = fmt(vn); }
+    if (keepSub) { keepSub.textContent = Math.abs(price-t.stock)<0.01 ? 'right now' : 'at $'+price.toFixed(2); }
+
+    var expEl = document.getElementById('m-exp-val');
+    if (expEl) { expEl.style.color = veC; expEl.textContent = fmt(ve); }
+
+    // Capture bar
+    var fillEl = document.getElementById('m-cap-fill');
+    var pillEl = document.getElementById('m-cap-pill');
+    if (fillEl && pillEl) {
+      var zL=28, rW=72, mxL=premIn*3, bLeft, bW, bBg, pillTxt, pillC, pillBg;
+      if (vn>=0) {
+        bLeft=zL+'%'; bW=Math.min(pct,100)/100*rW+'%'; bBg=pct>=80?'var(--g)':'var(--y)';
+        pillTxt='▲ '+Math.min(pct,100)+'% captured'; pillC=bBg;
+        pillBg=pct>=80?'rgba(0,229,160,0.14)':'rgba(245,166,35,0.14)';
+      } else {
+        var lf=Math.min(Math.abs(vn)/mxL,1)*zL; bLeft=(zL-lf)+'%'; bW=lf+'%'; bBg='var(--r)';
+        pillTxt='▼ '+Math.abs(pct)+'% underwater'; pillC='var(--r)'; pillBg='rgba(255,69,96,0.14)';
+      }
+      fillEl.style.left=bLeft; fillEl.style.width=bW; fillEl.style.background=bBg;
+      pillEl.textContent=pillTxt; pillEl.style.color=pillC; pillEl.style.background=pillBg;
+    }
+
+    // Action box
+    var boxEl = document.getElementById('m-action-box');
+    var titleEl = document.getElementById('m-action-title');
+    var descEl = document.getElementById('m-action-desc');
+    var gridEl = document.getElementById('m-action-grid');
+    if (boxEl && titleEl && descEl && gridEl) {
+      var s = getActionState(pct, vn, premIn);
+      boxEl.style.background = s.bg;
+      boxEl.style.borderColor = s.bd;
+      titleEl.style.color = s.c;
+      titleEl.textContent = s.title;
+      descEl.textContent = s.desc;
+      gridEl.innerHTML =
+        '<div class="action-opt"><div class="action-opt-title">'+s.c1+'</div><div class="action-opt-desc">'+s.c1v+'</div></div>'
+        +'<div class="action-opt"><div class="action-opt-title">'+s.c2+'</div><div class="action-opt-desc">'+s.c2v+'</div></div>';
+    }
+  }
+
+  // Initial position = current stock price
+  movePriceTo(t.stock);
+
+  // ── DRAG HANDLERS ──────────────────────────────────────
+  function priceFromClientX(clientX) {
+    var rect = svg.getBoundingClientRect();
+    var scaleX = (PR+24) / rect.width;
+    var localX = (clientX - rect.left) * scaleX;
+    return xMin + (localX - PL) / (PR - PL) * (xMax - xMin);
+  }
+  var dragging = false;
+  svg.addEventListener('pointerdown', function(e) {
+    dragging = true;
+    svg.setPointerCapture(e.pointerId);
+    movePriceTo(priceFromClientX(e.clientX));
+  });
+  svg.addEventListener('pointermove', function(e) {
+    if (dragging) movePriceTo(priceFromClientX(e.clientX));
+  });
+  svg.addEventListener('pointerup', function() { dragging = false; });
+
+  // Store a reset-to-now function on the SVG element so the "NOW" button can call it
+  svg._resetToNow = function() { movePriceTo(t.stock); };
+
+  return svg;
+}
+
+function getActionState(pct, vn, premIn) {
+  var st=vn<0?'under':pct<50?'early':pct<80?'target':'good';
+  var smap={
+    under:{bg:'rgba(255,69,96,0.07)',bd:'rgba(255,69,96,0.28)',c:'var(--r)',
+      title:'Underwater — close or roll',desc:'Closing now locks in '+fmt(vn)+'. Rolling buys time and new premium.',
+      c1:'Close the trade',c1v:'Stop the loss growing if it keeps moving against you.',
+      c2:'Roll to next expiry',c2v:'Buy back now, sell the next expiry. Collect fresh premium.'},
+    early:{bg:'rgba(245,166,35,0.07)',bd:'rgba(245,166,35,0.22)',c:'var(--y)',
+      title:'Let time work — target 50–80%',desc:'Only '+pct+'% captured. Most premium is still in the option.',
+      c1:'Hold for now',c1v:'Time decay is working in your favour every day.',
+      c2:'Set a target',c2v:'Plan to close between 50–80% capture.'},
+    target:{bg:'rgba(245,166,35,0.07)',bd:'rgba(245,166,35,0.22)',c:'var(--y)',
+      title:'Getting there — aim for 80%',desc:pct+'% captured. A few more days should get you to the close window.',
+      c1:'Hold to 80%',c1v:'~$'+Math.round(premIn*.8)+' kept if it gets there.',
+      c2:'Close early',c2v:'Lock in $'+Math.round(vn)+' and remove risk now.'},
+    good:{bg:'rgba(0,229,160,0.07)',bd:'rgba(0,229,160,0.28)',c:'var(--g)',
+      title:'Good time to close or roll',desc:pct+'% captured. Most traders close here.',
+      c1:'Close the trade',c1v:'Keep $'+Math.round(vn)+' ('+pct+'%). Done.',
+      c2:'Roll for more',c2v:'Sell the next expiry for fresh credit.'}
+  };
+  return smap[st];
+}
+
+// ── CARD RENDER ────────────────────────────────────────
+function renderCard(t) {
+  var premIn=t.prem*100*t.contracts;
+  var vn=pNow(t.stock,t),ve=pExp(t.stock,t);
+  var pct=premIn>0?Math.round(vn/premIn*100):0;
+  var vnC=vn>=0?'var(--g)':'var(--r)';
+  var veC=ve>=0?'var(--g)':'var(--r)';
+
+  // Badge colors
+  var badgeColor=t.isShort?'var(--y)':'var(--b)';
+  var badgeBg=t.isShort?'rgba(245,166,35,0.12)':'rgba(77,159,255,0.12)';
+  var typeLabel=(t.isShort?'SHORT ':'LONG ')+(t.isCall?'CALL':'PUT');
+  var stratLabel=t.isShort?(t.isCall?'COVERED CALL':'CASH SECURED PUT'):(t.isCall?'LONG CALL':'LONG PUT');
+
+  // Headline
+  var verb=t.isShort?(t.isCall?'stays below':'stays above'):(t.isCall?'rises above':'falls below');
+  var hlHtml=t.isShort
+    ?'You keep <span class="hg">'+fmt(premIn)+'</span> if '+t.ticker+' '+verb+' <strong>$'+t.be.toFixed(2)+'</strong>'
+    :'You profit if '+t.ticker+' '+verb+' <strong>$'+t.be.toFixed(2)+'</strong>';
+
+  var goalText=t.isShort?(t.isCall?'Stay below $'+t.be.toFixed(2):'Stay above $'+t.be.toFixed(2)):(t.isCall?'Rise above $'+t.be.toFixed(2):'Fall below $'+t.be.toFixed(2));
+  var riskText=t.isShort&&t.isCall?'Unlimited if called':t.isShort?'Bounded if assigned':'$'+Math.round(premIn)+' paid';
+
+  // Capture bar
+  var zL=28,rW=72,mxL=premIn*3;
+  var bLeft,bW,bBg,pillTxt,pillC,pillBg;
+  if(vn>=0){
+    bLeft=zL+'%';bW=Math.min(pct,100)/100*rW+'%';bBg=pct>=80?'var(--g)':'var(--y)';
+    pillTxt='▲ '+Math.min(pct,100)+'% captured';pillC=bBg;
+    pillBg=pct>=80?'rgba(0,229,160,0.14)':'rgba(245,166,35,0.14)';
+  } else {
+    var lf=Math.min(Math.abs(vn)/mxL,1)*zL;bLeft=(zL-lf)+'%';bW=lf+'%';bBg='var(--r)';
+    pillTxt='▼ '+Math.abs(pct)+'% underwater';pillC='var(--r)';pillBg='rgba(255,69,96,0.14)';
+  }
+
+  // Theta
+  var T=Math.max(t.dte/365,0.001),sig=Math.max(t.iv/100,0.01);
+  var opt0=bsOpt(t.stock,t.strike,T,sig,t.isCall);
+  var opt1=bsOpt(t.stock,t.strike,Math.max((t.dte-1)/365,0.001),sig,t.isCall);
+  var theta=Math.abs(opt1-opt0)*100*t.contracts;
+
+  // Action state
+  var s=getActionState(pct, vn, premIn);
+
+  // Scenarios
+  var scArr=t.isShort&&!t.isCall?[
+    {p:t.strike*1.08,l:t.ticker+' +8%',d:'Above strike'},
+    {p:t.strike,l:'Strike $'+t.strike,d:'Max profit'},
+    {p:t.be,l:'B/E',d:'$'+t.be.toFixed(2)},
+    {p:t.stock,l:'Now',d:'$'+t.stock.toFixed(2)},
+    {p:t.strike*0.94,l:t.ticker+' -6%',d:'Below strike'},
+    {p:t.strike*0.87,l:t.ticker+' -13%',d:'Significant loss'}
+  ]:t.isShort&&t.isCall?[
+    {p:t.strike*0.92,l:t.ticker+' -8%',d:'Below strike'},
+    {p:t.strike,l:'Strike $'+t.strike,d:'Max profit'},
+    {p:t.be,l:'B/E',d:'$'+t.be.toFixed(2)},
+    {p:t.stock,l:'Now',d:'$'+t.stock.toFixed(2)},
+    {p:t.strike*1.06,l:t.ticker+' +6%',d:'Above strike'},
+    {p:t.strike*1.13,l:t.ticker+' +13%',d:'Significant loss'}
+  ]:[
+    {p:t.stock*.88,l:t.ticker+' -12%',d:'Down 12%'},
+    {p:t.be,l:'B/E',d:'$'+t.be.toFixed(2)},
+    {p:t.stock,l:'Now',d:'$'+t.stock.toFixed(2)},
+    {p:t.stock*1.05,l:t.ticker+' +5%',d:'Up 5%'},
+    {p:t.stock*1.1,l:t.ticker+' +10%',d:'Up 10%'},
+    {p:t.stock*1.18,l:t.ticker+' +18%',d:'Up 18%'}
+  ];
+
+  var scHtml=scArr.map(function(sc){
+    var sve=pExp(sc.p,t),g=sve>=0;
+    var bg=g?'rgba(0,229,160,0.07)':'rgba(255,69,96,0.07)';
+    var bc=g?'rgba(0,229,160,0.16)':'rgba(255,69,96,0.16)';
+    var vc=g?'var(--g)':'var(--r)';
+    return '<div class="sc-card" style="background:'+bg+';border-color:'+bc+'">'
+      +'<div class="sc-label">'+sc.l+'</div>'
+      +'<div class="sc-val" style="color:'+vc+'">'+fmt(sve)+'</div>'
+      +'<div class="sc-sub">'+sc.d+'</div>'
+      +'</div>';
+  }).join('');
+
+  // Build DOM
+  var card=document.createElement('div');
+  card.className='card';
+
+  // Header
+  card.innerHTML+=
+    '<div class="card-header">'
+    +'<div>'
+    +'<div class="card-ticker">'+t.ticker+'</div>'
+    +'<div class="card-sub">$'+t.stock.toFixed(2)+' · '+t.dte+'d left · $'+t.prem.toFixed(2)+'/share · '+t.contracts+' contract'+(t.contracts!==1?'s':'')+'</div>'
+    +'</div>'
+    +'<div class="card-badges">'
+    +'<span class="cbadge" style="background:'+badgeBg+';color:'+badgeColor+'">'+typeLabel+'</span>'
+    +'</div>'
+    +'</div>'
+
+    // Headline
+    +'<div class="card-hl">'
+    +'<h2>'+hlHtml+'</h2>'
+    +'<div class="goal-row">'
+    +'<div class="goal-chip"><div class="gc-icon" style="background:rgba(0,229,160,0.12);color:var(--g)">⊙</div><div><div class="gc-lbl">Goal</div><div class="gc-val">'+goalText+'</div></div></div>'
+    +'<div class="goal-chip"><div class="gc-icon" style="background:rgba(245,166,35,0.12);color:var(--y)">◷</div><div><div class="gc-lbl">Time left</div><div class="gc-val">'+t.dte+' days</div></div></div>'
+    +'<div class="goal-chip"><div class="gc-icon" style="background:rgba(255,69,96,0.12);color:var(--r)">⚡</div><div><div class="gc-lbl">Max risk</div><div class="gc-val">'+riskText+'</div></div></div>'
+    +'</div>'
+    +'</div>';
+
+  // Chart (append SVG after innerHTML is set)
+  var chartDiv=document.createElement('div');
+  chartDiv.className='card-chart';
+  chartDiv.innerHTML='<div class="chart-hdr"><span class="chart-lbl" style="margin:0">Profit map <span style="color:var(--dim)">— drag to explore</span></span>'
+    +'<button class="chart-now-btn" id="pc-now-btn">↺ NOW</button></div>';
+  var chartSvg = buildChart(t);
+  chartDiv.appendChild(chartSvg);
+  var nowBtn = chartDiv.querySelector('#pc-now-btn');
+  if (nowBtn) nowBtn.addEventListener('click', function(){ chartSvg._resetToNow(); });
+  chartDiv.innerHTML+='<div class="legend-row">'
+    +'<div class="legend-item"><svg width="20" height="3" style="overflow:visible"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke="rgba(0,200,255,0.9)" stroke-width="2.5"/></svg> Close now (T+0)</div>'
+    +'<div class="legend-item"><svg width="20" height="3" style="overflow:visible"><line x1="0" y1="1.5" x2="20" y2="1.5" stroke="rgba(255,255,255,0.45)" stroke-width="1.8" stroke-dasharray="5 3"/></svg> At expiry</div>'
+    +'<div class="legend-item"><svg width="10" height="12" style="overflow:visible"><line x1="5" y1="0" x2="5" y2="12" stroke="rgba(200,60,60,0.65)" stroke-width="1.2" stroke-dasharray="4 3"/></svg> Strike</div>'
+    +'<div class="legend-item"><svg width="10" height="12" style="overflow:visible"><line x1="5" y1="0" x2="5" y2="12" stroke="rgba(40,180,80,0.7)" stroke-width="1.2" stroke-dasharray="4 3"/></svg> Breakeven</div>'
+    +'</div>';
+  card.appendChild(chartDiv);
+
+  // Capture bar
+  card.innerHTML+=
+    '<div class="cap-section">'
+    +'<div class="cap-hdr"><span class="cap-lbl">Premium captured</span>'
+    +'<span class="cap-pill" id="m-cap-pill" style="background:'+pillBg+';color:'+pillC+'">'+pillTxt+'</span></div>'
+    +'<div class="cap-track">'
+    +'<div class="cap-fill" id="m-cap-fill" style="left:'+bLeft+';width:'+bW+';background:'+bBg+'"></div>'
+    +'<div class="cap-zero"></div></div>'
+    +'<div class="cap-axis"><span>← loss</span><span>0%</span><span>100% →</span></div>'
+    +'</div>'
+
+    // Metrics
+    +'<div class="metrics-section">'
+    +'<div class="metrics-grid">'
+    +'<div class="metric"><div class="metric-lbl">'+(t.isShort?'Collected':'Paid')+'</div><div class="metric-val" style="color:'+(t.isShort?'var(--g)':'var(--y)')+'">'+(t.isShort?'+':'-')+'$'+Math.round(premIn)+'</div><div class="metric-sub">'+t.contracts+'×$'+t.prem.toFixed(2)+'</div></div>'
+    +'<div class="metric"><div class="metric-lbl">Keep if closed</div><div class="metric-val" id="m-keep-val" style="color:'+vnC+'">'+fmt(vn)+'</div><div class="metric-sub" id="m-keep-sub">right now</div></div>'
+    +'<div class="metric"><div class="metric-lbl">At expiry</div><div class="metric-val" id="m-exp-val" style="color:'+veC+'">'+fmt(ve)+'</div><div class="metric-sub">if held</div></div>'
+    +'<div class="metric"><div class="metric-lbl">Theta</div><div class="metric-val" style="color:'+(t.isShort?'var(--g)':'var(--r)')+'">'+(t.isShort?'+':'-')+'$'+theta.toFixed(2)+'</div><div class="metric-sub">per day</div></div>'
+    +'</div></div>'
+
+    // Action box
+    +'<div class="action-section">'
+    +'<div class="action-box" id="m-action-box" style="background:'+s.bg+';border-color:'+s.bd+'">'
+    +'<div class="abt" id="m-action-title" style="color:'+s.c+'">'+s.title+'</div>'
+    +'<div class="abd" id="m-action-desc">'+s.desc+'</div>'
+    +'<div class="action-grid" id="m-action-grid">'
+    +'<div class="action-opt"><div class="action-opt-title">'+s.c1+'</div><div class="action-opt-desc">'+s.c1v+'</div></div>'
+    +'<div class="action-opt"><div class="action-opt-title">'+s.c2+'</div><div class="action-opt-desc">'+s.c2v+'</div></div>'
+    +'</div></div></div>'
+
+    // Scenarios
+    +'<div class="sc-section">'
+    +'<div class="sc-lbl">If the trade hits this price…</div>'
+    +'<div class="sc-grid">'+scHtml+'</div>'
+    +'</div>'
+
+    // Pro nudge
+    +'<div class="pro-nudge">'
+    +'<div class="pn-left"><div class="pn-title">Save and track this trade over time</div><div class="pn-sub">Journal, portfolio dashboard, and multi-position view in Pro</div></div>'
+    +'<button class="pn-btn" onclick="showProToast()">SEE PRO →</button>'
+    +'</div>';
+
+  return card;
+}
+
+function showProToast() {
+  var existing = document.getElementById('pro-toast');
+  if (existing) existing.remove();
+  var toast = document.createElement('div');
+  toast.id = 'pro-toast';
+  toast.className = 'pro-toast';
+  toast.innerHTML = '<strong>Pro is launching soon</strong> — journal, saved trades, and the full dashboard.';
+  document.body.appendChild(toast);
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){ toast.classList.add('show'); });
+  });
+  setTimeout(function(){
+    toast.classList.remove('show');
+    setTimeout(function(){ toast.remove(); }, 300);
+  }, 2800);
+}
+
+// ── LIVE PRICE FETCH ───────────────────────────────────
+// ── TICKER CHANGE HANDLING ──────────────────────────────
+// When the ticker actually changes to a different symbol, the old premium
+// and IV are almost certainly wrong for the new stock (e.g. $3.80 premium
+// made sense for a $215 stock, not a $40 one) — clear them so the user is
+// prompted to enter real numbers rather than accidentally building a card
+// with mismatched, misleading values.
+// ── KEYBOARD FLOW ────────────────────────────────────────
+// Enter advances to the next field in the natural fill order, and
+// finally triggers the build — mirrors how Typeform/Stripe-style forms
+// let you move through everything without reaching for the mouse.
+function onEnterFocusNext(e, nextId) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (nextId) {
+      document.getElementById(nextId).focus();
+    } else {
+      showCard();
+    }
+  }
+}
+
+// Removes the "fill me next" glow the moment the user starts typing a value
+function clearNeedsInput(el) {
+  el.classList.remove('needs-input');
+}
+
+function onTickerBlur(el) {
+  var newTicker = (el.value || '').trim().toUpperCase();
+  if (newTicker && newTicker !== lastTickerCommitted) {
+    var premEl = document.getElementById('e-prem');
+    var ivEl = document.getElementById('e-iv');
+    premEl.value = '';
+    ivEl.value = '';
+    // Glow tells the eye exactly where to go next — these two fields now need real numbers
+    premEl.classList.add('needs-input');
+    ivEl.classList.add('needs-input');
+    // Strike isn't empty, but it's now stale for the new stock — flag it for a glance too
+    document.getElementById('e-strike-section').classList.add('needs-check');
+  }
+  lastTickerCommitted = newTicker;
+  fetchPrice(newTicker, true); // true = genuine ticker change, reset strike to a sensible default
+}
+
+function fetchPrice(ticker, resetStrikeDefault) {
+  ticker = (ticker||'').trim().toUpperCase();
+  if (!ticker || ticker.length < 1) return Promise.resolve(null);
+  var stockEl = document.getElementById('e-stock');
+  // Matches your existing server.js route: app.get('/api/price/:symbol', ...)
+  return fetch('/api/price/' + encodeURIComponent(ticker))
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var price = data.price;
+      if (price && price > 0) {
+        stockEl.value = price.toFixed(2);
+        updateStrikeRange(price);
+        var isCall = strat.endsWith('call');
+        var outOfRange = strikeVal < strikeMin || strikeVal > strikeMax;
+        if (resetStrikeDefault) {
+          // Genuine new ticker — old strike is stale/irrelevant, pick a sensible default near the new price
+          strikeVal = Math.max(strikeMin, Math.min(strikeMax,
+            Math.round(price * (isCall ? 1.03 : 0.97) / 5) * 5));
+        } else if (outOfRange) {
+          // Same ticker, just re-checking price — only nudge the strike if it's now literally
+          // outside the valid range; otherwise leave whatever the user manually set alone.
+          strikeVal = Math.max(strikeMin, Math.min(strikeMax,
+            Math.round(price * (isCall ? 1.03 : 0.97) / 5) * 5));
+        }
+        updateSliderUI();
+      }
+      return price;
+    })
+    .catch(function(){ return null; /* silent fail — whatever's in the field stays as-is */ });
+}
+
+// ── REBUILD ────────────────────────────────────────────
+// rebuild() — kept for any legacy calls, but card only shows on CTA click
+function rebuild() { /* intentionally empty — card builds on showCard() */ }
+
+// ── STRATEGY SWITCH ────────────────────────────────────
+function setStrat(v) {
+  strat=v;
+  document.querySelectorAll('.pill').forEach(function(b){
+    b.classList.toggle('on',b.dataset.v===v);
+  });
+  var stock=parseFloat(document.getElementById('e-stock').value)||215;
+  var isCall=v.endsWith('call');
+  strikeVal=Math.round(stock*(isCall?1.03:0.97)/5)*5;
+  strikeVal=Math.max(strikeMin,Math.min(strikeMax,strikeVal));
+  updateSliderUI();
+  updateStrikeDisplay();
+}
+
+// ── CARD REVEAL ────────────────────────────────────────
+function showCard() {
+  var ticker = document.getElementById('e-ticker').value.trim();
+  var cta = document.getElementById('e-cta');
+
+  function buildAndReveal() {
+    var t = getPosition();
+    if (!t) return;
+
+    var cardEl   = document.getElementById('e-card');
+    var wrap     = document.getElementById('e-card-wrap');
+    var slide    = document.getElementById('e-card-slide');
+    var controls = document.getElementById('e-controls');
+
+    // Build card
+    cardEl.innerHTML = '';
+    cardEl.appendChild(renderCard(t));
+    controls.style.display = 'flex';
+
+    // Reset classes so animation replays each time
+    wrap.classList.remove('revealed');
+    slide.classList.remove('revealed');
+
+    // Force browser to register the reset before adding classes back
+    void wrap.offsetHeight;
+
+    // Trigger the reveal — clip-path opens top-to-bottom (card slides from behind entry form)
+    wrap.classList.add('revealed');
+    requestAnimationFrame(function() {
+      slide.classList.add('revealed');
+    });
+
+    // Scroll card into view once the reveal is well underway
+    setTimeout(function() {
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 1800);
+
+    // Pulse CTA to confirm
+    cta.classList.remove('glow');
+    void cta.offsetWidth;
+    cta.classList.add('glow');
+    setTimeout(function() { cta.classList.remove('glow'); }, 1000);
+
+    cta.disabled = false;
+    cta.textContent = 'See my trade →';
+  }
+
+  if (ticker) {
+    // Re-fetch the latest price for this ticker before building — same button, always current data.
+    // Brief disabled state prevents double-clicks from firing overlapping fetches.
+    cta.disabled = true;
+    cta.textContent = 'Checking price…';
+    fetchPrice(ticker).then(buildAndReveal).catch(buildAndReveal);
+  } else {
+    buildAndReveal();
+  }
+}
+
+function newTrade() {
+  var wrap     = document.getElementById('e-card-wrap');
+  var slide    = document.getElementById('e-card-slide');
+  var controls = document.getElementById('e-controls');
+
+  // Reverse the reveal
+  slide.classList.remove('revealed');
+  setTimeout(function() { wrap.classList.remove('revealed'); }, 80);
+  setTimeout(function() { controls.style.display = 'none'; }, 500);
+
+  // Clear fields
+  document.getElementById('e-ticker').value    = '';
+  document.getElementById('e-stock').value     = '';
+  document.getElementById('e-prem').value      = '';
+  document.getElementById('e-contracts').value = '';
+  document.getElementById('e-iv').value        = '';
+
+  // Show cursor again
+  var cursor = document.getElementById('e-cursor');
+  if (cursor) cursor.style.display = '';
+
+  // Reset strike
+  strikeVal = 200;
+  updateStrikeRange(215);
+  updateSliderUI();
+  updateStrikeDisplay();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(function() { document.getElementById('e-ticker').focus(); }, 300);
+}
+
+function editTrade() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(function() { document.getElementById('e-ticker').focus(); }, 300);
+}
+
+// ── TYPEWRITER INTRO ───────────────────────────────────
+function typewriterInit() {
+  var ticker  = document.getElementById('e-ticker');
+  var cursor  = document.getElementById('e-cursor');
+
+  // Type AAPL one character at a time using recursive setTimeout (no closure bugs)
+  var text = 'AAPL', idx = 0;
+  function typeNext() {
+    ticker.value = text.substring(0, idx + 1);
+    idx++;
+    if (idx < text.length) {
+      setTimeout(typeNext, 155);
+    } else {
+      // Typing done — hide cursor, fill rest of form, show card
+      cursor.style.display = 'none';
+
+      // Set field values directly (simple and reliable)
+      setTimeout(function() {
+        document.getElementById('e-stock').value     = '215.40';
+        document.getElementById('e-prem').value      = '3.80';
+        document.getElementById('e-contracts').value = '1';
+        document.getElementById('e-iv').value        = '22';
+        lastTickerCommitted = 'AAPL'; // matches the auto-filled ticker so an unchanged blur doesn't wipe these
+
+        // Pulse CTA to say "click me"
+        setTimeout(function() {
+          var cta = document.getElementById('e-cta');
+          cta.classList.add('glow');
+          setTimeout(function() { cta.classList.remove('glow'); }, 1000);
+        }, 200);
+
+        // Build and reveal the AAPL card
+        setTimeout(function() { showCard(); }, 600);
+      }, 180);
+    }
+  }
+  setTimeout(typeNext, 500);
+}
+
+// ── INIT ───────────────────────────────────────────────
+(function init(){
+  // Set up expiry strip, default to Aug 21 2026
+  var target=new Date(2026,7,21);
+  selDate=EXPIRIES.reduce(function(best,d){
+    return Math.abs(d-target)<Math.abs(best-target)?d:best;
+  },EXPIRIES[0]);
+  document.getElementById('e-dte-label').textContent=
+    Math.round((selDate-TODAY)/86400000)+'d';
+  buildStrip();
+
+  // Set up strike slider around AAPL ~$215
+  updateStrikeRange(215.40);
+  strikeVal=205;
+  updateSliderUI();
+
+  // Kick off typewriter — types AAPL, fills form, shows card
+  typewriterInit();
+})();
+</script>
+</body>
+</html>

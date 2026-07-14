@@ -37,8 +37,13 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(__dirname));
 
-// ── Root ──────────────────────────────────────────────
+// ── Root — new quick-entry landing page ────────────────
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'smt-landing-v14.html'));
+});
+
+// ── Scan tool — existing multi-position dashboard ──────
+app.get('/scan', (req, res) => {
   res.sendFile(path.join(__dirname, 'options-desk-mvp.html'));
 });
 
@@ -196,11 +201,12 @@ app.get('/api/earnings/:symbol', (req, res) => {
 // ── Start ─────────────────────────────────────────────
 app.listen(PORT, () => {
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
+  const hasPriceKey = !!process.env.TWELVE_DATA_API_KEY;
   console.log('\n  ╔══════════════════════════════════════╗');
   console.log('  ║         SCAN MY TRADE  v1.0          ║');
   console.log('  ╚══════════════════════════════════════╝\n');
   console.log(`  ✓  Running at  http://localhost:${PORT}`);
-  console.log(`  ${hasKey?'✓':'✗'}  API key  ${hasKey?'configured ✓':'MISSING — add to .env'}`);
-  console.log(`  ✓  Prices via Yahoo Finance\n`);
+  console.log(`  ${hasKey?'✓':'✗'}  Anthropic key  ${hasKey?'configured ✓':'MISSING — add ANTHROPIC_API_KEY to .env'}`);
+  console.log(`  ${hasPriceKey?'✓':'✗'}  Twelve Data key  ${hasPriceKey?'configured ✓':'MISSING — add TWELVE_DATA_API_KEY to .env'}\n`);
   console.log(`  Open →  http://localhost:${PORT}\n`);
 });
