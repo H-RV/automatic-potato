@@ -199,6 +199,23 @@ app.get('/api/earnings/:symbol', (req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────
+app.get('/api/price', async (req, res) => {
+  const ticker = req.query.ticker;
+  if (!ticker) return res.status(400).json({ error: 'No ticker provided' });
+  try {
+    const apiKey = process.env.TWELVE_DATA_API_KEY;
+    const response = await fetch(`https://api.twelvedata.com/price?symbol=${ticker}&apikey=${apiKey}`);
+    const data = await response.json();
+    if (data.price) {
+      res.json({ price: parseFloat(data.price), ticker: ticker.toUpperCase() });
+    } else {
+      res.status(404).json({ error: 'Price not found', detail: data });
+    }
+  } catch (e) {
+    res.status(500).json({ error: 'Fetch failed', detail: e.message });
+  }
+});
+
 app.listen(PORT, () => {
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
   const hasPriceKey = !!process.env.TWELVE_DATA_API_KEY;
