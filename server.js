@@ -150,6 +150,7 @@ function fetchPrice(symbol, callback) {
 }
 
 app.get('/api/price/:symbol', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
   const symbol = req.params.symbol.toUpperCase();
   fetchPrice(symbol, price => {
     res.json({ symbol, price, source: price ? 'twelvedata' : 'unavailable' });
