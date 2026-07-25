@@ -249,7 +249,6 @@ app.get('/api/iv/:symbol', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-});
 app.listen(PORT, () => {
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
   const hasPriceKey = !!process.env.TWELVE_DATA_API_KEY;
