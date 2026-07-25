@@ -226,21 +226,29 @@ app.get('/api/iv/:symbol', async (req, res) => {
       { headers: { 'X-Api-Key': process.env.FLASHALPHA_KEY } }
     );
     const data = await response.json();
-    if (data.error || !data.atm_iv) {
-      return res.status(404).json({ error: 'No data returned', raw: data });
-    }
+    const vol = data.volatility || {};
+    const mac = data.macro || {};
+    const exp = data.exposure || {};
+    const px = data.price || {};
     res.json({
       symbol: sym,
-      iv: parseFloat((data.atm_iv * 100).toFixed(1)),
-      ivr: parseFloat(data.iv_rank.toFixed(1)),
-      ivp: parseFloat(data.iv_percentile.toFixed(1)),
-      hv20: parseFloat((data.hv20 * 100).toFixed(1)),
-      iv_high: parseFloat((data.iv_high_52w * 100).toFixed(1)),
-      iv_low: parseFloat((data.iv_low_52w * 100).toFixed(1))
+      price: px.last || px.mid || null,
+      iv: vol.atm_iv || null,
+      hv20: vol.hv_20 || null,
+      hv60: vol.hv_60 || null,
+      vrp: vol.vrp || null,
+      vix: mac.vix ? mac.vix.value : null,
+      gamma_flip: exp.gamma_flip || null,
+      gamma_regime: exp.regime || null,
+      call_wall: exp.call_wall || null,
+      put_wall: exp.put_wall || null,
+      pc_ratio: data.options_flow ? data.options_flow.pc_ratio_oi : null,
+      as_of: data.as_of || null
     });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
+});
 });
 app.listen(PORT, () => {
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
