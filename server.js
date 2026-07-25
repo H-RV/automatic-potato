@@ -258,15 +258,41 @@ app.get('/api/ema/:symbol', async (req, res) => {
     const url = `https://api.twelvedata.com/ema?symbol=${sym}&interval=1day&time_period=21&outputsize=10&apikey=${key}`;
     const response = await fetch(url);
     const data = await response.json();
-
-    // Debug: return raw so we can see the structure
     if (!data.values || !data.values.length) {
       return res.status(404).json({ error: 'No EMA data', raw: data });
     }
-
-    // Return raw first value so we can see the field names
-    return res.json({ debug: true, sample: data.values[0], allKeys: Object.keys(data.values[0]) });
-
+    const emaToday = parseFloat(data.values[0].ema);
+    const ema5ago = parseFloat(data.values[5].ema);
+    const priceResp = await fetch(`https://api.twelvedata.com/price?symbol=${sym}&apikey=${key}`);
+    const priceData = await priceResp.json();
+    const price = parseFloat(priceData.price);
+    const diff = emaToday - ema5ago;
+    const pctDiff = (diff / ema5ago) * 100;
+    const slope = pctDiff > 0.15 ? 'rising' : pctDiff < -0.15 ? 'declining' : 'flat';
+    const position = price > emaToday ? 'above' : 'below';
+    const regimeMap = {
+      'above-rising': 'ar', 'above-flat': 'af', 'above-declining': 'ad',
+      'below-rising': 'br', 'below-flat': 'br', 'below-declining': 'bd'
+    };
+    const regime = regimeMap[position + '-' + slope] || 'af';
+    const descriptions = {
+      ar: `${sym} $${price.toFixed(2)} — above rising EMA ($${emaToday.toFixed(2)}). Uptrend confirmed. BPS full size.`,
+      af: `${sym} $${price.toFixed(2)} — above flat EMA ($${emaToday.toFixed(2)}). Ranging market. IC conditions.`,
+      ad: `${sym} $${price.toFixed(2)} — above declining EMA ($${emaToday.toFixed(2)}). Warning — rolling over. Half size, favour BCS.`,
+      br: `${sym} $${price.toFixed(2)} — below flat/rising EMA ($${emaToday.toFixed(2)}). Pullback not trend. BPS half size only.`,
+      bd: `${sym} $${price.toFixed(2)} — below declining EMA ($${emaToday.toFixed(2)}). Downtrend confirmed. BCS only. No BPS.`,
+    };
+    res.json({
+      symbol: sym,
+      price: price,
+      ema21: emaToday,
+      ema5ago: ema5ago,
+      slope: slope,
+      position: position,
+      regime: regime,
+      description: descriptions[regime],
+      as_of: data.values[0].datetime
+    });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
