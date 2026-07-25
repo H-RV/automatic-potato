@@ -258,52 +258,15 @@ app.get('/api/ema/:symbol', async (req, res) => {
     const url = `https://api.twelvedata.com/ema?symbol=${sym}&interval=1day&time_period=21&outputsize=10&apikey=${key}`;
     const response = await fetch(url);
     const data = await response.json();
+
+    // Debug: return raw so we can see the structure
     if (!data.values || !data.values.length) {
       return res.status(404).json({ error: 'No EMA data', raw: data });
     }
-    // values[0] = most recent, values[5] = 5 days ago
-    const emaToday = parseFloat(data.values[0].value);
-    const ema5ago = parseFloat(data.values[5].value);
-    const lastPriceUrl = `https://api.twelvedata.com/price?symbol=${sym}&apikey=${key}`;
-    const priceResp = await fetch(lastPriceUrl);
-    const priceData = await priceResp.json();
-    const price = parseFloat(priceData.price);
-    // Determine slope
-    const diff = emaToday - ema5ago;
-    const pctDiff = (diff / ema5ago) * 100;
-    const slope = pctDiff > 0.15 ? 'rising' : pctDiff < -0.15 ? 'declining' : 'flat';
-    // Determine position
-    const position = price > emaToday ? 'above' : 'below';
-    // Map to regime
-    const regimeMap = {
-      'above-rising': 'ar',
-      'above-flat': 'af',
-      'above-declining': 'ad',
-      'below-rising': 'br',
-      'below-declining': 'bd',
-      'below-flat': 'br'
-    };
-    const regimeKey = position + '-' + slope;
-    const regime = regimeMap[regimeKey] || 'af';
-    // Plain English description
-    const descriptions = {
-      ar: `${sym} at $${price.toFixed(2)} is above a rising 21 EMA at $${emaToday.toFixed(2)}. Uptrend confirmed — bull put spreads at full size.`,
-      af: `${sym} at $${price.toFixed(2)} is above a flat 21 EMA at $${emaToday.toFixed(2)}. Market ranging — iron condor conditions.`,
-      ad: `${sym} at $${price.toFixed(2)} is above a declining 21 EMA at $${emaToday.toFixed(2)}. Warning — EMA rolling over. Half size, favour bear calls.`,
-      br: `${sym} at $${price.toFixed(2)} is below a flat/rising 21 EMA at $${emaToday.toFixed(2)}. Pullback not trend change — bull puts at half size only.`,
-      bd: `${sym} at $${price.toFixed(2)} is below a declining 21 EMA at $${emaToday.toFixed(2)}. Downtrend confirmed — bear call spreads only. No bull puts.`,
-    };
-    res.json({
-      symbol: sym,
-      price: price,
-      ema21: parseFloat(emaToday.toFixed(2)),
-      ema5ago: parseFloat(ema5ago.toFixed(2)),
-      slope: slope,
-      position: position,
-      regime: regime,
-      description: descriptions[regime] || descriptions.af,
-      as_of: data.values[0].datetime
-    });
+
+    // Return raw first value so we can see the field names
+    return res.json({ debug: true, sample: data.values[0], allKeys: Object.keys(data.values[0]) });
+
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
