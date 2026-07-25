@@ -216,7 +216,32 @@ app.get('/api/price', async (req, res) => {
     res.status(500).json({ error: 'Fetch failed', detail: e.message });
   }
 });
-
+// FlashAlpha IV + IVR endpoint
+app.get('/api/iv/:symbol', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  const sym = req.params.symbol.toUpperCase();
+  try {
+    const response = await fetch(
+      `https://lab.flashalpha.com/v1/stock/${sym}/summary`,
+      { headers: { 'X-Api-Key': process.env.FLASHALPHA_KEY } }
+    );
+    const data = await response.json();
+    if (data.error || !data.atm_iv) {
+      return res.status(404).json({ error: 'No data returned', raw: data });
+    }
+    res.json({
+      symbol: sym,
+      iv: parseFloat((data.atm_iv * 100).toFixed(1)),
+      ivr: parseFloat(data.iv_rank.toFixed(1)),
+      ivp: parseFloat(data.iv_percentile.toFixed(1)),
+      hv20: parseFloat((data.hv20 * 100).toFixed(1)),
+      iv_high: parseFloat((data.iv_high_52w * 100).toFixed(1)),
+      iv_low: parseFloat((data.iv_low_52w * 100).toFixed(1))
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 app.listen(PORT, () => {
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
   const hasPriceKey = !!process.env.TWELVE_DATA_API_KEY;
