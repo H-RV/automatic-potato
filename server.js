@@ -297,6 +297,41 @@ app.get('/api/ema/:symbol', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+// Chart data endpoint — price history + 21 EMA
+app.get('/api/chart/:symbol', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  const sym = req.params.symbol.toUpperCase();
+  try {
+    const key = process.env.TWELVE_DATA_API_KEY;
+    const url = `https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=30&apikey=${key}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    if (!data.values || !data.values.length) {
+      return res.status(404).json({ error: 'No data', raw: data });
+    }
+    // Values come newest first — reverse to oldest first for charting
+    const closes = data.values.reverse().map(v => ({
+      date: v.datetime,
+      close: parseFloat(v.close)
+    }));
+    // Calculate 21 EMA
+    const period = 21;
+    const k = 2 / (period + 1);
+    let ema = closes[0].close;
+    const result = closes.map((bar, i) => {
+      if (i === 0) { ema = bar.close; }
+      else { ema = bar.close * k + ema * (1 - k); }
+      return {
+        date: bar.date,
+        close: parseFloat(bar.close.toFixed(2)),
+        ema21: parseFloat(ema.toFixed(2))
+      };
+    });
+    res.json({ symbol: sym, data: result });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 app.listen(PORT, () => {
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
   const hasPriceKey = !!process.env.TWELVE_DATA_API_KEY;
