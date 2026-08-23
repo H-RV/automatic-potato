@@ -366,12 +366,81 @@ app.get('/api/fundamentals/:symbol', async (req, res) => {
   }
 });
 
-// ── GARCH(1,1) vol regime signal ──────────────────────
-// Shown as the 4th session-bar indicator in Backbone Pro. Spawns
-// garch_model.py (must sit alongside server.js) on 252 days of Twelve
-// Data closes. Requires python3 + numpy + scipy in the deploy container —
-// see nixpacks.toml.
-const { spawn } = require('child_process');
+// ── GARCH(1,1) vol regime signal — pure JS, no external deps ──
+// Shown as the 4th session-bar indicator in Backbone Pro. Originally shelled
+// out to a Python script, which needed python3/numpy/scipy in the deploy
+// container — Railway's current builder (Railpack) doesn't support that
+// cleanly, so this is a JS reimplementation instead. Trades a little
+// statistical precision for zero runtime dependencies.
+function garchLogReturns(closes) {
+  const r = [];
+  for (let i = 1; i < closes.length; i++) r.push(Math.log(closes[i] / closes[i - 1]));
+  return r;
+}
+function garchVariance(arr) {
+  const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+  return arr.reduce((a, b) => a + (b - mean) ** 2, 0) / arr.length;
+}
+function garchLogLik(r, omega, alpha, beta) {
+  let sigma2 = garchVariance(r);
+  let ll = 0;
+  for (let t = 0; t < r.length; t++) {
+    if (t > 0) sigma2 = omega + alpha * r[t - 1] ** 2 + beta * sigma2;
+    if (sigma2 <= 0) return -Infinity;
+    ll += -0.5 * (Math.log(2 * Math.PI * sigma2) + (r[t] ** 2) / sigma2);
+  }
+  return ll;
+}
+function fitGarch11(r) {
+  const varR = garchVariance(r);
+  let best = { alpha: 0.08, beta: 0.88, ll: -Infinity };
+  for (let alpha = 0.02; alpha <= 0.30; alpha += 0.02) {
+    for (let beta = 0.50; beta <= 0.97; beta += 0.02) {
+      if (alpha + beta >= 0.999) continue;
+      const omega = varR * (1 - alpha - beta);
+      if (omega <= 0) continue;
+      const ll = garchLogLik(r, omega, alpha, beta);
+      if (ll > best.ll) best = { alpha, beta, ll };
+    }
+  }
+  const a0 = best.alpha, b0 = best.beta;
+  for (let alpha = Math.max(0.001, a0 - 0.02); alpha <= a0 + 0.02; alpha += 0.002) {
+    for (let beta = Math.max(0.001, b0 - 0.02); beta <= Math.min(0.998, b0 + 0.02); beta += 0.002) {
+      if (alpha + beta >= 0.999) continue;
+      const omega = varR * (1 - alpha - beta);
+      if (omega <= 0) continue;
+      const ll = garchLogLik(r, omega, alpha, beta);
+      if (ll > best.ll) best = { alpha, beta, ll };
+    }
+  }
+  const omega = varR * (1 - best.alpha - best.beta);
+  return { omega, alpha: best.alpha, beta: best.beta };
+}
+function garchRegime(closes) {
+  if (closes.length < 60) return { error: 'need at least 60 closes for a stable GARCH fit' };
+  const r = garchLogReturns(closes);
+  const { omega, alpha, beta } = fitGarch11(r);
+  let sigma2 = garchVariance(r);
+  const sigma2Path = [sigma2];
+  for (let t = 1; t < r.length; t++) {
+    sigma2 = omega + alpha * r[t - 1] ** 2 + beta * sigma2;
+    sigma2Path.push(sigma2);
+  }
+  const forecastVar = omega + alpha * r[r.length - 1] ** 2 + beta * sigma2Path[sigma2Path.length - 1];
+  const currentVolAnnualised = Math.sqrt(sigma2Path[sigma2Path.length - 1] * 252) * 100;
+  const forecastVolAnnualised = Math.sqrt(forecastVar * 252) * 100;
+  const longRunVar = (alpha + beta) < 1 ? omega / (1 - alpha - beta) : garchVariance(sigma2Path);
+  const longRunVol = Math.sqrt(longRunVar * 252) * 100;
+  const ratio = longRunVol > 0 ? forecastVolAnnualised / longRunVol : 1;
+  const regime = ratio < 0.85 ? 'low_vol' : ratio > 1.25 ? 'high_vol' : 'transitioning';
+  return {
+    regime,
+    forecast: Math.round(forecastVolAnnualised * 100) / 100,
+    current_vol: Math.round(currentVolAnnualised * 100) / 100,
+    long_run_vol: Math.round(longRunVol * 100) / 100
+  };
+}
+
 app.get('/api/garch/:symbol', async (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   const sym = req.params.symbol.toUpperCase();
@@ -384,35 +453,9 @@ app.get('/api/garch/:symbol', async (req, res) => {
     const data = await resp.json();
     if (!data.values) throw new Error('no price history from Twelve Data');
     const closes = data.values.map(v => parseFloat(v.close)).reverse();
-
-    const py = spawn('python3', [path.join(__dirname, 'garch_model.py')]);
-    let out = '', err = '', responded = false;
-    py.on('error', spawnErr => {
-      // e.g. ENOENT — python3 not installed in this container. Without this
-      // handler, an unhandled 'error' event crashes the whole Node process,
-      // taking every other route down with it — not just this one.
-      if (responded) return;
-      responded = true;
-      console.log('garch spawn failed:', spawnErr.message);
-      res.status(503).json({ error: 'python3 not available on server', detail: spawnErr.message });
-    });
-    py.stdin.write(JSON.stringify({ closes }));
-    py.stdin.end();
-    py.stdout.on('data', d => out += d);
-    py.stderr.on('data', d => err += d);
-    py.on('close', code => {
-      if (responded) return;
-      responded = true;
-      if (code !== 0) {
-        console.log('garch_model.py failed:', err);
-        return res.status(502).json({ error: 'garch calc failed' });
-      }
-      try {
-        res.json(JSON.parse(out));
-      } catch (e) {
-        res.status(502).json({ error: 'garch output unparsable' });
-      }
-    });
+    const result = garchRegime(closes);
+    if (result.error) return res.status(422).json(result);
+    res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
