@@ -386,12 +386,23 @@ app.get('/api/garch/:symbol', async (req, res) => {
     const closes = data.values.map(v => parseFloat(v.close)).reverse();
 
     const py = spawn('python3', [path.join(__dirname, 'garch_model.py')]);
-    let out = '', err = '';
+    let out = '', err = '', responded = false;
+    py.on('error', spawnErr => {
+      // e.g. ENOENT — python3 not installed in this container. Without this
+      // handler, an unhandled 'error' event crashes the whole Node process,
+      // taking every other route down with it — not just this one.
+      if (responded) return;
+      responded = true;
+      console.log('garch spawn failed:', spawnErr.message);
+      res.status(503).json({ error: 'python3 not available on server', detail: spawnErr.message });
+    });
     py.stdin.write(JSON.stringify({ closes }));
     py.stdin.end();
     py.stdout.on('data', d => out += d);
     py.stderr.on('data', d => err += d);
     py.on('close', code => {
+      if (responded) return;
+      responded = true;
       if (code !== 0) {
         console.log('garch_model.py failed:', err);
         return res.status(502).json({ error: 'garch calc failed' });
