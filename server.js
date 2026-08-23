@@ -132,7 +132,6 @@ function fetchPrice(symbol, callback) {
     res.on('end', () => {
       try {
         const parsed = JSON.parse(data);
-        // Twelve Data returns { price: "417.85" } or { code: 400, message: "..." }
         const price = parsed?.price ? +parseFloat(parsed.price).toFixed(2) : null;
         console.log(`Price ${symbol}: ${price} (status: ${res.statusCode})`);
         callback(price);
@@ -199,7 +198,7 @@ app.get('/api/earnings/:symbol', (req, res) => {
   }).on('error', () => res.json({ symbol, earningsDate: null }));
 });
 
-// ── Start ─────────────────────────────────────────────
+// ── Price via query param (legacy) ────────────────────
 app.get('/api/price', async (req, res) => {
   const ticker = req.query.ticker;
   if (!ticker) return res.status(400).json({ error: 'No ticker provided' });
@@ -216,14 +215,15 @@ app.get('/api/price', async (req, res) => {
     res.status(500).json({ error: 'Fetch failed', detail: e.message });
   }
 });
-// FlashAlpha IV + IVR endpoint
+
+// ── FlashAlpha IV + volatility data ──────────────────
 app.get('/api/iv/:symbol', async (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   const sym = req.params.symbol.toUpperCase();
   try {
     const response = await fetch(
       `https://lab.flashalpha.com/v1/stock/${sym}/summary`,
-      { headers: { 'X-Api-Key': process.env.FLASHALPHA_KEY } }
+      { headers: { 'X-Api-Key': process.env.flashalpha_trial } }
     );
     const data = await response.json();
     const vol = data.volatility || {};
@@ -236,7 +236,6 @@ app.get('/api/iv/:symbol', async (req, res) => {
       iv: vol.atm_iv || null,
       hv20: vol.hv_20 || null,
       hv60: vol.hv_60 || null,
-      vrp: vol.vrp || null,
       vix: mac.vix ? mac.vix.value : null,
       gamma_flip: exp.gamma_flip || null,
       gamma_regime: exp.regime || null,
@@ -249,7 +248,8 @@ app.get('/api/iv/:symbol', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-// EMA 21 endpoint
+
+// ── EMA 21 endpoint ───────────────────────────────────
 app.get('/api/ema/:symbol', async (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   const sym = req.params.symbol.toUpperCase();
@@ -297,7 +297,8 @@ app.get('/api/ema/:symbol', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-// Chart data endpoint — price history + 21 EMA
+
+// ── Chart data — price history + 21 EMA ──────────────
 app.get('/api/chart/:symbol', async (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   const sym = req.params.symbol.toUpperCase();
@@ -309,12 +310,10 @@ app.get('/api/chart/:symbol', async (req, res) => {
     if (!data.values || !data.values.length) {
       return res.status(404).json({ error: 'No data', raw: data });
     }
-    // Values come newest first — reverse to oldest first for charting
     const closes = data.values.reverse().map(v => ({
       date: v.datetime,
       close: parseFloat(v.close)
     }));
-    // Calculate 21 EMA
     const period = 21;
     const k = 2 / (period + 1);
     let ema = closes[0].close;
@@ -332,6 +331,8 @@ app.get('/api/chart/:symbol', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// ── Start ─────────────────────────────────────────────
 app.listen(PORT, () => {
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
   const hasPriceKey = !!process.env.TWELVE_DATA_API_KEY;
