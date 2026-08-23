@@ -332,6 +332,81 @@ app.get('/api/chart/:symbol', async (req, res) => {
   }
 });
 
+// ── Fundamentals + next earnings via Finnhub ──────────
+// Separate from the existing /api/earnings/:symbol (Yahoo-based, left
+// untouched above in case ScanMyTrade depends on its exact shape). This
+// route is what backbone-pro.html's single-ticker fundamentals panel calls.
+// Needs FINNHUB_API_KEY in Railway env vars (free tier: https://finnhub.io).
+app.get('/api/fundamentals/:symbol', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  const symbol = req.params.symbol.toUpperCase();
+  const key = process.env.FINNHUB_API_KEY;
+  if (!key) return res.status(503).json({ error: 'FINNHUB_API_KEY not configured' });
+
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const future = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10);
+    const calUrl = `https://finnhub.io/api/v1/calendar/earnings?from=${today}&to=${future}&symbol=${symbol}&token=${key}`;
+    const calResp = await fetch(calUrl);
+    const calData = await calResp.json();
+    const nextEarnings = (calData.earningsCalendar && calData.earningsCalendar[0])
+      ? calData.earningsCalendar[0].date
+      : null;
+
+    const metricUrl = `https://finnhub.io/api/v1/stock/metric?symbol=${symbol}&metric=all&token=${key}`;
+    const metricResp = await fetch(metricUrl);
+    const metricData = await metricResp.json();
+    const m = metricData.metric || {};
+    const epsGrowth = m.epsGrowthTTMYoy != null ? Math.round(m.epsGrowthTTMYoy * 10) / 10 : null;
+    const revenueGrowth = m.revenueGrowthTTMYoy != null ? Math.round(m.revenueGrowthTTMYoy * 10) / 10 : null;
+
+    res.json({ symbol, epsGrowth, revenueGrowth, nextEarnings });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── GARCH(1,1) vol regime signal ──────────────────────
+// Shown as the 4th session-bar indicator in Backbone Pro. Spawns
+// garch_model.py (must sit alongside server.js) on 252 days of Twelve
+// Data closes. Requires python3 + numpy + scipy in the deploy container —
+// see nixpacks.toml.
+const { spawn } = require('child_process');
+app.get('/api/garch/:symbol', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  const sym = req.params.symbol.toUpperCase();
+  const tdKey = process.env.TWELVE_DATA_API_KEY;
+  if (!tdKey) return res.status(503).json({ error: 'TWELVE_DATA_API_KEY not configured' });
+
+  try {
+    const url = `https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=252&apikey=${tdKey}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (!data.values) throw new Error('no price history from Twelve Data');
+    const closes = data.values.map(v => parseFloat(v.close)).reverse();
+
+    const py = spawn('python3', [path.join(__dirname, 'garch_model.py')]);
+    let out = '', err = '';
+    py.stdin.write(JSON.stringify({ closes }));
+    py.stdin.end();
+    py.stdout.on('data', d => out += d);
+    py.stderr.on('data', d => err += d);
+    py.on('close', code => {
+      if (code !== 0) {
+        console.log('garch_model.py failed:', err);
+        return res.status(502).json({ error: 'garch calc failed' });
+      }
+      try {
+        res.json(JSON.parse(out));
+      } catch (e) {
+        res.status(502).json({ error: 'garch output unparsable' });
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Start ─────────────────────────────────────────────
 app.listen(PORT, () => {
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
