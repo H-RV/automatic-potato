@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journal Upload — Test</title>
+<style>
+:root{
+  --bg0:#0d1117;--bg1:#161b22;--bg2:#21262d;--bg3:#2d333b;--border:#30363d;
+  --green:#3fb950;--green-dim:#0a2212;--green-bright:#56d364;
+  --red:#f85149;--red-dim:#2d0f0e;--amber:#e3b341;
+  --text:#e6edf3;--text-dim:#8b949e;--text-muted:#484f58;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg0);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;padding:24px;min-height:100vh}
+.app{max-width:640px;margin:0 auto}
+h1{font-size:18px;font-weight:600;margin-bottom:4px}
+.sub{font-size:13px;color:var(--text-muted);margin-bottom:20px}
+.drop{border:2px dashed var(--border);border-radius:10px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:20px}
+.drop:hover,.drop.over{border-color:var(--green);background:var(--green-dim)}
+.drop-label{font-size:14px;color:var(--text-dim);margin-bottom:4px}
+.drop-sub{font-size:12px;color:var(--text-muted)}
+input[type=file]{display:none}
+.status{font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:16px;min-height:18px}
+.result{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:16px;display:none}
+.result.show{display:block}
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.row:last-child{border-bottom:none}
+.row-label{color:var(--text-dim)}
+.row-val{font-weight:600;font-variant-numeric:tabular-nums}
+.pos{color:var(--green-bright)}.neg{color:var(--red)}
+.bucket-table{margin-top:8px}
+.bucket-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px}
+.bucket-name{color:var(--text-dim)}
+.warnings{margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
+.warn-title{font-size:11px;color:var(--text-muted);letter-spacing:.6px;margin-bottom:6px}
+.warn-item{font-size:11px;color:var(--amber);padding:3px 0;line-height:1.5}
+.error{color:var(--red);font-size:13px;padding:10px;background:var(--red-dim);border-radius:6px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Journal Upload — Test</h1>
+  <div class="sub">Drop an IBKR Activity Statement CSV to test /api/journal/upload</div>
+
+  <div class="drop" id="drop">
+    <div class="drop-label">Drop CSV here</div>
+    <div class="drop-sub">or click to browse</div>
+    <input type="file" id="fileInput" accept=".csv">
+  </div>
+
+  <div class="status" id="status"></div>
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+var drop = document.getElementById('drop');
+var fileInput = document.getElementById('fileInput');
+var statusEl = document.getElementById('status');
+var resultEl = document.getElementById('result');
+
+drop.addEventListener('click', function(){ fileInput.click(); });
+drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', function(){ drop.classList.remove('over'); });
+drop.addEventListener('drop', function(e){
+  e.preventDefault();
+  drop.classList.remove('over');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', function(e){
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  statusEl.textContent = 'Reading ' + file.name + '...';
+  resultEl.className = 'result';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    upload(e.target.result);
+  };
+  reader.onerror = function() {
+    statusEl.textContent = '';
+    showError('Could not read the file.');
+  };
+  reader.readAsText(file);
+}
+
+function upload(csvText) {
+  statusEl.textContent = 'Uploading...';
+  fetch('/api/journal/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: csvText
+  })
+  .then(function(r) {
+    if (!r.ok) return r.json().then(function(d){ throw new Error(d.error || ('HTTP ' + r.status)); });
+    return r.json();
+  })
+  .then(function(data) {
+    statusEl.textContent = '';
+    showResult(data);
+  })
+  .catch(function(err) {
+    statusEl.textContent = '';
+    showError(err.message);
+  });
+}
+
+function showError(msg) {
+  resultEl.className = 'result show';
+  resultEl.innerHTML = '<div class="error">' + msg + '</div>';
+}
+
+function showResult(data) {
+  resultEl.className = 'result show';
+  var html = '';
+  html += '<div class="row"><span class="row-label">New executions added</span><span class="row-val">' + data.newExecutionsAdded + '</span></div>';
+  html += '<div class="row"><span class="row-label">Total stored</span><span class="row-val">' + data.totalExecutionsStored + '</span></div>';
+  var netClass = data.netRealized >= 0 ? 'pos' : 'neg';
+  html += '<div class="row"><span class="row-label">Net realized</span><span class="row-val ' + netClass + '">$' + data.netRealized.toFixed(2) + '</span></div>';
+
+  html += '<div class="bucket-table">';
+  var buckets = Object.keys(data.byBucket).sort(function(a,b){ return data.byBucket[b] - data.byBucket[a]; });
+  for (var i = 0; i < buckets.length; i++) {
+    var b = buckets[i], v = data.byBucket[b];
+    var cls = v >= 0 ? 'pos' : 'neg';
+    html += '<div class="bucket-row"><span class="bucket-name">' + b + '</span><span class="' + cls + '">$' + v.toFixed(2) + '</span></div>';
+  }
+  html += '</div>';
+
+  if (data.warnings && data.warnings.length) {
+    html += '<div class="warnings"><div class="warn-title">WARNINGS (' + data.warnings.length + ')</div>';
+    for (var j = 0; j < data.warnings.length; j++) {
+      html += '<div class="warn-item">' + data.warnings[j] + '</div>';
+    }
+    html += '</div>';
+  }
+
+  resultEl.innerHTML = html;
+}
+</script>
+</body>
+</html>
