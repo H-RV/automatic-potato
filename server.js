@@ -19,6 +19,7 @@ const express = require('express');
 const path    = require('path');
 const fs      = require('fs');
 const https   = require('https');
+const { parseCsvRows, classifyExecutions } = require('./journal-parser');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -455,6 +456,94 @@ app.get('/api/garch/:symbol', async (req, res) => {
     const closes = data.values.map(v => parseFloat(v.close)).reverse();
     const result = garchRegime(closes);
     if (result.error) return res.status(422).json(result);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── TRADE JOURNAL — upload, storage, summary ──────────────────────────────
+// Storage lives on the Railway volume (survives redeploys) — falls back to
+// a local ./journal-data folder for testing on your Mac, where there's no
+// RAILWAY_VOLUME_MOUNT_PATH set.
+const JOURNAL_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'journal-data');
+const JOURNAL_FILE = path.join(JOURNAL_DIR, 'raw-data.json');
+
+function loadJournalStore() {
+  try {
+    if (!fs.existsSync(JOURNAL_FILE)) return { execs: [], realizedPnl: {}, sharesHeld: {} };
+    return JSON.parse(fs.readFileSync(JOURNAL_FILE, 'utf8'));
+  } catch (e) {
+    console.log('journal store read failed, starting fresh:', e.message);
+    return { execs: [], realizedPnl: {}, sharesHeld: {} };
+  }
+}
+
+function saveJournalStore(store) {
+  if (!fs.existsSync(JOURNAL_DIR)) fs.mkdirSync(JOURNAL_DIR, { recursive: true });
+  fs.writeFileSync(JOURNAL_FILE, JSON.stringify(store));
+}
+
+function execKey(e) {
+  return [e.contract, e.dt, e.qty, e.price].join('|');
+}
+
+app.post('/api/journal/upload', express.text({ type: '*/*', limit: '10mb' }), (req, res) => {
+  try {
+    const csvText = req.body;
+    if (!csvText || typeof csvText !== 'string') {
+      return res.status(400).json({ error: 'No CSV text received' });
+    }
+
+    const rows = parseCsvRows(csvText);
+    const tradeRows = rows.filter(r => r[0] === 'Trades' && r[1] === 'Data' && r[3] === 'Equity and Index Options');
+    const newExecs = tradeRows.map(r => ({
+      contract: r[5], dt: r[6], qty: parseFloat(r[7]), price: parseFloat(r[8]), code: r[15] || '',
+    }));
+
+    const realizedRows = rows.filter(r => r[0] === 'Realized & Unrealized Performance Summary' && r[1] === 'Data' && r[2] === 'Equity and Index Options');
+    const newRealized = {};
+    for (const r of realizedRows) newRealized[r[3]] = parseFloat(r[9]) || 0;
+
+    const openStockRows = rows.filter(r => r[0] === 'Open Positions' && r[1] === 'Data' && r[3] === 'Stocks');
+    const newShares = {};
+    for (const r of openStockRows) newShares[r[5]] = parseFloat(r[6]) || 0;
+
+    const store = loadJournalStore();
+    const existingKeys = new Set(store.execs.map(execKey));
+    let added = 0;
+    for (const e of newExecs) {
+      const k = execKey(e);
+      if (!existingKeys.has(k)) {
+        store.execs.push(e);
+        existingKeys.add(k);
+        added++;
+      }
+    }
+    Object.assign(store.realizedPnl, newRealized);
+    Object.assign(store.sharesHeld, newShares);
+
+    saveJournalStore(store);
+
+    const result = classifyExecutions(store.execs, store.realizedPnl, store.sharesHeld);
+
+    res.json({
+      newExecutionsAdded: added,
+      totalExecutionsStored: store.execs.length,
+      netRealized: result.netRealized,
+      byBucket: result.byBucket,
+      warnings: result.warnings,
+    });
+  } catch (e) {
+    console.log('journal upload failed:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/journal/summary', (req, res) => {
+  try {
+    const store = loadJournalStore();
+    const result = classifyExecutions(store.execs, store.realizedPnl, store.sharesHeld);
     res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
