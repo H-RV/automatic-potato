@@ -342,7 +342,7 @@ canvas{display:block;width:100%}
 
       <!-- EMA description -->
       <div id="ema-desc" style="display:none;font-size:var(--fs-2);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-sm);border-left:3px solid var(--border);background:var(--bg2);margin-bottom:var(--sp-3);line-height:1.6;color:var(--text-dim)">
-        <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:3px">SPY REGIME ANCHOR — 21 EMA</div>
+        <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:3px">REGIME — 21 EMA</div>
       </div>
       <!-- Price + EMA Chart -->
       <div id="price-chart-wrap" style="display:none;margin-bottom:var(--sp-3);background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-3)">
@@ -355,6 +355,13 @@ canvas{display:block;width:100%}
         </div>
         <canvas id="price-canvas" height="120" style="width:100%;display:block"></canvas>
         <div id="chart-footer" class="flex-c" style="font-size:var(--fs-1);color:var(--text-muted);margin-top:var(--sp-2);justify-content:space-between"></div>
+        <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-top:var(--sp-3);margin-bottom:2px">MACD HISTOGRAM</div>
+        <canvas id="macd-canvas" height="40" style="width:100%;display:block"></canvas>
+      </div>
+      <!-- Technical signals — MACD, Stochastic, Volume, alongside existing EMA trend -->
+      <div id="tech-signals" style="display:none;margin-bottom:var(--sp-3)">
+        <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">TECHNICAL SIGNALS</div>
+        <div class="flex-c gap-2" id="tech-signals-row" style="flex-wrap:wrap"></div>
       </div>
       <!-- Gamma context (SPY only) -->
       <div id="gamma-ctx" class="flex-c gap-4" style="display:none;font-size:var(--fs-1);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-sm);background:var(--bg2);border:1px solid var(--border);margin-bottom:var(--sp-3);flex-wrap:wrap"></div>
@@ -681,9 +688,11 @@ function renderChecklist() {
   }).join('');
 }
 
-// ── SESSION LOCK ──────────────────────────────────────────────────────────────
-// Locks the FETCH ALL 5 button after a successful fetch; unlocks at the next
-// ACST midnight (Australia/Darwin, matching the clock above).
+// ── SESSION FETCH TRACKING ──────────────────────────────────────────────────
+// No longer locks the button — HH has a paid FlashAlpha plan with real
+// quota headroom, so the once-a-day cap from the original build (written
+// when quota was assumed to be tight) was overly cautious. Still tracks
+// how many times you've fetched today, just informationally, not as a block.
 function getLockState() {
   try { return JSON.parse(localStorage.getItem('bp_fetch_lock')||'null'); } catch(e){ return null; }
 }
@@ -695,17 +704,19 @@ function applyLockUI() {
   var btn = document.getElementById('fetch-all-btn');
   var note = document.getElementById('fetch-all-status');
   if (!btn) return;
+  btn.disabled = false;
   var lock = getLockState();
-  if (lock && lock.day === acstMidnightKey()) {
-    btn.disabled = true;
-    note.innerHTML = '<span style="color:var(--text-muted)">Locked until midnight ACST — fetched '+lock.count+'/5 today</span>';
+  if (lock && lock.day === acstMidnightKey() && lock.count) {
+    note.innerHTML = '<span style="color:var(--text-muted)">Fetched '+lock.count+' time'+(lock.count===1?'':'s')+' today</span>';
   } else {
-    btn.disabled = false;
-    if (lock) note.textContent = '';
+    note.textContent = '';
   }
 }
 function setLock(count) {
-  try { localStorage.setItem('bp_fetch_lock', JSON.stringify({day:acstMidnightKey(), count:count})); } catch(e){}
+  var today = acstMidnightKey();
+  var existing = getLockState();
+  var runningCount = (existing && existing.day === today ? existing.count : 0) + 1;
+  try { localStorage.setItem('bp_fetch_lock', JSON.stringify({day:today, count:runningCount})); } catch(e){}
   applyLockUI();
 }
 
@@ -856,6 +867,46 @@ function renderStrip() {
   }).join('');
 }
 
+// ── REGIME BANNER — always reflects the CURRENTLY SELECTED pillar ───────────
+// Fixes a real bug: this banner used to only ever show SPY's regime (fetched
+// once in fetchAll), so switching to another pillar left SPY's stale read on
+// screen with no indication it was wrong — which caused a real mismatched
+// trade-type suggestion on GLD. Now it reads per-pillar stored data, and
+// shows an explicit "not detected" state rather than silently staying stale.
+var regimeColors = {ar:'var(--green)',af:'var(--blue)',ad:'var(--amber)',br:'#93c5fd',bd:'var(--red)'};
+function renderRegimeBanner(sym) {
+  var desc = document.getElementById('ema-desc');
+  var sel = document.getElementById('regime');
+  var rs = document.getElementById('regime-status');
+  if (!desc) return;
+  var d = pillarData[sym];
+
+  if (d && d.regime && d.ema21 != null) {
+    // We have a real, fresh regime reading for THIS pillar
+    var col = regimeColors[d.regime] || 'var(--text-dim)';
+    desc.style.display = 'block';
+    desc.style.borderLeftColor = col;
+    desc.innerHTML = '<div style="font-size:9px;color:var(--text-muted);letter-spacing:.8px;margin-bottom:3px">'+sym+' REGIME — 21 EMA</div>'
+      +'<span style="color:'+col+';font-weight:600">'+d.regimeDesc+'</span>'
+      +'<br><span style="color:var(--text-muted)">EMA today $'+d.ema21.toFixed(2)+' vs 5 days ago $'+d.ema5ago.toFixed(2)+' — slope '+d.slope+'. Verify on TradingView 1D chart.</span>';
+    if (sel) {
+      sel.value = d.regime;
+      onSessChange();
+    }
+    if (rs) { rs.textContent = '✓ auto-detected for '+sym; rs.style.background='var(--green-dim)'; rs.style.color='var(--green-bright)'; rs.style.borderColor='var(--green)'; rs.style.display='inline'; }
+  } else {
+    // No per-pillar regime on file (not yet fetched, or a manual-entry
+    // pillar like XLE/EEM that FETCH ALL 5 doesn't cover) — say so plainly
+    // instead of leaving a different ticker's old text on screen.
+    desc.style.display = 'block';
+    desc.style.borderLeftColor = 'var(--amber)';
+    desc.innerHTML = '<div style="font-size:9px;color:var(--text-muted);letter-spacing:.8px;margin-bottom:3px">'+sym+' REGIME — 21 EMA</div>'
+      +'<span style="color:var(--amber)">⚠ Not auto-detected for '+sym+'</span>'
+      +'<br><span style="color:var(--text-muted)">'+(AUTO_PILLARS.indexOf(sym)>=0 ? 'Click FETCH ALL 5 to pull it, or ' : 'This pillar is manual-entry only — ')+'select the regime manually below and verify on TradingView 1D.</span>';
+    if (rs) { rs.style.display = 'none'; }
+  }
+}
+
 function selectPillar(sym) {
   activePillar = sym;
   currentTT = null;
@@ -868,6 +919,7 @@ function selectPillar(sym) {
   document.getElementById('p-ivr').value = d.ivr || '';
   document.getElementById('p-fetch-msg').textContent = '';
   document.getElementById('p-open-contracts').value = d.openContracts || '';
+  renderRegimeBanner(sym);
   renderStrip();
   highlightIVR();
   renderT3Panel();
@@ -949,6 +1001,10 @@ async function fetchAndDrawChart(sym) {
     wrap.style.display = 'block';
     if (title) title.textContent = sym + ' — 30 DAYS + 21 EMA';
     drawPriceChart(d.data, sym);
+    if (d.signals) {
+      drawMacdHistogram(d.data);
+      renderTechSignals(d.signals, sym);
+    }
   } catch(e) {
     // Silently fail — chart is supplementary
   }
@@ -1070,6 +1126,74 @@ function drawPriceChart(data, sym) {
   }
 }
 
+// ── MACD HISTOGRAM STRIP ──────────────────────────────────────────────────────
+// Mirrors classic charting layout: price+EMA above, MACD histogram below —
+// green bars above zero (bullish momentum), red below (bearish).
+function drawMacdHistogram(data) {
+  var canvas = document.getElementById('macd-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.parentElement.clientWidth - 24;
+  if (W <= 0) W = 600;
+  canvas.width = W; canvas.height = 40;
+  ctx.clearRect(0, 0, W, 40);
+
+  var hist = data.map(function(d){ return d.macdHist; });
+  var maxAbs = Math.max.apply(null, hist.map(Math.abs)) || 0.01;
+  var n = data.length;
+  var barW = Math.max(1, (W - 8) / n - 1);
+
+  // zero line
+  ctx.strokeStyle = 'rgba(139,148,158,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, 20); ctx.lineTo(W, 20); ctx.stroke();
+
+  for (var i = 0; i < n; i++) {
+    var x = 4 + (i / (n - 1)) * (W - 8);
+    var v = hist[i];
+    var h = Math.max(1, Math.abs(v) / maxAbs * 18);
+    var y = v >= 0 ? 20 - h : 20;
+    ctx.fillStyle = v >= 0 ? 'rgba(63,185,80,0.75)' : 'rgba(248,81,73,0.75)';
+    ctx.fillRect(x - barW/2, y, barW, h);
+  }
+}
+
+// ── TECHNICAL SIGNALS ROW ─────────────────────────────────────────────────────
+// EMA trend (existing regime read) + MACD + Stochastic + Volume, as a single
+// glance-able row of colored dot+label chips.
+function renderTechSignals(signals, sym) {
+  var wrap = document.getElementById('tech-signals');
+  var row = document.getElementById('tech-signals-row');
+  if (!wrap || !row) return;
+  wrap.style.display = 'block';
+
+  function chipColor(state) {
+    if (state === 'bullish') return 'var(--green)';
+    if (state === 'bearish') return 'var(--red)';
+    return 'var(--text-muted)';
+  }
+  function chip(label, state, detail) {
+    var col = chipColor(state);
+    return '<div style="display:flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-pill);padding:4px 10px;font-size:var(--fs-1)">'
+      + '<span style="width:8px;height:8px;border-radius:50%;background:'+col+'"></span>'
+      + '<span style="color:var(--text-dim)">'+label+'</span>'
+      + (detail ? '<span style="color:'+col+'">'+detail+'</span>' : '')
+      + '</div>';
+  }
+
+  var html = '';
+  html += chip('EMA', signals.emaTrend, signals.emaTrend === 'bullish' ? 'above' : 'below');
+  html += chip('MACD', signals.macd, (signals.macdHistLatest >= 0 ? '+' : '') + signals.macdHistLatest.toFixed(2));
+  html += chip('Stoch', signals.stochastic, signals.stochKLatest != null ? signals.stochKLatest.toFixed(0) : '—');
+  html += chip('Volume', signals.volume, null);
+  row.innerHTML = html;
+
+  if (signals.volumeDivergenceWarning) {
+    row.innerHTML += '<div style="display:flex;align-items:center;gap:5px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:var(--r-pill);padding:4px 10px;font-size:var(--fs-1);color:var(--amber)">'
+      + '⚠ price up, volume falling — negative divergence</div>';
+  }
+}
+
 // Pillars that get auto-fetched (5 free calls)
 var AUTO_PILLARS = ['SPY','QQQ','GLD','IWM','XLF'];
 
@@ -1078,30 +1202,27 @@ async function fetchAll() {
   status.textContent = 'Fetching...';
   var count = 0;
 
-  // 1. Fetch EMA for SPY — sets regime and VIX
-  try {
-    var emaR = await fetch(RAILWAY_BASE + 'ema/SPY');
-    var ema = await emaR.json();
-    if (ema.ema21) {
-      // Auto-fill VIX if available (comes from /api/iv/ below)
-      // Show EMA description
-      var desc = document.getElementById('ema-desc');
-      var regimeColors = {ar:'var(--green)',af:'var(--blue)',ad:'var(--amber)',br:'#93c5fd',bd:'var(--red)'};
-      var col = regimeColors[ema.regime] || 'var(--text-dim)';
-      desc.style.display = 'block';
-      desc.style.borderLeftColor = col;
-      desc.innerHTML = '<div style="font-size:9px;color:var(--text-muted);letter-spacing:.8px;margin-bottom:3px">SPY REGIME ANCHOR — 21 EMA</div>'
-        +'<span style="color:'+col+';font-weight:600">'+ema.description+'</span>'
-        +'<br><span style="color:var(--text-muted)">EMA today $'+ema.ema21.toFixed(2)+' vs 5 days ago $'+ema.ema5ago.toFixed(2)+' — slope '+ema.slope+'. Verify on TradingView 1D chart.</span>';
-      // Auto-select regime
-      var sel = document.getElementById('regime');
-      if (sel) {
-        sel.value = ema.regime; onSessChange();
-        var rs = document.getElementById('regime-status');
-        if (rs) { rs.textContent = '✓ auto-detected'; rs.style.background='var(--green-dim)'; rs.style.color='var(--green-bright)'; rs.style.borderColor='var(--green)'; rs.style.display='inline'; }
-      }
-    }
-  } catch(e) {}
+  // 1. Fetch EMA regime for EVERY auto pillar (not just SPY) — each pillar's
+  // regime is stored separately so switching pillars shows the right one
+  // instead of carrying over whichever ticker was checked last.
+  var emaResults = await Promise.allSettled(
+    AUTO_PILLARS.map(function(sym) {
+      return fetch(RAILWAY_BASE + 'ema/' + sym).then(function(r){ return r.json(); }).then(function(d){ return {sym:sym, data:d}; });
+    })
+  );
+  emaResults.forEach(function(res) {
+    if (res.status !== 'fulfilled') return;
+    var sym = res.value.sym, ema = res.value.data;
+    if (!ema.ema21) return;
+    if (!pillarData[sym]) pillarData[sym] = {};
+    pillarData[sym].regime = ema.regime;
+    pillarData[sym].regimeDesc = ema.description;
+    pillarData[sym].ema21 = ema.ema21;
+    pillarData[sym].ema5ago = ema.ema5ago;
+    pillarData[sym].slope = ema.slope;
+  });
+  // Render the banner + regime dropdown for whichever pillar is on screen right now
+  renderRegimeBanner(activePillar);
 
   // 2. Fetch IV data for all 5 auto pillars in parallel
   var ivBase = RAILWAY_BASE + 'iv/';
@@ -1260,14 +1381,16 @@ function onTickerInput() {
 
 // ── EARNINGS / FUNDAMENTALS (single ticker) ──────────────────────────────────
 // Best-effort call to a Finnhub-backed Railway endpoint. Degrades silently
-// (panel stays hidden) if /api/earnings/:symbol isn't deployed yet — see
-// backend addendum for the Express route + Finnhub call.
+// (panel stays hidden) if /api/fundamentals/:symbol isn't deployed yet — see
+// backend addendum for the Express route + Finnhub call. Deliberately NOT
+// /api/earnings/:symbol — that path already exists on this server (Yahoo-based,
+// different response shape) and may be used elsewhere, so this uses its own path.
 async function fetchEarningsForTicker(sym) {
   var panel = document.getElementById('fund-panel');
   if (!sym) { panel.style.display = 'none'; return; }
   try {
-    var r = await fetch(RAILWAY_BASE + 'earnings/' + sym);
-    if (!r.ok) throw new Error('earnings endpoint not available');
+    var r = await fetch(RAILWAY_BASE + 'fundamentals/' + sym);
+    if (!r.ok) throw new Error('fundamentals endpoint not available');
     var d = await r.json();
     panel.style.display = 'block';
     document.getElementById('fund-eps').textContent = (d.epsGrowth!=null) ? (d.epsGrowth>=0?'+':'')+d.epsGrowth+'%' : '—';
@@ -1291,12 +1414,41 @@ async function fetchEarningsForTicker(sym) {
 // ── MATHS ─────────────────────────────────────────────────────────────────────
 function sdMove(p,iv,dte,sig) { return p*(iv/100)*Math.sqrt(dte/365)*sig; }
 
-function approxStrike(p,iv,dte,delta,dir) {
+// ── STRIKE SNAPPING ───────────────────────────────────────────────────────────
+// approxStrike() below is a Black-Scholes approximation and returns raw
+// decimals (e.g. $429.29) that don't exist as real listed contracts — real
+// strikes trade in fixed increments that vary by underlying. Verified live
+// against IBKR's actual option chains (Sep 2026):
+var STRIKE_INCREMENTS = {
+  SPY: 0.5,   // confirmed: 753.5/748.5 real strikes
+  QQQ: 1,     // confirmed: whole-dollar strikes 695-705
+  GLD: 1,     // confirmed: whole-dollar strikes 425-435
+  XLF: 0.5,   // confirmed: 55/55.5/56... half-dollar strikes
+  IWM: 1,     // real chain mixes $1 and $0.50 near the money — $1 is always
+              // present at every level, so it's the safe universal choice
+  XLE: 0.5,   // confirmed: 59.5/54.5 real strikes
+  EEM: 0.5,   // confirmed: 63/63.5/64... half-dollar strikes
+};
+function strikeIncrement(sym, price) {
+  if (STRIKE_INCREMENTS[sym] != null) return STRIKE_INCREMENTS[sym];
+  // Fallback for single-ticker mode / tickers outside the 7 pillars — not
+  // verified per-symbol, so use standard market convention by price tier.
+  if (price < 25) return 0.5;
+  if (price < 200) return 1;
+  if (price < 500) return 2.5;
+  return 5;
+}
+function snapToIncrement(strike, inc) {
+  return Math.round(strike / inc) * inc;
+}
+
+function approxStrike(p,iv,dte,delta,dir,sym) {
   var zm = {0.10:1.28,0.12:1.17,0.13:1.13,0.15:1.04,0.16:0.99,0.18:0.92,0.20:0.84,0.25:0.67,0.30:0.52,0.35:0.39,0.40:0.25};
   var z = zm[delta] || 0.67;
   var sig = iv/100, sqT = Math.sqrt(dte/365);
   var s = dir==='put' ? p*Math.exp(-z*sig*sqT) : p*Math.exp(z*sig*sqT);
-  return Math.round(s*100)/100;
+  var inc = strikeIncrement(sym, p);
+  return snapToIncrement(s, inc);
 }
 
 function estCredit(p,iv,dte,strike,dir) {
@@ -1405,9 +1557,9 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
   // Strike calculation
   var shortS, longS, credit, spreadCredit, be, maxRisk;
   if (isIC) {
-    var putShort = approxStrike(price,iv,dte,0.16,'put');
+    var putShort = approxStrike(price,iv,dte,0.16,'put',sym);
     var putLong = putShort - w;
-    var callShort = approxStrike(price,iv,dte,0.16,'call');
+    var callShort = approxStrike(price,iv,dte,0.16,'call',sym);
     var callLong = callShort + w;
     var putCr = estCredit(price,iv,dte,putShort,'put');
     var callCr = estCredit(price,iv,dte,callShort,'call');
@@ -1418,7 +1570,7 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
     maxRisk = (w - spreadCredit/2) * 100;
     be = putShort - spreadCredit/2;
   } else {
-    shortS = approxStrike(price,iv,dte,delta,dir);
+    shortS = approxStrike(price,iv,dte,delta,dir,sym);
     longS = dir==='put' ? shortS-w : shortS+w;
     credit = estCredit(price,iv,dte,shortS,dir);
     var longCr = estCredit(price,iv,dte,longS,dir);
@@ -1463,7 +1615,7 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
     // Tier strip
     var t1p=ivr>=40&&dte>=21&&dte<=45;
     var t2p=ivr>=25&&dte>=14&&dte<=45;
-    var t3p=dte<=9;
+    var t3p=(sym==='SPY')&&dte<=9;
     var ts=document.getElementById('tier-strip');
     ts.innerHTML=
       '<div class="ts-card '+(t1p?'ts-pass-t1':'')+'">'
@@ -1479,7 +1631,7 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
       +'<div class="ts-card '+(t3p?'ts-pass-t3':'')+'">'
       +'<div class="ts-name" style="color:'+(t3p?'#fcd34d':'var(--text-muted)')+'">T3 SPY WEEKLY</div>'
       +'<div class="ts-result" style="color:'+(t3p?'#fcd34d':'var(--text-muted)')+'">'+(t3p?'✓ PASS':'✕ FAIL')+'</div>'
-      +'<div class="ts-criteria" style="color:'+(t3p?'var(--amber)':'var(--text-muted)')+'">IVR any · DTE 7</div>'
+      +'<div class="ts-criteria" style="color:'+(t3p?'var(--amber)':'var(--text-muted)')+'">SPY only · DTE 7</div>'
       +'</div>';
     if(!pillarData[activePillar]) pillarData[activePillar]={};
     pillarData[activePillar].beyondSD = beyond13;
@@ -1501,8 +1653,8 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
   // Legs HTML
   var legsHtml='';
   if(isIC){
-    var pS=approxStrike(price,iv,dte,0.16,'put'),pL=pS-w;
-    var cS=approxStrike(price,iv,dte,0.16,'call'),cL=cS+w;
+    var pS=approxStrike(price,iv,dte,0.16,'put',sym),pL=pS-w;
+    var cS=approxStrike(price,iv,dte,0.16,'call',sym),cL=cS+w;
     legsHtml='<div class="section-side-label">PUT SIDE — below market</div>'
       +'<div class="leg"><span class="leg-badge sto">STO</span>'+sym+' '+expStr+' $'+pS.toFixed(2)+'P</div>'
       +'<div class="leg"><span class="leg-badge bto">BTO</span>'+sym+' '+expStr+' $'+pL.toFixed(2)+'P</div>'
@@ -1524,6 +1676,19 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
   document.getElementById(eid+'-legs').innerHTML = legsHtml;
   if(prefix==='single') document.getElementById('s-trade-label').textContent = typeName.toUpperCase()+' — '+sym;
   document.getElementById(eid+'-limit').innerHTML = 'Limit: <strong>$'+spreadCredit.toFixed(2)+'</strong> CR, DAY &nbsp;·&nbsp; '+typeName+' &nbsp;·&nbsp; Verify in IBKR';
+
+  // Take profit — 50% of credit received, per HH's stated management rule.
+  // Exact calculation, no live position tracking needed: buy-to-close target
+  // is half of what you took in.
+  var takeProfitPrice = spreadCredit / 2;
+  var tpEl = document.getElementById(eid+'-takeprofit');
+  if (!tpEl) {
+    tpEl = document.createElement('div');
+    tpEl.id = eid+'-takeprofit';
+    tpEl.style.cssText = 'font-size:var(--fs-2);color:var(--text-dim);margin-top:4px';
+    document.getElementById(eid+'-limit').insertAdjacentElement('afterend', tpEl);
+  }
+  tpEl.innerHTML = 'Take profit (50%): <strong style="color:var(--green-bright)">$'+takeProfitPrice.toFixed(2)+'</strong> buy-to-close &nbsp;·&nbsp; set as GTC once filled';
 
   // Metrics
   var metrics=[

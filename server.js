@@ -267,6 +267,13 @@ app.get('/api/ema/:symbol', async (req, res) => {
     const priceResp = await fetch(`https://api.twelvedata.com/price?symbol=${sym}&apikey=${key}`);
     const priceData = await priceResp.json();
     const price = parseFloat(priceData.price);
+    if (!Number.isFinite(price)) {
+      // Twelve Data's price call didn't return a usable number (rate limit,
+      // transient error, etc.) — return a real error instead of silently
+      // baking "NaN" into the description string. The frontend's existing
+      // "not auto-detected" fallback state handles this correctly already.
+      return res.status(503).json({ error: 'Price unavailable from Twelve Data', raw: priceData });
+    }
     const diff = emaToday - ema5ago;
     const pctDiff = (diff / ema5ago) * 100;
     const slope = pctDiff > 0.15 ? 'rising' : pctDiff < -0.15 ? 'declining' : 'flat';
@@ -305,29 +312,95 @@ app.get('/api/chart/:symbol', async (req, res) => {
   const sym = req.params.symbol.toUpperCase();
   try {
     const key = process.env.TWELVE_DATA_API_KEY;
-    const url = `https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=30&apikey=${key}`;
+    // 90 days fetched (not just the 30 displayed) so MACD's 26-period EMA and
+    // the signal line have real time to settle before the values we actually
+    // show — a 26-EMA computed from only 30 points of lead-in is noisy.
+    const url = `https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=90&apikey=${key}`;
     const response = await fetch(url);
     const data = await response.json();
     if (!data.values || !data.values.length) {
       return res.status(404).json({ error: 'No data', raw: data });
     }
-    const closes = data.values.reverse().map(v => ({
+    const bars = data.values.reverse().map(v => ({
       date: v.datetime,
-      close: parseFloat(v.close)
+      close: parseFloat(v.close),
+      high: parseFloat(v.high),
+      low: parseFloat(v.low),
+      volume: parseFloat(v.volume) || 0,
     }));
-    const period = 21;
-    const k = 2 / (period + 1);
-    let ema = closes[0].close;
-    const result = closes.map((bar, i) => {
-      if (i === 0) { ema = bar.close; }
-      else { ema = bar.close * k + ema * (1 - k); }
-      return {
-        date: bar.date,
-        close: parseFloat(bar.close.toFixed(2)),
-        ema21: parseFloat(ema.toFixed(2))
-      };
+
+    // ── 21-day EMA (existing regime indicator) ──
+    const emaPeriod = 21;
+    const emaK = 2 / (emaPeriod + 1);
+    let ema21 = bars[0].close;
+    bars.forEach((bar, i) => {
+      if (i === 0) ema21 = bar.close; else ema21 = bar.close * emaK + ema21 * (1 - emaK);
+      bar.ema21 = ema21;
     });
-    res.json({ symbol: sym, data: result });
+
+    // ── MACD (12, 26, 9) ──
+    function emaSeries(vals, period) {
+      const k = 2 / (period + 1);
+      let e = vals[0];
+      return vals.map((v, i) => { e = i === 0 ? v : v * k + e * (1 - k); return e; });
+    }
+    const closesArr = bars.map(b => b.close);
+    const ema12Arr = emaSeries(closesArr, 12);
+    const ema26Arr = emaSeries(closesArr, 26);
+    const macdLineArr = closesArr.map((_, i) => ema12Arr[i] - ema26Arr[i]);
+    const signalArr = emaSeries(macdLineArr, 9);
+    bars.forEach((bar, i) => {
+      bar.macd = macdLineArr[i];
+      bar.macdSignal = signalArr[i];
+      bar.macdHist = macdLineArr[i] - signalArr[i];
+    });
+
+    // ── Stochastic Oscillator (14-period %K, 3-period %D) ──
+    const stochPeriod = 14;
+    bars.forEach((bar, i) => {
+      if (i < stochPeriod - 1) { bar.stochK = null; return; }
+      const window = bars.slice(i - stochPeriod + 1, i + 1);
+      const hh = Math.max(...window.map(w => w.high));
+      const ll = Math.min(...window.map(w => w.low));
+      bar.stochK = hh === ll ? 50 : ((bar.close - ll) / (hh - ll)) * 100;
+    });
+    bars.forEach((bar, i) => {
+      if (i < stochPeriod + 1) { bar.stochD = null; return; }
+      const window = bars.slice(i - 2, i + 1).map(w => w.stochK).filter(v => v != null);
+      bar.stochD = window.reduce((a, b) => a + b, 0) / window.length;
+    });
+
+    // ── Volume trend: is recent volume rising or falling vs its own 10-day average ──
+    const last10Vol = bars.slice(-10).map(b => b.volume);
+    const avgVol10 = last10Vol.reduce((a, b) => a + b, 0) / last10Vol.length;
+    const last3Vol = bars.slice(-3).map(b => b.volume);
+    const avgVol3 = last3Vol.reduce((a, b) => a + b, 0) / last3Vol.length;
+    const volumeTrend = avgVol3 > avgVol10 * 1.1 ? 'rising' : avgVol3 < avgVol10 * 0.9 ? 'falling' : 'flat';
+
+    // ── Display window: last 30 days only, matching the existing chart ──
+    const display = bars.slice(-30).map(b => ({
+      date: b.date,
+      close: parseFloat(b.close.toFixed(2)),
+      ema21: parseFloat(b.ema21.toFixed(2)),
+      macdHist: parseFloat(b.macdHist.toFixed(4)),
+      stochK: b.stochK != null ? parseFloat(b.stochK.toFixed(1)) : null,
+      volume: b.volume,
+    }));
+
+    const latest = bars[bars.length - 1];
+    const priceAboveVolumeDivergence = latest.close > bars[bars.length - 5].close && volumeTrend === 'falling';
+
+    const signals = {
+      emaTrend: latest.close > latest.ema21 ? 'bullish' : 'bearish',
+      macd: latest.macdHist > 0 ? 'bullish' : 'bearish',
+      stochastic: latest.stochK != null ? (latest.stochK > 80 ? 'bullish' : latest.stochK < 20 ? 'bearish' : 'neutral') : 'neutral',
+      volume: volumeTrend === 'rising' ? 'bullish' : volumeTrend === 'falling' ? 'bearish' : 'neutral',
+      volumeDivergenceWarning: priceAboveVolumeDivergence,
+      macdHistLatest: parseFloat(latest.macdHist.toFixed(4)),
+      stochKLatest: latest.stochK != null ? parseFloat(latest.stochK.toFixed(1)) : null,
+    };
+
+    res.json({ symbol: sym, data: display, signals });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }

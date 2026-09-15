@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Journal</title>
+<style>
+:root{
+  --bg0:#0d1117;--bg1:#161b22;--bg2:#21262d;--bg3:#2d333b;--border:#30363d;
+  --green:#3fb950;--green-dim:#0a2212;--green-bright:#56d364;
+  --red:#f85149;--red-dim:#2d0f0e;--amber:#e3b341;--blue:#58a6ff;--purple:#bc8cff;
+  --text:#e6edf3;--text-dim:#8b949e;--text-muted:#484f58;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-6:24px;
+  --fs-1:9px;--fs-2:11px;--fs-3:13px;--fs-4:15px;--fs-5:20px;--fs-6:32px;
+  --r-sm:6px;--r-md:8px;--r-pill:20px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg0);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;font-size:var(--fs-3);line-height:1.5;min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding:var(--sp-4)}
+
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4);padding-bottom:var(--sp-3);border-bottom:1px solid var(--border)}
+.htitle{font-size:var(--fs-4);font-weight:600;letter-spacing:-.3px}
+.hsub{font-size:var(--fs-1);color:var(--text-muted);margin-top:2px}
+
+.upload-zone{border:1.5px dashed var(--border);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:var(--sp-2)}
+.upload-zone:hover,.upload-zone.over{border-color:var(--green);background:var(--green-dim)}
+.upload-label{font-size:var(--fs-2);color:var(--text-dim)}
+.upload-sub{font-size:var(--fs-1);color:var(--text-muted);margin-top:2px}
+input[type=file]{display:none}
+.upload-status{font-size:var(--fs-1);color:var(--text-muted);text-align:center;margin-bottom:var(--sp-4);min-height:14px}
+
+.hero{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4);margin-bottom:var(--sp-3);text-align:center}
+.hero-label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-1)}
+.hero-num{font-size:var(--fs-6);font-weight:700;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.hero-sub{font-size:var(--fs-2);color:var(--text-muted);margin-top:4px}
+
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-2);margin-bottom:var(--sp-3)}
+.stat{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-3) var(--sp-2);text-align:center}
+.stat-label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.5px;margin-bottom:3px}
+.stat-num{font-size:var(--fs-4);font-weight:600;font-variant-numeric:tabular-nums}
+.stat-sub{font-size:var(--fs-1);color:var(--text-muted);margin-top:2px}
+
+.section{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4);margin-bottom:var(--sp-3)}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-3)}
+.section-title{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px}
+.toggle{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-pill);padding:2px;gap:2px}
+.toggle-btn{padding:3px var(--sp-3);border-radius:16px;border:none;font-family:inherit;font-size:var(--fs-1);font-weight:500;letter-spacing:.3px;cursor:pointer;background:transparent;color:var(--text-muted)}
+.toggle-btn.active{background:var(--bg3);color:var(--text)}
+
+.chart-wrap{display:flex;align-items:flex-end;gap:3px;height:100px;margin-bottom:var(--sp-2)}
+.chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.chart-bar{width:70%;border-radius:2px 2px 0 0;min-height:2px}
+.chart-label{font-size:8px;color:var(--text-muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)}
+.bucket-row{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) 0;border-bottom:1px solid var(--border)}
+.bucket-row:last-child{border-bottom:none}
+.bucket-name{flex:0 0 90px;font-size:var(--fs-2);color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bucket-bar-wrap{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.bucket-bar{height:100%;border-radius:3px}
+.bucket-val{flex:0 0 68px;text-align:right;font-size:var(--fs-2);font-weight:600;font-variant-numeric:tabular-nums}
+
+.filter-row{display:flex;gap:var(--sp-1);flex-wrap:wrap;margin-bottom:var(--sp-3)}
+.filter-pill{font-size:var(--fs-1);font-weight:500;padding:4px var(--sp-3);border-radius:var(--r-pill);background:var(--bg2);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;letter-spacing:.3px}
+.filter-pill.active{background:var(--bg3);border-color:var(--blue);color:var(--text)}
+
+table{width:100%;border-collapse:collapse;font-size:var(--fs-2)}
+th{text-align:left;font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.5px;padding:var(--sp-1) var(--sp-2);border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap}
+th:hover{color:var(--text-dim)}
+td{padding:var(--sp-2);border-bottom:1px solid var(--border);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg2)}
+.badge{font-size:8px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:10px;display:inline-block}
+.badge-open{background:var(--blue);color:var(--bg0)}
+.badge-closed{background:var(--bg3);color:var(--text-dim)}
+.badge-naked{background:var(--red);color:var(--bg0)}
+.table-wrap{overflow-x:auto}
+
+.gap-note{font-size:var(--fs-1);color:var(--text-muted);line-height:1.6;padding:var(--sp-3);background:var(--bg2);border-radius:var(--r-sm);margin-top:var(--sp-3)}
+.empty{text-align:center;padding:var(--sp-6) var(--sp-4);color:var(--text-muted);font-size:var(--fs-3)}
+.pos{color:var(--green-bright)}.neg{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="htitle">Trade Journal</div>
+      <div class="hsub">Parsed from your real IBKR Activity Statement exports</div>
+    </div>
+  </div>
+
+  <div class="upload-zone" id="drop">
+    <div class="upload-label">Drop a CSV here to add trades</div>
+    <div class="upload-sub">or click to browse — duplicates are skipped automatically</div>
+    <input type="file" id="fileInput" accept=".csv">
+  </div>
+  <div class="upload-status" id="uploadStatus"></div>
+
+  <div id="content"></div>
+</div>
+
+<script>
+var drop = document.getElementById('drop');
+var fileInput = document.getElementById('fileInput');
+var uploadStatus = document.getElementById('uploadStatus');
+var content = document.getElementById('content');
+var currentData = null;
+var periodMode = 'week';
+var tickerFilter = 'All';
+var statusFilter = 'All';
+var sortCol = 'date', sortDir = -1;
+
+drop.addEventListener('click', function(){ fileInput.click(); });
+drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', function(){ drop.classList.remove('over'); });
+drop.addEventListener('drop', function(e){
+  e.preventDefault();
+  drop.classList.remove('over');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', function(e){
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  uploadStatus.textContent = 'Reading ' + file.name + '...';
+  var reader = new FileReader();
+  reader.onload = function(e) { upload(e.target.result); };
+  reader.onerror = function() { uploadStatus.textContent = 'Could not read the file.'; };
+  reader.readAsText(file);
+}
+
+function upload(csvText) {
+  uploadStatus.textContent = 'Uploading...';
+  fetch('/api/journal/upload', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: csvText })
+  .then(function(r) {
+    if (!r.ok) return r.json().then(function(d){ throw new Error(d.error || ('HTTP ' + r.status)); });
+    return r.json();
+  })
+  .then(function(data) {
+    uploadStatus.innerHTML = '<span style="color:var(--green)">Added ' + data.newExecutionsAdded + ' new execution' + (data.newExecutionsAdded===1?'':'s') + '</span>';
+    loadSummary();
+  })
+  .catch(function(err) {
+    uploadStatus.innerHTML = '<span style="color:var(--red)">' + err.message + '</span>';
+  });
+}
+
+var PALETTE = ['#3fb950','#58a6ff','#bc8cff','#e3b341','#f85149','#39d353','#93c5fd','#f0883e','#a5d6ff','#d2a8ff'];
+var tickerColorMap = {};
+function tickerColor(t) {
+  if (!tickerColorMap[t]) {
+    var keys = Object.keys(tickerColorMap);
+    tickerColorMap[t] = PALETTE[keys.length % PALETTE.length];
+  }
+  return tickerColorMap[t];
+}
+var BUCKET_COLORS = { 'CSP':'#3fb950','CC':'#58a6ff','LEAP':'#bc8cff','Put Credit Spread':'#56d364','Call Credit Spread':'#58a6ff' };
+function bucketColor(name) {
+  if (BUCKET_COLORS[name]) return BUCKET_COLORS[name];
+  if (name.indexOf('NAKED') >= 0) return '#f85149';
+  return '#484f58';
+}
+
+function loadSummary() {
+  fetch('/api/journal/summary')
+    .then(function(r){ return r.json(); })
+    .then(function(data){ currentData = data; render(); })
+    .catch(function(err){ content.innerHTML = '<div class="empty">Couldn\'t load the journal — ' + err.message + '</div>'; });
+}
+
+function isoWeek(dateStr) {
+  var d = new Date(dateStr + 'T00:00:00');
+  var day = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - day + 3);
+  var firstThu = new Date(d.getFullYear(), 0, 4);
+  var week = 1 + Math.round(((d - firstThu) / 86400000 - 3 + ((firstThu.getDay()+6)%7)) / 7);
+  return d.getFullYear() + '-W' + String(week).padStart(2,'0');
+}
+
+function render() {
+  var data = currentData;
+  var journal = data.journal || [];
+  if (!journal.length) {
+    content.innerHTML = '<div class="empty">No trades yet — drop a CSV above to get started.</div>';
+    return;
+  }
+
+  var wins = journal.filter(function(j){ return j.pnl > 0; });
+  var losses = journal.filter(function(j){ return j.pnl < 0; });
+  var winRate = (wins.length+losses.length) > 0 ? Math.round(wins.length/(wins.length+losses.length)*100) : 0;
+  var largestWin = wins.length ? Math.max.apply(null, wins.map(function(j){return j.pnl;})) : 0;
+  var largestLoss = losses.length ? Math.min.apply(null, losses.map(function(j){return j.pnl;})) : 0;
+  var knownHold = journal.filter(function(j){ return j.daysHeld != null; });
+  var avgDays = knownHold.length ? (knownHold.reduce(function(s,j){return s+j.daysHeld;},0)/knownHold.length) : null;
+
+  var netClass = data.netRealized >= 0 ? 'pos' : 'neg';
+  var html = '';
+
+  html += '<div class="hero"><div class="hero-label">NET REALIZED</div>'
+    + '<div class="hero-num ' + netClass + '">' + (data.netRealized>=0?'+':'') + '$' + data.netRealized.toFixed(2) + '</div>'
+    + '<div class="hero-sub">' + journal.length + ' positions \u00b7 ' + wins.length + ' wins, ' + losses.length + ' losses' + '</div></div>';
+
+  html += '<div class="stat-grid">'
+    + '<div class="stat"><div class="stat-label">WIN RATE</div><div class="stat-num">' + winRate + '%</div><div class="stat-sub">' + (wins.length+losses.length) + ' closed</div></div>'
+    + '<div class="stat"><div class="stat-label">AVG DAYS HELD</div><div class="stat-num">' + (avgDays!=null ? avgDays.toFixed(1) : '\u2014') + '</div><div class="stat-sub">' + knownHold.length + ' known</div></div>'
+    + '<div class="stat"><div class="stat-label">LARGEST WIN</div><div class="stat-num pos">+$' + largestWin.toFixed(0) + '</div></div>'
+    + '<div class="stat"><div class="stat-label">LARGEST LOSS</div><div class="stat-num neg">' + largestLoss.toFixed(0) + '</div></div>'
+    + '</div>';
+
+  var periods = {};
+  journal.forEach(function(j){
+    var key = periodMode==='week' ? isoWeek(j.date) : j.date.slice(0,7);
+    periods[key] = (periods[key]||0) + j.pnl;
+  });
+  var pkeys = Object.keys(periods).sort();
+  var maxAbsP = Math.max.apply(null, pkeys.map(function(k){return Math.abs(periods[k]);})) || 1;
+  html += '<div class="section"><div class="section-head"><div class="section-title">PREMIUM BY PERIOD</div>'
+    + '<div class="toggle"><button class="toggle-btn' + (periodMode==='week'?' active':'') + '" onclick="setPeriod(\'week\')">Week</button><button class="toggle-btn' + (periodMode==='month'?' active':'') + '" onclick="setPeriod(\'month\')">Month</button></div></div>';
+  html += '<div class="chart-wrap">';
+  pkeys.forEach(function(k){
+    var v = periods[k];
+    var h = Math.max(4, Math.abs(v)/maxAbsP*90);
+    html += '<div class="chart-bar-col"><div class="chart-bar" style="height:' + h + 'px;background:' + (v>=0?'#3fb950':'#f85149') + '" title="' + k + ': $' + v.toFixed(0) + '"></div><div class="chart-label">' + k.replace('2026-','').replace('-W','W') + '</div></div>';
+  });
+  html += '</div></div>';
+
+  var byTicker = {};
+  journal.forEach(function(j){ byTicker[j.underlying] = (byTicker[j.underlying]||0) + j.pnl; });
+  var tickers = Object.keys(byTicker).sort(function(a,b){ return Math.abs(byTicker[b])-Math.abs(byTicker[a]); });
+  var maxAbsT = Math.max.apply(null, tickers.map(function(t){return Math.abs(byTicker[t]);})) || 1;
+
+  var buckets = Object.keys(data.byBucket).sort(function(a,b){ return Math.abs(data.byBucket[b])-Math.abs(data.byBucket[a]); });
+  var maxAbsB = Math.max.apply(null, buckets.map(function(b){return Math.abs(data.byBucket[b]);})) || 1;
+
+  html += '<div class="grid2">';
+  html += '<div class="section"><div class="section-title">BY TICKER</div>';
+  tickers.forEach(function(t){
+    var v = byTicker[t], pct = Math.abs(v)/maxAbsT*100;
+    html += '<div class="bucket-row"><div class="bucket-name">' + t + '</div><div class="bucket-bar-wrap"><div class="bucket-bar" style="width:' + pct + '%;background:' + (v>=0?tickerColor(t):'#f85149') + '"></div></div><div class="bucket-val ' + (v>=0?'pos':'neg') + '">' + (v>=0?'+':'') + '$' + v.toFixed(0) + '</div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="section"><div class="section-title">BY STRATEGY</div>';
+  buckets.forEach(function(b){
+    var v = data.byBucket[b], pct = Math.abs(v)/maxAbsB*100;
+    html += '<div class="bucket-row"><div class="bucket-name">' + b + '</div><div class="bucket-bar-wrap"><div class="bucket-bar" style="width:' + pct + '%;background:' + (v>=0?bucketColor(b):'#f85149') + '"></div></div><div class="bucket-val ' + (v>=0?'pos':'neg') + '">' + (v>=0?'+':'') + '$' + v.toFixed(0) + '</div></div>';
+  });
+  html += '</div></div>';
+
+  html += '<div class="section"><div class="section-title">ALL TRADES</div>';
+  html += '<div class="filter-row" id="tickerFilters"></div>';
+  html += '<div class="filter-row" id="statusFilters"></div>';
+  html += '<div class="table-wrap"><table><thead><tr>'
+    + '<th onclick="setSort(\'date\')">DATE</th><th onclick="setSort(\'underlying\')">TICKER</th><th onclick="setSort(\'bucket\')">STRATEGY</th>'
+    + '<th>STATUS</th><th onclick="setSort(\'daysHeld\')">DAYS</th><th onclick="setSort(\'pnl\')">P/L</th>'
+    + '</tr></thead><tbody id="tradeRows"></tbody></table></div></div>';
+
+  if (data.warnings && data.warnings.length) {
+    html += '<div class="gap-note">' + data.warnings.length + ' position' + (data.warnings.length===1?'':'s') + ' opened before your earliest uploaded statement — direction resolved from the CSV\'s Code column, days-held shown as \u2014 for those since the true open date isn\'t in your data yet.</div>';
+  }
+  html += '<div class="gap-note">Not yet tracked: gross premium generated vs. paid to close (currently net P/L per position only).</div>';
+
+  content.innerHTML = html;
+  renderFilters(journal);
+  renderTable(journal);
+}
+
+function setPeriod(mode) { periodMode = mode; render(); }
+
+function renderFilters(journal) {
+  var tickers = ['All'].concat(Array.from(new Set(journal.map(function(j){return j.underlying;}))).sort());
+  var tf = document.getElementById('tickerFilters');
+  tf.innerHTML = tickers.map(function(t){
+    return '<button class="filter-pill' + (t===tickerFilter?' active':'') + '" onclick="setTickerFilter(\'' + t + '\')">' + t + '</button>';
+  }).join('');
+
+  var statuses = ['All','Open','Closed'];
+  var sf = document.getElementById('statusFilters');
+  sf.innerHTML = statuses.map(function(s){
+    return '<button class="filter-pill' + (s===statusFilter?' active':'') + '" onclick="setStatusFilter(\'' + s + '\')">' + s + '</button>';
+  }).join('');
+}
+
+function setTickerFilter(t) { tickerFilter = t; renderFilters(currentData.journal); renderTable(currentData.journal); }
+function setStatusFilter(s) { statusFilter = s; renderFilters(currentData.journal); renderTable(currentData.journal); }
+function setSort(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
+  renderTable(currentData.journal);
+}
+
+function renderTable(journal) {
+  var rows = journal.filter(function(j){
+    if (tickerFilter !== 'All' && j.underlying !== tickerFilter) return false;
+    if (statusFilter === 'Open' && j.status !== 'open') return false;
+    if (statusFilter === 'Closed' && j.status !== 'closed') return false;
+    return true;
+  });
+  rows.sort(function(a,b){
+    var av = a[sortCol], bv = b[sortCol];
+    if (av == null) av = sortDir===1 ? Infinity : -Infinity;
+    if (bv == null) bv = sortDir===1 ? Infinity : -Infinity;
+    if (av < bv) return -1*sortDir; if (av > bv) return 1*sortDir; return 0;
+  });
+  document.getElementById('tradeRows').innerHTML = rows.map(function(j){
+    var badge = j.status==='open' ? '<span class="badge badge-open">OPEN</span>' : '<span class="badge badge-closed">CLOSED</span>';
+    if (j.bucket.indexOf('NAKED')>=0) badge += ' <span class="badge badge-naked">NAKED</span>';
+    var days = j.daysHeld != null ? j.daysHeld : (j.status==='open' ? '\u2014' : '?');
+    var pnlClass = j.pnl >= 0 ? 'pos' : 'neg';
+    return '<tr><td>' + j.date + '</td><td>' + j.underlying + '</td><td>' + j.bucket.replace(' (via roll)',' \u21bb') + '</td>'
+      + '<td>' + badge + '</td><td>' + days + '</td><td class="' + pnlClass + '">' + (j.pnl>=0?'+':'') + '$' + j.pnl.toFixed(2) + '</td></tr>';
+  }).join('');
+}
+
+loadSummary();
+</script>
+</body>
+</html>

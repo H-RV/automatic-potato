@@ -138,6 +138,7 @@ function classifyExecutions(execs, realizedPnl, sharesHeld) {
     contractInfo[contract] = {
       underlying: parseUnderlying(contract),
       openDt: openingExec ? openingExec.dt : list[0].dt,
+      openDateKnown: !!openingExec,
       closeDt: closingExec ? closingExec.dt : null,
       trueSideQty,
       realizedPnl: realizedPnl[contract] ?? 0,
@@ -184,6 +185,26 @@ function classifyExecutions(execs, realizedPnl, sharesHeld) {
   const DASH_BUCKETS = new Set(['CC', 'CSP', 'Call Credit Spread', 'Put Credit Spread', 'LEAP']);
   const journal = [];
 
+  // Small addition — closeDt is already computed per-contract above (needed
+  // to resolve direction via the Code column); this just surfaces it on the
+  // journal entry itself, since "days held" needs it. Not a new data source,
+  // just exposing what's already there.
+  function closeInfo(legList, openDateStr) {
+    const closeDates = legList.map(c => contractInfo[c].closeDt).filter(Boolean);
+    const allClosed = closeDates.length === legList.length;
+    if (!allClosed) return { status: 'open', closeDate: null, daysHeld: null };
+    const latestClose = closeDates.sort().slice(-1)[0].slice(0, 10);
+    const openDateKnown = legList.every(c => contractInfo[c].openDateKnown);
+    if (!openDateKnown) {
+      // At least one leg's true open date is outside this file's range —
+      // don't report a days-held number that would actually just be
+      // measuring "days since this file started," not the real hold length.
+      return { status: 'closed', closeDate: latestClose, daysHeld: null, daysHeldUnknown: true };
+    }
+    const days = Math.round((new Date(latestClose) - new Date(openDateStr)) / 86400000);
+    return { status: 'closed', closeDate: latestClose, daysHeld: days };
+  }
+
   for (const [key, legs] of spreadGroups) {
     if (legs.length === 4) {
       const withMeta = legs.map(c => ({ c, type: parseType(c), side: contractInfo[c].trueSideQty < 0 ? 'short' : 'long', strike: parseStrike(c) }));
@@ -198,13 +219,15 @@ function classifyExecutions(execs, realizedPnl, sharesHeld) {
         }
       }
       const pnl = legs.reduce((s, c) => s + contractInfo[c].realizedPnl, 0);
-      journal.push({ date: key.split('|')[1].slice(0, 10), underlying: key.split('|')[0], bucket, pnl: Math.round(pnl * 100) / 100, legs });
+      const openDate = key.split('|')[1].slice(0, 10);
+      journal.push({ date: openDate, underlying: key.split('|')[0], bucket, pnl: Math.round(pnl * 100) / 100, legs, ...closeInfo(legs, openDate) });
       continue;
     }
     if (legs.length !== 2) {
       warnings.push(`${key}: ${legs.length}-leg group, not 2 or 4 \u2014 flagged as Other`);
       const pnl = legs.reduce((s, c) => s + contractInfo[c].realizedPnl, 0);
-      journal.push({ date: key.split('|')[1].slice(0, 10), underlying: key.split('|')[0], bucket: 'Other (unusual leg count)', pnl: Math.round(pnl * 100) / 100, legs });
+      const openDate = key.split('|')[1].slice(0, 10);
+      journal.push({ date: openDate, underlying: key.split('|')[0], bucket: 'Other (unusual leg count)', pnl: Math.round(pnl * 100) / 100, legs, ...closeInfo(legs, openDate) });
       continue;
     }
     const [l1, l2] = legs;
@@ -218,13 +241,15 @@ function classifyExecutions(execs, realizedPnl, sharesHeld) {
     const canon = CANON[strat];
     const bucket = DASH_BUCKETS.has(canon) ? canon : 'Other (debit spread)';
     const pnl = contractInfo[l1].realizedPnl + contractInfo[l2].realizedPnl;
-    journal.push({ date: key.split('|')[1].slice(0, 10), underlying: key.split('|')[0], bucket, pnl: Math.round(pnl * 100) / 100, legs });
+    const openDate = key.split('|')[1].slice(0, 10);
+    journal.push({ date: openDate, underlying: key.split('|')[0], bucket, pnl: Math.round(pnl * 100) / 100, legs, ...closeInfo(legs, openDate) });
   }
 
   for (const [oldC, newC] of rolls) {
     const pnl = contractInfo[oldC].realizedPnl + contractInfo[newC].realizedPnl;
     const bucket = parseType(oldC) === 'C' ? 'CC' : 'CSP';
-    journal.push({ date: contractInfo[oldC].openDt.slice(0, 10), underlying: contractInfo[oldC].underlying, bucket: `${bucket} (via roll)`, pnl: Math.round(pnl * 100) / 100, legs: [oldC, newC] });
+    const openDate = contractInfo[oldC].openDt.slice(0, 10);
+    journal.push({ date: openDate, underlying: contractInfo[oldC].underlying, bucket: `${bucket} (via roll)`, pnl: Math.round(pnl * 100) / 100, legs: [oldC, newC], ...closeInfo([oldC, newC], openDate) });
   }
 
   const handled = new Set([...usedBySpread, ...usedInRoll]);
@@ -253,7 +278,8 @@ function classifyExecutions(execs, realizedPnl, sharesHeld) {
     } else {
       bucket = isLeap ? 'LEAP' : 'Other (long option)';
     }
-    journal.push({ date: info.openDt.slice(0, 10), underlying: info.underlying, bucket, pnl: Math.round(info.realizedPnl * 100) / 100, legs: [contract] });
+    const openDate = info.openDt.slice(0, 10);
+    journal.push({ date: openDate, underlying: info.underlying, bucket, pnl: Math.round(info.realizedPnl * 100) / 100, legs: [contract], ...closeInfo([contract], openDate) });
   }
 
   // 8. Aggregate
