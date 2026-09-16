@@ -186,6 +186,11 @@ body{background:var(--bg0);color:var(--text);font-family:-apple-system,BlinkMacS
 .mt-label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.5px;margin-bottom:var(--sp-1)}
 .mt-val{font-size:var(--fs-4);font-weight:500;line-height:1.2}
 .mt-sub{font-size:var(--fs-1);color:var(--text-muted);margin-top:2px}
+.pb-rule{font-size:var(--fs-2);padding:5px 10px;border-left:2px solid var(--border);margin-bottom:3px;color:var(--text-dim)}
+.pb-rule strong{color:var(--text)}
+.pb-good{border-left-color:var(--green)}
+.pb-warn{border-left-color:var(--amber)}
+.pb-bad{border-left-color:var(--red)}
 .vg{color:var(--green)}.vr{color:var(--red)}.vb{color:#93c5fd}.va{color:var(--amber)}.vp{color:var(--purple)}
 
 /* VISUALS */
@@ -245,6 +250,13 @@ canvas{display:block;width:100%}
 </head>
 <body>
 <div class="app">
+
+<!-- APP NAV — which tool, not to be confused with the Backbone/Single Ticker
+     mode toggle below, which is a different level of navigation -->
+<div style="display:flex;gap:var(--sp-2);margin-bottom:var(--sp-3)">
+  <a href="/backbone-pro.html" style="text-decoration:none;background:var(--bg2);border:1px solid var(--green);color:var(--green-bright);font-size:var(--fs-2);font-weight:600;padding:5px 14px;border-radius:var(--r-pill)">Backbone Pro</a>
+  <a href="/scan" style="text-decoration:none;background:var(--bg1);border:1px solid var(--border);color:var(--text-dim);font-size:var(--fs-2);padding:5px 14px;border-radius:var(--r-pill)">Scan</a>
+</div>
 
 <!-- HEADER -->
 <div class="header">
@@ -346,15 +358,25 @@ canvas{display:block;width:100%}
       </div>
       <!-- Price + EMA Chart -->
       <div id="price-chart-wrap" style="display:none;margin-bottom:var(--sp-3);background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-3)">
-        <div class="flex-c" style="justify-content:space-between;margin-bottom:var(--sp-2)">
-          <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px" id="chart-title">PRICE — 30 DAYS + 21 EMA</div>
-          <div class="flex-c gap-3" style="font-size:var(--fs-1)">
-            <span><span style="display:inline-block;width:10px;height:2px;background:var(--green);vertical-align:middle;margin-right:4px"></span>Price</span>
-            <span><span style="display:inline-block;width:10px;height:2px;background:var(--amber);vertical-align:middle;margin-right:4px"></span>21 EMA</span>
+        <div class="flex-c" style="justify-content:space-between;margin-bottom:var(--sp-2);flex-wrap:wrap">
+          <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px" id="chart-title">PRICE — 130 DAYS</div>
+          <div class="flex-c gap-2" style="font-size:var(--fs-1);flex-wrap:wrap" id="ma-legend">
+            <span><span style="display:inline-block;width:10px;height:2px;background:#f0883e;vertical-align:middle;margin-right:3px"></span>EMA8</span>
+            <span><span style="display:inline-block;width:10px;height:2px;background:#e3b341;vertical-align:middle;margin-right:3px"></span>EMA21</span>
+            <span><span style="display:inline-block;width:10px;height:2px;background:#bc8cff;vertical-align:middle;margin-right:3px"></span>EMA34</span>
+            <span><span style="display:inline-block;width:10px;height:2px;background:#58a6ff;vertical-align:middle;margin-right:3px"></span>SMA50</span>
+            <span id="ema200-legend"><span style="display:inline-block;width:10px;height:2px;background:#e6edf3;vertical-align:middle;margin-right:3px"></span>EMA200</span>
           </div>
         </div>
-        <canvas id="price-canvas" height="120" style="width:100%;display:block"></canvas>
+        <canvas id="price-canvas" height="190" style="width:100%;display:block"></canvas>
         <div id="chart-footer" class="flex-c" style="font-size:var(--fs-1);color:var(--text-muted);margin-top:var(--sp-2);justify-content:space-between"></div>
+
+        <!-- TTM Squeeze -->
+        <div id="squeeze-box" style="display:none;margin-top:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-sm)"></div>
+
+        <!-- Fibonacci retracement -->
+        <div id="fib-box" style="display:none;margin-top:var(--sp-3)"></div>
+
         <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-top:var(--sp-3);margin-bottom:2px">MACD HISTOGRAM</div>
         <canvas id="macd-canvas" height="40" style="width:100%;display:block"></canvas>
       </div>
@@ -570,8 +592,87 @@ canvas{display:block;width:100%}
     </div>
   </div>
 </div>
-
 </div>
+
+<!-- ── PLAYBOOK — static reference rules, collapsed by default ── -->
+
+
+<div class="app" style="margin-top:var(--sp-3)">
+  <div style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4)">
+    <div class="flex-c" style="justify-content:space-between;cursor:pointer" onclick="var b=document.getElementById('playbook-body');b.style.display=b.style.display==='none'?'block':'none';document.getElementById('playbook-arrow').textContent=b.style.display==='none'?'▸':'▾';">
+      <div style="font-size:var(--fs-2);font-weight:600;letter-spacing:.5px">📋 PLAYBOOK — REFERENCE RULES</div>
+      <span id="playbook-arrow" style="color:var(--text-muted)">▸</span>
+    </div>
+    <div id="playbook-body" style="display:none;margin-top:var(--sp-3)">
+
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">CAPITAL ALLOCATION — $250K REFERENCE</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-2);margin-bottom:var(--sp-3)">
+        <div class="mt"><div class="mt-label">MAX DEPLOYED</div><div class="mt-val" style="color:var(--green)">$125K</div><div class="mt-sub">50% · 7 pillars active</div></div>
+        <div class="mt"><div class="mt-label">RESERVE</div><div class="mt-val" style="color:var(--blue)">$75K</div><div class="mt-sub">30% · rolls + margin</div></div>
+        <div class="mt"><div class="mt-label">DRY POWDER</div><div class="mt-val" style="color:var(--amber)">$50K</div><div class="mt-sub">20% · VIX 25+ deploy</div></div>
+        <div class="mt"><div class="mt-label">MAX PER TRADE</div><div class="mt-val" style="color:var(--red)">$12.5K</div><div class="mt-sub">5% risk cap · hard limit</div></div>
+      </div>
+
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">CIRCUIT BREAKERS — NON-NEGOTIABLE</div>
+      <div style="margin-bottom:var(--sp-3)">
+        <div class="pb-rule"><strong>Drawdown 10%:</strong> all new entries stop. Manage to close. Resume next month only.</div>
+        <div class="pb-rule"><strong>$5K target hit:</strong> shift to defensive. Smaller size, tighter delta, fewer entries.</div>
+        <div class="pb-rule"><strong>VIX 30+ (2 days):</strong> deploy $25K dry powder into T1. Wider strikes, smaller size.</div>
+        <div class="pb-rule"><strong>SPY below 200MA:</strong> minimum size only. Bear calls only. No bull puts until recovery.</div>
+      </div>
+
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">MANAGEMENT RULES</div>
+      <div style="margin-bottom:var(--sp-3)">
+        <div class="pb-rule pb-good">Spread at 50% profit → CLOSE, take the win, no exceptions.</div>
+        <div class="pb-rule pb-warn">Short delta crosses 0.25 → ROLL out 7 days, away, net credit only.</div>
+        <div class="pb-rule pb-warn">Spread doubles to $1.00+ → ROLL 7 days further, 6–10pts away.</div>
+        <div class="pb-rule pb-bad">Regime flips mid-trade → CLOSE immediately, no delta check needed.</div>
+        <div class="pb-rule pb-bad">Inside 7 DTE + threatened (T1/T2) → CLOSE, no rolls, no exceptions.</div>
+        <div class="pb-rule pb-bad">Friday + any delta concern → CLOSE, never hold threatened over the weekend.</div>
+        <div class="pb-rule pb-good">Big intraday reversal, spread $0.10–0.15 → CLOSE EARLY, 70–80% profit, take it.</div>
+        <div class="pb-rule pb-bad">T3 inside 3 DTE + threatened → CLOSE, no rolls inside 3 DTE on weeklies.</div>
+      </div>
+
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">HARD RULES — NEVER BREAK THESE</div>
+      <div style="margin-bottom:var(--sp-3)">
+        <div class="pb-rule pb-bad">Never open T1 + T2 on the same underlying simultaneously.</div>
+        <div class="pb-rule pb-bad">Never hold more than 3 bull puts open at the same time.</div>
+        <div class="pb-rule pb-bad">Never roll for a debit — close and accept the loss instead.</div>
+        <div class="pb-rule pb-bad">Never hold a threatened position into the weekend.</div>
+        <div class="pb-rule pb-bad">Never open bull puts when price is below a declining 21 EMA.</div>
+        <div class="pb-rule pb-bad">Never trade EEM or XLE without checking open interest first.</div>
+        <div class="pb-rule pb-good">A missed trade is always better than a wrong-direction trade.</div>
+        <div class="pb-rule pb-good">No entry across all tiers = valid outcome. Log and close.</div>
+        <div class="pb-rule pb-good">Monthly $5K target hit = shift to defensive. Protect the month.</div>
+        <div class="pb-rule pb-good">CPI / Fed day = wait 15 min after print, then assess cleanly.</div>
+      </div>
+
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">CHARTING SETUP</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-2);margin-bottom:var(--sp-3)">
+        <div class="mt" style="text-align:left"><div class="mt-label">REGIME CHECK — DAILY</div><div style="font-size:var(--fs-2);margin-top:4px">1D, 3–6mo lookback · 21 EMA only · above/below? slope? · 30 sec, done first</div></div>
+        <div class="mt" style="text-align:left"><div class="mt-label">MACRO CONFIRM — WEEKLY</div><div style="font-size:var(--fs-2);margin-top:4px">1W, 12–18mo lookback · 200MA + 20SMA · uptrend intact? below 200MA? · 60 sec, done second</div></div>
+        <div class="mt" style="text-align:left"><div class="mt-label">T3 INTRADAY — 30 MIN</div><div style="font-size:var(--fs-2);margin-top:4px">30min, entry day only · move still in progress or exhausted? · T3 SPY entries only</div></div>
+      </div>
+
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">MONTHLY INCOME TARGETS — SCALE 3 → 5 → 10 CONTRACTS</div>
+      <div class="table-wrap" style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:var(--fs-2)">
+          <thead><tr style="color:var(--text-muted);font-size:var(--fs-1);text-align:left">
+            <th style="padding:4px">CONTRACTS</th><th style="padding:4px">T1 ×2/mo</th><th style="padding:4px">T2 ×4/mo</th><th style="padding:4px">T3 ×4/mo</th><th style="padding:4px">COMBINED</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:4px">3 (start)</td><td style="padding:4px">2×$262 = $525</td><td style="padding:4px">4×$171 = $684</td><td style="padding:4px">4×$150 = $600</td><td style="padding:4px;color:var(--green)">~$1,809</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:4px">5</td><td style="padding:4px">2×$437 = $875</td><td style="padding:4px">4×$285 = $1,140</td><td style="padding:4px">4×$250 = $1,000</td><td style="padding:4px;color:var(--green)">~$3,015</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:4px">10</td><td style="padding:4px">2×$875 = $1,750</td><td style="padding:4px">4×$570 = $2,280</td><td style="padding:4px">4×$500 = $2,000</td><td style="padding:4px;color:var(--green)">~$6,030</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:var(--fs-1);color:var(--text-muted);margin-top:6px">Start at 3, scale to 5 after $5K net banked, scale to 10 after $10K net banked. Max risk per trade $12.5K hard limit regardless of size.</div>
+
+    </div>
+  </div>
+</div>
+
 <script>
 var RAILWAY = 'https://automatic-potato-production-8488.up.railway.app/api/price/';
 var RAILWAY_BASE = 'https://automatic-potato-production-8488.up.railway.app/api/';
@@ -1000,12 +1101,16 @@ async function fetchAndDrawChart(sym) {
     var d = await r.json();
     if (!d.data || !d.data.length) return;
     wrap.style.display = 'block';
-    if (title) title.textContent = sym + ' — 30 DAYS + 21 EMA';
+    if (title) title.textContent = sym + ' — ' + d.data.length + ' DAYS';
+    var ema200Legend = document.getElementById('ema200-legend');
+    if (ema200Legend) ema200Legend.style.display = d.ema200Available ? 'inline' : 'none';
     drawPriceChart(d.data, sym);
     if (d.signals) {
       drawMacdHistogram(d.data);
       renderTechSignals(d.signals, sym, d.data);
     }
+    if (d.squeeze) renderSqueeze(d.squeeze);
+    if (d.fib) renderFib(d.fib);
   } catch(e) {
     // Silently fail — chart is supplementary
   }
@@ -1017,114 +1122,160 @@ function drawPriceChart(data, sym) {
   var ctx = canvas.getContext('2d');
   var W = canvas.parentElement.clientWidth - 24;
   if (W <= 0) W = 600;
+  var H = 190;
   canvas.width = W;
-  canvas.height = 120;
-  ctx.clearRect(0, 0, W, 120);
+  canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
 
-  var closes = data.map(function(d) { return d.close; });
-  var emas = data.map(function(d) { return d.ema21; });
-  var allVals = closes.concat(emas);
+  var n = data.length;
+  var highs = data.map(function(d){ return d.high; });
+  var lows = data.map(function(d){ return d.low; });
+  var maLines = [
+    { key: 'ema8',   color: '#f0883e', label: 'EMA8' },
+    { key: 'ema21',  color: '#e3b341', label: 'EMA21' },
+    { key: 'ema34',  color: '#bc8cff', label: 'EMA34' },
+    { key: 'sma50',  color: '#58a6ff', label: 'SMA50' },
+    { key: 'ema200', color: '#e6edf3', label: 'EMA200' },
+  ];
+  var maVals = [];
+  maLines.forEach(function(m){ data.forEach(function(d){ if (d[m.key]!=null) maVals.push(d[m.key]); }); });
+  var allVals = highs.concat(lows).concat(maVals);
   var minV = Math.min.apply(null, allVals);
   var maxV = Math.max.apply(null, allVals);
-  var padding = (maxV - minV) * 0.08;
+  var padding = (maxV - minV) * 0.06;
   minV -= padding; maxV += padding;
-  var range = maxV - minV;
-  var n = data.length;
+  var range = maxV - minV || 1;
 
-  function toX(i) { return Math.round((i / (n - 1)) * (W - 20) + 10); }
-  function toY(v) { return Math.round(110 - ((v - minV) / range) * 100); }
+  var padL = 8, padR = 44; // right padding reserves room for the current-price label
+  function toX(i) { return Math.round((i / (n - 1)) * (W - padL - padR) + padL); }
+  function toY(v) { return Math.round(H - 22 - ((v - minV) / range) * (H - 40)); }
 
   // Grid lines
-  ctx.strokeStyle = 'rgba(48,54,61,0.8)';
+  ctx.strokeStyle = 'rgba(48,54,61,0.6)';
   ctx.lineWidth = 1;
   [0.25, 0.5, 0.75].forEach(function(f) {
-    var y = Math.round(10 + f * 100);
-    ctx.beginPath(); ctx.moveTo(10, y); ctx.lineTo(W - 10, y);
+    var y = Math.round(10 + f * (H - 32));
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y);
     ctx.stroke();
   });
 
-  // Shade area where price is below EMA (bearish)
-  ctx.beginPath();
-  ctx.moveTo(toX(0), toY(data[0].ema21));
-  for (var i = 1; i < n; i++) ctx.lineTo(toX(i), toY(data[i].ema21));
-  for (var j = n - 1; j >= 0; j--) ctx.lineTo(toX(j), toY(data[j].close));
-  ctx.closePath();
-  // Determine overall regime for shade colour
-  var lastClose = data[n-1].close;
-  var lastEMA = data[n-1].ema21;
-  ctx.fillStyle = lastClose < lastEMA ? 'rgba(248,81,73,0.06)' : 'rgba(63,185,80,0.06)';
-  ctx.fill();
-
-  // EMA line (amber)
-  ctx.beginPath();
-  ctx.moveTo(toX(0), toY(data[0].ema21));
-  for (var i = 1; i < n; i++) ctx.lineTo(toX(i), toY(data[i].ema21));
-  ctx.strokeStyle = '#e3b341';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([4, 3]);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Price line (green or red depending on regime)
-  ctx.beginPath();
-  ctx.moveTo(toX(0), toY(data[0].close));
-  for (var i = 1; i < n; i++) ctx.lineTo(toX(i), toY(data[i].close));
-  ctx.strokeStyle = lastClose >= lastEMA ? '#3fb950' : '#f85149';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Current price dot
-  ctx.beginPath();
-  ctx.arc(toX(n-1), toY(lastClose), 4, 0, Math.PI * 2);
-  ctx.fillStyle = lastClose >= lastEMA ? '#56d364' : '#f85149';
-  ctx.fill();
-
-  // EMA crossover markers — dots where price crosses EMA
-  for (var i = 1; i < n; i++) {
-    var prev = data[i-1];
-    var curr = data[i];
-    var crossed = (prev.close > prev.ema21) !== (curr.close > curr.ema21);
-    if (crossed) {
-      ctx.beginPath();
-      ctx.arc(toX(i), toY(curr.ema21), 3, 0, Math.PI * 2);
-      ctx.fillStyle = curr.close < curr.ema21 ? '#f85149' : '#3fb950';
-      ctx.fill();
-    }
+  // Candlesticks
+  var candleW = Math.max(1, ((W - padL - padR) / n) * 0.62);
+  for (var i = 0; i < n; i++) {
+    var d = data[i];
+    var x = toX(i);
+    var up = d.close >= d.open;
+    ctx.strokeStyle = ctx.fillStyle = up ? '#3fb950' : '#f85149';
+    // wick
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, toY(d.high));
+    ctx.lineTo(x, toY(d.low));
+    ctx.stroke();
+    // body
+    var yOpen = toY(d.open), yClose = toY(d.close);
+    var bodyTop = Math.min(yOpen, yClose), bodyH = Math.max(1, Math.abs(yClose - yOpen));
+    ctx.fillRect(x - candleW/2, bodyTop, candleW, bodyH);
   }
 
-  // Labels: first date, last date, current price, EMA value
+  // Moving average overlay lines — skip any line with no data yet (e.g. EMA200
+  // on a ticker without 200 days of real history)
+  maLines.forEach(function(m) {
+    var pts = data.map(function(d, i){ return d[m.key] != null ? {x:toX(i), y:toY(d[m.key])} : null; }).filter(Boolean);
+    if (pts.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.strokeStyle = m.color;
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+  });
+
+  var lastClose = data[n-1].close;
+  var lastEMA21 = data[n-1].ema21;
+
+  // Current price marker + label
+  var px = toX(n-1), py = toY(lastClose);
+  ctx.beginPath();
+  ctx.arc(px, py, 3, 0, Math.PI * 2);
+  ctx.fillStyle = lastClose >= lastEMA21 ? '#56d364' : '#f85149';
+  ctx.fill();
+  ctx.font = 'bold 10px -apple-system,sans-serif';
+  ctx.fillText('$' + lastClose.toFixed(2), Math.min(W - 46, px + 6), py + 3);
+
+  // Date labels
   ctx.font = '9px -apple-system,sans-serif';
   ctx.fillStyle = 'rgba(139,148,158,0.8)';
-  ctx.fillText(data[0].date.slice(5), 10, 118); // first date MM-DD
+  ctx.fillText(data[0].date.slice(5), padL, H - 6);
   ctx.textAlign = 'right';
-  ctx.fillText(data[n-1].date.slice(5), W - 10, 118); // last date
+  ctx.fillText(data[n-1].date.slice(5), W - padR, H - 6);
   ctx.textAlign = 'left';
-
-  // Price label at current dot
-  var px = toX(n-1), py = toY(lastClose);
-  ctx.fillStyle = lastClose >= lastEMA ? '#56d364' : '#f85149';
-  ctx.font = 'bold 10px -apple-system,sans-serif';
-  var priceLabel = '$' + lastClose.toFixed(2);
-  var lx = px - ctx.measureText(priceLabel).width - 6;
-  ctx.fillText(priceLabel, Math.max(4, lx), Math.max(14, py - 4));
-
-  // EMA label
-  ctx.fillStyle = '#e3b341';
-  ctx.font = '9px -apple-system,sans-serif';
-  var emaLabel = 'EMA $' + lastEMA.toFixed(2);
-  ctx.fillText(emaLabel, 12, toY(lastEMA) - 4);
 
   // Footer
   var footer = document.getElementById('chart-footer');
   if (footer) {
-    var diff = lastClose - lastEMA;
-    var pct = ((diff / lastEMA) * 100).toFixed(1);
+    var diff = lastClose - lastEMA21;
+    var pct = ((diff / lastEMA21) * 100).toFixed(1);
     var col = diff >= 0 ? 'var(--green)' : 'var(--red)';
     var pos = diff >= 0 ? 'above' : 'below';
-    footer.innerHTML = '<span>30 trading days</span>'
-      + '<span style="color:'+col+'">Price '+pos+' EMA by $'+Math.abs(diff).toFixed(2)+' ('+Math.abs(pct)+'%)</span>'
+    footer.innerHTML = '<span>' + n + ' trading days</span>'
+      + '<span style="color:'+col+'">Price '+pos+' 21 EMA by $'+Math.abs(diff).toFixed(2)+' ('+Math.abs(pct)+'%)</span>'
       + '<span style="color:var(--text-muted)">Verify on TradingView 1D</span>';
   }
+}
+
+// ── MACD HISTOGRAM STRIP ──────────────────────────────────────────────────────
+// Mirrors classic charting layout: price+EMA above, MACD histogram below —
+// green bars above zero (bullish momentum), red below (bearish).
+// ── TTM SQUEEZE ────────────────────────────────────────────────────────────
+// Bollinger Bands compressed inside Keltner Channels = low realized
+// volatility, often the calm before a real move. "Fired" means that
+// compression just resolved — doesn't say which direction, just that
+// something moved.
+function renderSqueeze(squeeze) {
+  var box = document.getElementById('squeeze-box');
+  if (!box) return;
+  if (squeeze.on == null) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  var col = squeeze.on ? 'var(--amber)' : 'var(--green)';
+  var headline = squeeze.on ? 'SQUEEZE ON' : 'SQUEEZE FIRED';
+  var explain = squeeze.on
+    ? 'Volatility is compressed — Bollinger Bands are sitting inside the Keltner Channel. This often precedes a bigger move, but doesn\'t say which direction. The longer it stays compressed, the more energy tends to be stored for whatever comes next.'
+    : 'The compression just resolved — Bollinger Bands have moved back outside the Keltner Channel, meaning a real move is already underway. This has been the state for ' + (squeeze.barsInState || '?') + ' bar' + (squeeze.barsInState===1?'':'s') + '.';
+  box.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+    + '<span style="width:9px;height:9px;border-radius:50%;background:'+col+'"></span>'
+    + '<span style="font-weight:600;color:'+col+';font-size:var(--fs-2)">'+headline+'</span>'
+    + (squeeze.barsInState ? '<span style="color:var(--text-muted);font-size:var(--fs-1)">'+squeeze.barsInState+' bars in this state</span>' : '')
+    + '</div>'
+    + '<div style="font-size:var(--fs-2);color:var(--text-dim);line-height:1.5">'+explain+'</div>';
+}
+
+// ── FIBONACCI RETRACEMENT ───────────────────────────────────────────────────
+// Levels computed from the real 180-day swing high/low, not eyeballed —
+// classic retracement ratios (38.2%, 61.8% especially) tend to act as
+// support/resistance because enough traders are watching them that they
+// become somewhat self-fulfilling.
+function renderFib(fib) {
+  var box = document.getElementById('fib-box');
+  if (!box) return;
+  box.style.display = 'block';
+  var dirLabel = fib.measuredFrom === 'high'
+    ? 'Measuring down from the 180-day high ($'+fib.swingHigh.toFixed(2)+') — the last major move was up, so these are pullback levels.'
+    : 'Measuring up from the 180-day low ($'+fib.swingLow.toFixed(2)+') — the last major move was down, so these are bounce levels.';
+  var html = '<div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:4px">FIBONACCI RETRACEMENT — 180D</div>'
+    + '<div style="font-size:var(--fs-2);color:var(--text-dim);margin-bottom:var(--sp-2)">'+dirLabel+'</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:var(--sp-1)">';
+  fib.levels.forEach(function(l) {
+    var isKey = l.ratio === 0.382 || l.ratio === 0.618;
+    var dCol = l.distanceFromCurrent >= 0 ? 'var(--green)' : 'var(--red)';
+    html += '<div style="background:var(--bg1);border:1px solid '+(isKey?'var(--amber)':'var(--border)')+';border-radius:var(--r-sm);padding:6px;text-align:center">'
+      + '<div style="font-size:var(--fs-1);color:'+(isKey?'var(--amber)':'var(--text-muted)')+'">'+(l.ratio*100).toFixed(1)+'%</div>'
+      + '<div style="font-size:var(--fs-2);font-weight:600">$'+l.level.toFixed(2)+'</div>'
+      + '<div style="font-size:var(--fs-1);color:'+dCol+'">'+(l.distanceFromCurrent>=0?'+':'')+l.distanceFromCurrent.toFixed(2)+'</div>'
+      + '</div>';
+  });
+  html += '</div>';
+  box.innerHTML = html;
 }
 
 // ── MACD HISTOGRAM STRIP ──────────────────────────────────────────────────────

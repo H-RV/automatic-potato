@@ -163,6 +163,8 @@ function bucketColor(name) {
   return '#484f58';
 }
 
+var selectedMonth = null; // null = not yet set; defaults to the latest month in the data
+
 function loadSummary() {
   fetch('/api/journal/summary')
     .then(function(r){ return r.json(); })
@@ -179,13 +181,31 @@ function isoWeek(dateStr) {
   return d.getFullYear() + '-W' + String(week).padStart(2,'0');
 }
 
+function monthLabel(m) {
+  var parts = m.split('-');
+  var names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return names[parseInt(parts[1],10)-1] + ' ' + parts[0];
+}
+
+function setMonth(m) { selectedMonth = m; render(); }
+
 function render() {
   var data = currentData;
-  var journal = data.journal || [];
-  if (!journal.length) {
+  var allJournal = data.journal || [];
+  if (!allJournal.length) {
     content.innerHTML = '<div class="empty">No trades yet — drop a CSV above to get started.</div>';
     return;
   }
+
+  // All-time running total — never filtered, this is the "track my progress"
+  // number that keeps accumulating regardless of which month is being viewed
+  var allTimeTotal = allJournal.reduce(function(s,j){ return s+j.pnl; }, 0);
+
+  // Months present in the data, most recent first
+  var months = Array.from(new Set(allJournal.map(function(j){ return j.date.slice(0,7); }))).sort().reverse();
+  if (!selectedMonth || months.indexOf(selectedMonth) === -1) selectedMonth = months[0];
+
+  var journal = allJournal.filter(function(j){ return j.date.slice(0,7) === selectedMonth; });
 
   var wins = journal.filter(function(j){ return j.pnl > 0; });
   var losses = journal.filter(function(j){ return j.pnl < 0; });
@@ -195,12 +215,22 @@ function render() {
   var knownHold = journal.filter(function(j){ return j.daysHeld != null; });
   var avgDays = knownHold.length ? (knownHold.reduce(function(s,j){return s+j.daysHeld;},0)/knownHold.length) : null;
 
-  var netClass = data.netRealized >= 0 ? 'pos' : 'neg';
+  var monthTotal = journal.reduce(function(s,j){ return s+j.pnl; }, 0);
+  var netClass = monthTotal >= 0 ? 'pos' : 'neg';
   var html = '';
 
-  html += '<div class="hero"><div class="hero-label">NET REALIZED</div>'
-    + '<div class="hero-num ' + netClass + '">' + (data.netRealized>=0?'+':'') + '$' + data.netRealized.toFixed(2) + '</div>'
-    + '<div class="hero-sub">' + journal.length + ' positions \u00b7 ' + wins.length + ' wins, ' + losses.length + ' losses' + '</div></div>';
+  // Month selector — pills for every month present in the data
+  html += '<div class="filter-row" style="margin-bottom:var(--sp-2)">';
+  months.forEach(function(m){
+    html += '<button class="filter-pill' + (m===selectedMonth?' active':'') + '" onclick="setMonth(\'' + m + '\')">' + monthLabel(m) + '</button>';
+  });
+  html += '</div>';
+
+  html += '<div class="hero"><div class="hero-label">' + monthLabel(selectedMonth).toUpperCase() + ' — NET REALIZED</div>'
+    + '<div class="hero-num ' + netClass + '">' + (monthTotal>=0?'+':'') + '$' + monthTotal.toFixed(2) + '</div>'
+    + '<div class="hero-sub">' + journal.length + ' positions \u00b7 ' + wins.length + ' wins, ' + losses.length + ' losses</div>'
+    + '<div style="margin-top:var(--sp-2);padding-top:var(--sp-2);border-top:1px solid var(--border);font-size:var(--fs-2);color:var(--text-muted)">All-time running total: <span style="color:' + (allTimeTotal>=0?'var(--green-bright)':'var(--red)') + ';font-weight:600">' + (allTimeTotal>=0?'+':'') + '$' + allTimeTotal.toFixed(2) + '</span> across ' + months.length + ' month' + (months.length===1?'':'s') + '</div>'
+    + '</div>';
 
   html += '<div class="stat-grid">'
     + '<div class="stat"><div class="stat-label">WIN RATE</div><div class="stat-num">' + winRate + '%</div><div class="stat-sub">' + (wins.length+losses.length) + ' closed</div></div>'
@@ -231,8 +261,10 @@ function render() {
   var tickers = Object.keys(byTicker).sort(function(a,b){ return Math.abs(byTicker[b])-Math.abs(byTicker[a]); });
   var maxAbsT = Math.max.apply(null, tickers.map(function(t){return Math.abs(byTicker[t]);})) || 1;
 
-  var buckets = Object.keys(data.byBucket).sort(function(a,b){ return Math.abs(data.byBucket[b])-Math.abs(data.byBucket[a]); });
-  var maxAbsB = Math.max.apply(null, buckets.map(function(b){return Math.abs(data.byBucket[b]);})) || 1;
+  var byBucket = {};
+  journal.forEach(function(j){ var key = j.bucket.replace(' (via roll)',''); byBucket[key] = (byBucket[key]||0) + j.pnl; });
+  var buckets = Object.keys(byBucket).sort(function(a,b){ return Math.abs(byBucket[b])-Math.abs(byBucket[a]); });
+  var maxAbsB = Math.max.apply(null, buckets.map(function(b){return Math.abs(byBucket[b]);})) || 1;
 
   html += '<div class="grid2">';
   html += '<div class="section"><div class="section-title">BY TICKER</div>';
@@ -244,7 +276,7 @@ function render() {
 
   html += '<div class="section"><div class="section-title">BY STRATEGY</div>';
   buckets.forEach(function(b){
-    var v = data.byBucket[b], pct = Math.abs(v)/maxAbsB*100;
+    var v = byBucket[b], pct = Math.abs(v)/maxAbsB*100;
     html += '<div class="bucket-row"><div class="bucket-name">' + b + '</div><div class="bucket-bar-wrap"><div class="bucket-bar" style="width:' + pct + '%;background:' + (v>=0?bucketColor(b):'#f85149') + '"></div></div><div class="bucket-val ' + (v>=0?'pos':'neg') + '">' + (v>=0?'+':'') + '$' + v.toFixed(0) + '</div></div>';
   });
   html += '</div></div>';
