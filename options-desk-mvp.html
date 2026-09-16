@@ -1,0 +1,2845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scan My Trade — Know Your Options</title>
+<meta name="description" content="Upload a screenshot of your broker positions. AI reads your trades and explains them in plain English.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111827'/%3E%3Ctext x='16' y='23' font-size='20' font-weight='bold' text-anchor='middle' fill='%2300e5a0' font-family='Arial'%3ES%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07080f; --surface:#0d0f1a; --surface2:#12152a; --surface3:#161a2e;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.14);
+  --text:#e8eaf2; --muted:rgba(232,234,242,0.42); --dim:rgba(232,234,242,0.18);
+  --g:#00e5a0; --r:#ff3a5c; --b:#4d9fff; --y:#ffb547; --pu:#a78bfa;
+  --g10:rgba(0,229,160,0.10); --r10:rgba(255,58,92,0.10);
+  --g20:rgba(0,229,160,0.20); --r20:rgba(255,58,92,0.20);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 28px;background:rgba(7,8,15,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.08em}
+.nav-logo span{color:var(--g)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-badge{background:var(--g10);border:1px solid rgba(0,229,160,0.25);color:var(--g);
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;padding:4px 10px;border-radius:20px}
+.nav-scan-btn{background:var(--g);color:#000;font-family:'DM Mono',monospace;font-weight:500;
+  font-size:10px;letter-spacing:0.1em;border:none;border-radius:7px;padding:8px 16px;cursor:pointer;transition:opacity 0.2s}
+.nav-scan-btn:hover{opacity:0.85}
+
+.wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:72px 0 56px;position:relative}
+.hero::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);
+  width:600px;height:400px;background:radial-gradient(ellipse,rgba(0,229,160,0.06) 0%,transparent 70%);
+  pointer-events:none;z-index:0}
+.hero>*{position:relative;z-index:1}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;
+  background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.15);
+  border-radius:30px;padding:5px 14px;
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.25em;color:var(--g);margin-bottom:24px}
+.hero-h{font-family:'Bebas Neue',sans-serif;font-size:clamp(52px,9vw,108px);
+  letter-spacing:0.02em;line-height:0.92;margin-bottom:20px}
+.hero-h em{color:var(--g);font-style:normal;
+  background:linear-gradient(135deg,#00e5a0,#4d9fff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:17px;color:var(--muted);max-width:460px;margin:0 auto 16px;
+  line-height:1.7;font-weight:300}
+.hero-trust{display:flex;align-items:center;justify-content:center;gap:20px;
+  margin-bottom:40px;flex-wrap:wrap}
+.hero-trust-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);
+  font-family:'DM Mono',monospace;letter-spacing:0.06em}
+.hero-trust-item span{color:var(--g);font-size:13px}
+
+.drop-zone{max-width:600px;margin:0 auto;border:1.5px dashed rgba(255,255,255,0.1);
+  border-radius:24px;padding:44px 32px 32px;cursor:pointer;transition:all 0.3s;
+  background:rgba(255,255,255,0.015);position:relative;overflow:hidden}
+.drop-zone::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,229,160,0.07),transparent 60%);
+  pointer-events:none;transition:opacity 0.3s}
+.drop-zone:hover,.drop-zone.drag-over{border-color:rgba(0,229,160,0.4);
+  background:rgba(0,229,160,0.02);box-shadow:0 0 40px rgba(0,229,160,0.04)}
+.drop-zone:hover::before,.drop-zone.drag-over::before{opacity:2}
+.dz-icon{width:64px;height:64px;background:rgba(0,229,160,0.07);
+  border:1px solid rgba(0,229,160,0.2);border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;font-size:28px;transition:transform 0.2s}
+.drop-zone:hover .dz-icon{transform:scale(1.05)}
+.dz-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.08em;
+  margin-bottom:6px;color:var(--text)}
+.dz-sub{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;font-weight:300}
+.dz-chips{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-bottom:4px}
+.dz-chip{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+  border-radius:20px;padding:4px 11px;font-size:9px;color:var(--dim);
+  font-family:'DM Mono',monospace;letter-spacing:0.06em}
+.demo-link{display:inline-flex;align-items:center;gap:5px;margin-top:18px;
+  font-size:11px;color:rgba(77,159,255,0.7);font-family:'DM Mono',monospace;
+  letter-spacing:0.08em;cursor:pointer;transition:color 0.15s}
+.demo-link:hover{color:var(--b)}
+
+/* What to screenshot tip */
+.screenshot-tip{max-width:600px;margin:16px auto 0;
+  background:rgba(255,181,71,0.04);border:1px solid rgba(255,181,71,0.12);
+  border-radius:12px;padding:12px 16px;
+  display:flex;align-items:flex-start;gap:10px;font-size:12px;color:rgba(255,181,71,0.7)}
+.screenshot-tip strong{color:rgba(255,181,71,0.9)}
+
+/* ── PARSING ── */
+.parsing{display:none;max-width:660px;margin:0 auto;
+  background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:48px 32px;text-align:center}
+.parsing.show{display:block}
+.spin{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--g);
+  border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.parse-step{font-family:'DM Mono',monospace;font-size:11px;color:var(--g);letter-spacing:0.12em;margin-bottom:6px}
+.parse-sub{font-size:12px;color:var(--muted)}
+
+/* ── SCREENSHOT THUMB ── */
+.ss-thumb{display:none;max-width:900px;margin:0 auto 28px}
+.ss-thumb.show{display:block}
+.ss-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;color:var(--muted);margin-bottom:8px}
+.ss-img{width:100%;border-radius:10px;border:1px solid var(--border);opacity:0.85;cursor:zoom-in;transition:opacity 0.2s}
+.ss-img:hover{opacity:1}
+/* Lightbox */
+.ss-lightbox{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.92);
+  align-items:center;justify-content:center;cursor:zoom-out;padding:20px}
+.ss-lightbox.open{display:flex}
+.ss-lightbox img{max-width:95vw;max-height:95vh;border-radius:10px;object-fit:contain}
+
+/* ── REVIEW TABLE ── */
+.review-section{display:none;max-width:1100px;margin:0 auto}
+.review-section.show{display:block}
+.review-header{display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:24px;gap:20px;flex-wrap:wrap}
+.review-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:0.06em}
+.review-title span{color:var(--g)}
+.review-subtitle{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5}
+.review-actions{display:flex;gap:10px;align-items:center;flex-shrink:0}
+.btn-add{background:var(--surface2);border:1px solid var(--border2);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;
+  padding:10px 16px;border-radius:8px;cursor:pointer;transition:all 0.15s}
+.btn-add:hover{border-color:var(--g);color:var(--g)}
+.btn-confirm{background:var(--g);color:#000;font-family:'DM Mono',monospace;font-weight:500;
+  font-size:11px;letter-spacing:0.1em;border:none;border-radius:8px;padding:12px 24px;cursor:pointer;transition:opacity 0.2s}
+.btn-confirm:hover{opacity:0.85}
+
+/* Review table */
+.review-table-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--border2);margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:var(--surface2);border-bottom:1px solid var(--border2)}
+thead th{padding:12px 14px;text-align:left;font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:0.14em;color:var(--muted);font-weight:500;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,0.018)}
+tbody td{padding:10px 14px;vertical-align:middle}
+
+/* Editable cells */
+.cell-input{background:transparent;border:1px solid transparent;border-radius:6px;
+  color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:5px 8px;
+  width:100%;min-width:60px;outline:none;transition:all 0.15s}
+.cell-input:hover{border-color:var(--border2);background:var(--surface2)}
+.cell-input:focus{border-color:var(--g);background:var(--surface2);color:var(--g)}
+.cell-select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 8px;
+  outline:none;cursor:pointer;transition:all 0.15s}
+.cell-select:focus{border-color:var(--g)}
+
+/* Row status */
+.row-ok td:first-child{border-left:3px solid var(--g)}
+.row-warn td:first-child{border-left:3px solid var(--y)}
+
+/* AI confidence badge */
+.ai-badge{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;
+  padding:2px 7px;border-radius:4px;border:1px solid currentColor;white-space:nowrap}
+.ai-high{color:var(--g);border-color:rgba(0,229,160,0.3);background:rgba(0,229,160,0.06)}
+.ai-med{color:var(--y);border-color:rgba(255,181,71,0.3);background:rgba(255,181,71,0.06)}
+.ai-low{color:var(--r);border-color:rgba(255,58,92,0.3);background:rgba(255,58,92,0.06)}
+
+/* Delete row btn */
+.del-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;
+  padding:4px 8px;border-radius:5px;transition:all 0.15s;line-height:1}
+.del-btn:hover{color:var(--r);background:var(--r10)}
+
+/* Review hint */
+.review-hint{background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.18);
+  border-radius:10px;padding:12px 16px;font-size:12px;color:rgba(77,159,255,0.8);
+  display:flex;gap:10px;align-items:flex-start;margin-bottom:20px}
+.hint-icon{flex-shrink:0;font-size:16px}
+
+/* ── PORTFOLIO BAR ── */
+.port-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--border);border-radius:12px;overflow:hidden;margin-bottom:28px}
+.port-stat{background:var(--surface);padding:14px 18px}
+.ps-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.14em;color:var(--muted);margin-bottom:4px}
+.ps-value{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:0.04em}
+
+/* ── SECTION HEADER ── */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.06em}
+.sec-title span{color:var(--g)}
+.sec-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em}
+.scan-again-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;
+  padding:8px 14px;border-radius:7px;cursor:pointer;transition:all 0.15s}
+.scan-again-btn:hover{border-color:var(--g);color:var(--g)}
+.nav-journal-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--muted);
+  font-family:'DM Mono',monospace;font-weight:500;font-size:10px;letter-spacing:0.1em;
+  border-radius:7px;padding:8px 16px;cursor:pointer;transition:all 0.2s}
+.nav-journal-btn:hover,.nav-journal-btn.active{background:rgba(0,229,160,0.1);
+  border-color:rgba(0,229,160,0.3);color:var(--g)}
+
+/* ══════════════════════════════════════════════════════
+   MOBILE — 480px and below
+   ══════════════════════════════════════════════════════ */
+@media(max-width:600px){
+
+  /* Nav */
+  .nav{padding:0 16px}
+  .nav-logo{font-size:18px}
+  .nav-badge{display:none}
+  .nav-journal-btn{padding:7px 10px;font-size:9px}
+  .nav-scan-btn{padding:7px 12px;font-size:9px}
+
+  /* Wrap padding */
+  .wrap{padding:0 16px}
+
+  /* Centre everything on mobile */
+  .hero{padding:40px 0 32px;text-align:center}
+  .hero-trust{justify-content:center}
+  .drop-zone{text-align:center}
+  .dz-chips{justify-content:center}
+  .hero-h{font-size:clamp(48px,14vw,72px)}
+  .hero-sub{font-size:14px}
+  .hero-trust{gap:12px}
+  .hero-trust-item{font-size:10px}
+  .drop-zone{padding:32px 20px 24px;border-radius:18px}
+  .dz-title{font-size:18px}
+  .dz-sub{font-size:11px}
+  .dz-chips{gap:5px}
+  .dz-chip{font-size:8px;padding:3px 9px}
+  .screenshot-tip{font-size:11px}
+
+  /* Carousel */
+  .carousel-wrap{padding:8px 16px;top:50px}
+  .c-chip{min-width:68px;padding:4px 8px}
+  .c-sym{font-size:12px}
+
+  /* Dashboard header */
+  .sec-hdr{flex-direction:column;align-items:center;gap:10px;text-align:center}
+  .sec-hdr>div{justify-content:center;width:100%}
+  .grid-selector{display:none !important}
+  .scan-again-btn{width:100%;text-align:center;justify-content:center}
+  .port-bar{border-radius:12px}
+
+  /* Cards — always 1 column on mobile */
+  .cards{grid-template-columns:1fr !important}
+
+  /* Card header mobile */
+  .card-hdr{flex-wrap:wrap;gap:8px}
+  .card-badges{flex-direction:row;gap:4px;align-items:center}
+
+  /* Card internals */
+  .card-sym{font-size:26px}
+  .card-price{font-size:16px}
+  .card-meta{font-size:10px}
+  .goal-headline{font-size:15px}
+  .goal-headline .goal-price{font-size:17px}
+  .stat-box-val{font-size:13px}
+  .bb-keep{font-size:20px}
+  .bb-value{font-size:14px}
+  .sc-outcome{font-size:14px}
+
+  /* Card footer — stack on mobile */
+  .card-footer{flex-direction:column;align-items:flex-start;gap:10px;padding:12px 16px}
+  .cf-btns{width:100%;justify-content:stretch}
+  .cf-btn{flex:1;text-align:center;padding:9px 6px;font-size:8px}
+
+  /* Journal */
+  .journal-section{padding:20px 0 60px}
+  .journal-hdr{flex-direction:column;align-items:center;gap:12px;text-align:center}
+  .journal-actions{flex-wrap:wrap;gap:8px}
+  .j-stats{grid-template-columns:repeat(2,1fr)}
+  .j-table-wrap{overflow-x:scroll}
+  .j-table{font-size:11px}
+  .j-td{padding:8px 10px}
+  .j-sym{font-size:14px}
+
+  /* Review table */
+  .review-table-wrap{overflow-x:scroll}
+
+  /* Port bar */
+  .port-bar{grid-template-columns:repeat(2,1fr)}
+
+  /* How it works */
+  .how-steps{grid-template-columns:1fr}
+  .how{padding:40px 0 16px}
+
+  /* Modal */
+  .modal{padding:20px 16px;margin:0 8px}
+  .modal-grid{grid-template-columns:1fr}
+
+  /* Screenshot thumb */
+  .ss-thumb{max-width:100%}
+}
+
+@media(max-width:380px){
+  .hero-h{font-size:42px}
+  .nav-journal-btn{display:none}
+}
+
+/* ── GRID SELECTOR ── */
+.grid-selector{display:flex;align-items:center;gap:6px}
+.grid-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.14em;color:var(--muted)}
+.grid-btn{width:28px;height:28px;border-radius:5px;border:1px solid var(--border);
+  background:rgba(255,255,255,0.03);color:var(--muted);font-family:'DM Mono',monospace;
+  font-size:10px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center}
+.grid-btn:hover{border-color:var(--border2);color:var(--text)}
+.grid-btn.active{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.3);color:var(--g)}
+
+/* ── CAROUSEL ── */
+.carousel-wrap{background:rgba(0,0,0,0.3);border-bottom:1px solid var(--border);
+  padding:10px 28px;position:sticky;top:57px;z-index:99;backdrop-filter:blur(14px);
+  display:none}
+.carousel-wrap.show{display:block}
+.carousel-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.2em;
+  color:var(--muted);margin-bottom:6px}
+.carousel-track{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.06) transparent}
+.carousel-track::-webkit-scrollbar{height:3px}
+.carousel-track::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+.c-chip{flex-shrink:0;padding:5px 11px;border-radius:6px;border:2px solid var(--cc);
+  background:color-mix(in srgb,var(--cc) 8%,transparent);cursor:pointer;
+  transition:all 0.15s;min-width:80px;text-align:center}
+.c-chip:hover{background:color-mix(in srgb,var(--cc) 18%,transparent);transform:translateY(-1px)}
+.c-sym{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:0.06em;
+  color:var(--cc);line-height:1;margin-bottom:1px}
+.c-pnl{font-size:8px;font-weight:700}
+.c-type{font-size:7px;letter-spacing:0.08em;color:var(--muted);margin-top:1px}
+
+/* ── JOURNAL ── */
+.journal-section{display:none;max-width:1200px;margin:0 auto;padding:32px 0 80px}
+.journal-section.show{display:block}
+.journal-hdr{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.journal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.06em}
+.journal-title span{color:var(--g)}
+.journal-actions{display:flex;gap:10px;align-items:center}
+.journal-export-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;
+  padding:8px 14px;border-radius:7px;cursor:pointer;transition:all 0.15s}
+.journal-export-btn:hover{border-color:var(--g);color:var(--g)}
+
+/* Journal stats bar */
+.j-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;
+  background:var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
+.j-stat{background:var(--surface);padding:12px 16px}
+.j-stat-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.14em;color:var(--muted);margin-bottom:4px}
+.j-stat-value{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.04em}
+
+/* Journal table */
+.j-table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border2)}
+.j-table{width:100%;border-collapse:collapse;font-size:12px}
+.j-table thead tr{background:var(--surface2);border-bottom:1px solid var(--border2)}
+.j-table thead th{padding:11px 14px;text-align:left;font-family:'DM Mono',monospace;
+  font-size:8px;letter-spacing:0.14em;color:var(--muted);font-weight:500;white-space:nowrap}
+.j-table tbody tr{border-bottom:1px solid var(--border);transition:background 0.15s;cursor:default}
+.j-table tbody tr:last-child{border-bottom:none}
+.j-table tbody tr:hover{background:rgba(255,255,255,0.018)}
+.j-table tbody tr.j-closed{opacity:0.65}
+.j-table tbody tr.j-closed:hover{opacity:1}
+.j-td{padding:11px 14px;white-space:nowrap}
+.j-sym{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.04em;color:var(--g)}
+.j-sym.call{color:var(--b)}
+.j-badge{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;
+  padding:2px 7px;border-radius:4px;border:1px solid currentColor;display:inline-block}
+.j-status-open{color:var(--g);border-color:rgba(0,229,160,0.3);background:rgba(0,229,160,0.06)}
+.j-status-closed{color:var(--muted);border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.03)}
+.j-pnl-pos{color:var(--g);font-family:'DM Mono',monospace;font-weight:500}
+.j-pnl-neg{color:var(--r);font-family:'DM Mono',monospace;font-weight:500}
+.j-muted{color:var(--muted);font-family:'DM Mono',monospace}
+.j-del{background:none;border:none;color:rgba(255,58,92,0.3);cursor:pointer;
+  font-size:12px;padding:3px 6px;border-radius:4px;transition:all 0.15s}
+.j-del:hover{color:var(--r);background:var(--r10)}
+.j-edit{background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;
+  font-size:12px;padding:3px 6px;border-radius:4px;transition:all 0.15s}
+.j-edit:hover{color:var(--b);background:rgba(77,159,255,0.08)}
+
+/* Empty journal */
+.j-empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.j-empty-icon{font-size:36px;margin-bottom:12px;opacity:0.2}
+.j-empty-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.08em;color:var(--dim);margin-bottom:6px}
+.j-empty-sub{font-size:12px}
+
+/* ── CARDS GRID ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:16px;
+  transition:grid-template-columns 0.3s ease}
+.cards.single-col{grid-template-columns:1fr !important;max-width:760px;margin:0 auto}
+@media(max-width:960px){.cards{grid-template-columns:1fr}}
+
+/* ── TRADE CARD ── */
+/* Collapsed card */
+.card{background:var(--surface);border-radius:14px;border:1px solid var(--border);
+  border-left:3px solid var(--accent,var(--g));overflow:hidden;
+  animation:cardIn 0.3s ease both;cursor:pointer;transition:border-color 0.2s}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card:hover{border-color:var(--border2)}
+
+/* Collapsed header */
+.card-hdr{display:grid;grid-template-columns:1fr auto;gap:10px;padding:13px 16px 9px;align-items:start}
+.card-sym{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.03em;line-height:1;color:var(--accent,var(--g))}
+.card-stock-price{font-size:15px;color:var(--muted);font-weight:300;margin-top:1px}
+.card-detail{font-size:11px;color:var(--muted);margin-top:2px;font-weight:300}
+.card-dte{font-size:11px;color:var(--muted);margin-top:1px;font-weight:300}
+.card-right{text-align:right}
+.card-pnl{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.02em;line-height:1;margin-bottom:1px}
+.card-pnl-of{font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:300}
+.card-badges{display:flex;gap:4px;justify-content:flex-end}
+.badge{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;
+  padding:2px 7px;border-radius:4px;border:1px solid currentColor}
+
+/* Protection line */
+.card-protection{padding:0 16px 9px;font-size:12px;color:var(--muted);
+  line-height:1.6;border-bottom:1px solid var(--border)}
+
+/* Tracker pill — collapsed version */
+.card-tracker{margin:9px 16px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px}
+.tracker-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.tracker-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;color:var(--muted)}
+.tracker-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
+  font-family:'DM Mono',monospace;letter-spacing:0.04em}
+.tracker-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.05);
+  position:relative;overflow:hidden;margin-bottom:4px}
+.tracker-bar-fill{height:100%;border-radius:3px;position:absolute;top:0}
+.tracker-bar-tick{position:absolute;top:-2px;width:1.5px;height:10px;transform:translateX(-50%)}
+.tracker-bar-labels{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;
+  font-size:8px;color:var(--dim);margin-bottom:7px}
+.tracker-stats{display:flex;justify-content:space-between;font-size:11px;
+  padding-top:7px;border-top:1px solid var(--border)}
+.tracker-action{margin-top:8px;padding:8px 10px;border-radius:7px;font-size:11px;
+  line-height:1.6;display:flex;gap:7px;align-items:flex-start}
+
+/* Price scenarios — 2 chips */
+.card-scenarios{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 16px 9px}
+.sc-chip{border-radius:8px;padding:9px 10px;border:1px solid var(--border)}
+.sc-chip-dir{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;
+  text-transform:uppercase;margin-bottom:4px;font-weight:500}
+.sc-chip-result{font-size:13px;font-weight:600;margin-bottom:3px;letter-spacing:0.01em}
+.sc-chip-note{font-size:10px;color:var(--muted);line-height:1.4;font-weight:300}
+
+/* Collapsed footer */
+.card-foot-collapsed{display:flex;justify-content:space-between;align-items:center;
+  padding:7px 16px 11px;font-size:11px;color:var(--muted)}
+.card-expand-btn{display:inline-flex;align-items:center;gap:5px;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;
+  color:var(--accent,var(--g));background:rgba(255,255,255,0.04);
+  border:1px solid var(--border2);border-radius:6px;
+  padding:5px 12px;transition:all 0.15s;user-select:none}
+.card-expand-btn:hover{background:rgba(255,255,255,0.07);color:var(--text);border-color:var(--border)}
+.card-expand-btn.expanded{color:var(--g);border-color:rgba(0,229,160,0.3);background:rgba(0,229,160,0.06)}
+
+/* ── EXPANDED SECTION ── */
+.card-expanded{border-top:1px solid var(--border);cursor:default}
+
+/* IV row */
+.iv-vol-row{display:flex;gap:14px;padding:7px 16px;border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,0.15);align-items:center}
+.ivv-item{display:flex;align-items:center;gap:7px}
+.ivv-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;color:var(--dim)}
+.ivv-val{font-size:12px;font-weight:600}
+.ivv-bar{width:40px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.ivv-bar-fill{height:100%;border-radius:2px}
+.iv-divider{width:1px;height:14px;background:var(--border);flex-shrink:0}
+
+/* Three stat boxes */
+.stat-boxes{display:grid;grid-template-columns:repeat(3,1fr);
+  border-bottom:1px solid var(--border);background:var(--border)}
+.stat-box{background:var(--surface);padding:11px 14px}
+.stat-box-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;
+  color:var(--muted);margin-bottom:4px}
+.stat-box-val{font-size:15px;font-weight:600;line-height:1.2;margin-bottom:2px}
+.stat-box-sub{font-size:9px;color:var(--muted);font-weight:300}
+
+/* Expanded tracker */
+.exp-tracker{margin:12px 16px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:12px 14px}
+.exp-tracker-rows{margin-bottom:10px}
+.exp-tracker-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px}
+.exp-tracker-row:last-child{margin-bottom:0}
+.exp-tracker-label{color:var(--muted);font-weight:300}
+.exp-tracker-keep{display:flex;justify-content:space-between;font-size:14px;
+  font-weight:600;padding-top:9px;border-top:1px solid var(--border);margin-top:8px}
+
+/* Chart */
+.chart-section{padding:12px 16px 4px}
+.chart-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;
+  color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+.chart-svg{width:100%;display:block;border-radius:8px}
+
+/* Interactive profit curve explorer */
+.curve-explorer{padding:12px 16px 14px;border-bottom:1px solid var(--border)}
+.cv-svg{user-select:none;-webkit-user-select:none;border-radius:8px;margin-bottom:2px}
+.cv-slider{width:calc(100% - 44px);margin:4px 0 0 36px;accent-color:var(--g);height:5px;cursor:pointer}
+.cv-stat{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 9px}
+.cv-stat-l{font-family:'DM Mono',monospace;font-size:7.5px;letter-spacing:0.08em;color:var(--muted);margin-bottom:3px;white-space:nowrap}
+.cv-stat-v{font-size:14px;font-weight:600;line-height:1.1}
+@media(max-width:600px){
+  .cv-stat{padding:6px 6px}
+  .cv-stat-v{font-size:12px}
+  .cv-stat-l{font-size:7px}
+}
+
+/* Price chips — 5 key prices */
+.price-chips{padding:10px 16px}
+.price-chips-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;
+  color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+.price-chips-row{display:flex;gap:5px}
+.price-chip{flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--border);
+  text-align:center;background:rgba(255,255,255,0.02);transition:all 0.15s;cursor:default}
+.price-chip-price{font-size:11px;font-weight:600;margin-bottom:2px;
+  font-family:'DM Mono',monospace;color:var(--text)}
+.price-chip-label{font-size:8px;color:var(--muted);margin-bottom:3px;
+  font-family:'DM Mono',monospace;letter-spacing:0.06em}
+.price-chip-outcome{font-size:12px;font-weight:600;font-family:'DM Mono',monospace}
+.price-chip.g{border-color:rgba(0,229,160,0.2);background:rgba(0,229,160,0.04)}
+.price-chip.g .price-chip-outcome{color:var(--g)}
+.price-chip.r{border-color:rgba(255,58,92,0.2);background:rgba(255,58,92,0.04)}
+.price-chip.r .price-chip-outcome{color:var(--r)}
+.price-chip.y{border-color:rgba(255,181,71,0.2);background:rgba(255,181,71,0.03)}
+.price-chip.y .price-chip-outcome{color:var(--y)}
+
+/* Plain English */
+.pe-section{margin:0 16px 12px;padding:11px 13px;background:var(--surface2);
+  border-radius:8px;font-size:12px;color:rgba(232,234,242,0.7);
+  line-height:1.8;font-weight:300;border:1px solid var(--border)}
+.pe-section strong{color:var(--text);font-weight:500}
+.hl-g{color:var(--g);font-weight:500}
+.hl-r{color:var(--r);font-weight:500}
+.hl-b{color:var(--b);font-weight:500}
+.hl-y{color:var(--y);font-weight:500}
+
+/* Expanded footer */
+.card-foot-expanded{display:flex;justify-content:space-between;align-items:center;
+  padding:9px 16px 11px;border-top:1px solid var(--border);background:rgba(0,0,0,0.15)}
+.foot-theta{font-size:11px;color:var(--muted)}
+.foot-theta strong{font-weight:600}
+.foot-right{display:flex;align-items:center;gap:10px}
+.foot-btn-group{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.foot-btn{padding:5px 11px;font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:0.06em;cursor:pointer;background:none;
+  border:none;border-right:1px solid var(--border);color:var(--muted);
+  white-space:nowrap;transition:all 0.15s}
+.foot-btn:last-child{border-right:none}
+.foot-btn:hover{background:rgba(255,255,255,0.04);color:var(--text)}
+.foot-btn.remove-btn{color:rgba(255,181,71,0.6)}
+.foot-btn.remove-btn:hover{background:rgba(255,181,71,0.06)}
+.foot-btn.close-btn{color:rgba(0,229,160,0.75)}
+.foot-btn.close-btn:hover{background:rgba(0,229,160,0.06)}
+.foot-collapse{display:inline-flex;align-items:center;gap:5px;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em;
+  color:var(--g);padding:5px 12px;margin-left:4px;
+  background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.25);
+  border-radius:6px;white-space:nowrap;transition:all 0.15s;user-select:none}
+.foot-collapse:hover{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.4)}
+
+@media(max-width:600px){
+  .card-hdr{gap:8px}
+  .card-sym{font-size:22px}
+  .card-pnl{font-size:22px}
+  .stat-boxes{grid-template-columns:repeat(3,1fr)}
+  .price-chips-row{gap:3px}
+  .price-chip{padding:6px 2px}
+  .price-chip-price{font-size:10px}
+  .price-chip-outcome{font-size:11px}
+  .foot-btn{padding:5px 8px;font-size:8px}
+}
+/* ── CLOSE TRADE MODAL ── */
+.close-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.close-modal-overlay.show{display:flex}
+.close-modal{background:#161b2e;border:1px solid var(--border2);border-radius:20px;
+  width:100%;max-width:420px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.5)}
+.close-modal-hdr{padding:20px 24px 16px;border-bottom:1px solid var(--border)}
+.close-modal-sym{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.04em;
+  color:var(--accent,var(--g))}
+.close-modal-meta{font-size:12px;color:var(--muted);margin-top:2px;font-weight:300}
+.close-modal-body{padding:20px 24px}
+.close-modal-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;
+  color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+.close-modal-input{width:100%;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:10px;padding:14px 16px;font-size:22px;font-family:'DM Mono',monospace;
+  font-weight:600;color:var(--text);text-align:center;outline:none;transition:border 0.15s;
+  box-sizing:border-box}
+.close-modal-input:focus{border-color:var(--g)}
+.close-modal-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;
+  font-weight:300}
+.close-modal-preview{margin-top:16px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:14px 16px}
+.close-modal-preview-row{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:8px;font-size:13px}
+.close-modal-preview-row:last-child{margin-bottom:0;padding-top:10px;
+  border-top:1px solid var(--border);font-weight:600}
+.close-modal-footer{padding:16px 24px 20px;display:flex;gap:10px}
+.close-modal-cancel{flex:1;padding:13px;border-radius:10px;border:1px solid var(--border2);
+  background:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:0.1em;cursor:pointer;transition:all 0.15s}
+.close-modal-cancel:hover{border-color:var(--border);color:var(--text)}
+.close-modal-confirm{flex:2;padding:13px;border-radius:10px;border:none;
+  background:var(--g);color:#000;font-family:'DM Mono',monospace;font-size:11px;
+  font-weight:700;letter-spacing:0.1em;cursor:pointer;transition:all 0.15s}
+.close-modal-confirm:hover{background:#00ffb3}
+.close-modal-confirm:disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
+
+/* ── EDIT MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);
+  align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;
+  padding:24px;width:100%;max-width:520px;animation:modalIn 0.2s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:0.08em;margin-bottom:4px}
+.modal-sub{font-size:11px;color:var(--muted);margin-bottom:20px}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.modal-field{display:flex;flex-direction:column;gap:5px}
+.modal-field.full{grid-column:1/-1}
+.modal-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.14em;color:var(--muted)}
+.modal-input{background:var(--surface2);border:1px solid var(--border);border-radius:7px;
+  color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:9px 12px;outline:none;transition:border-color 0.2s}
+.modal-input:focus{border-color:var(--g)}
+.modal-select{background:var(--surface2);border:1px solid var(--border);border-radius:7px;
+  color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:9px 12px;outline:none;cursor:pointer}
+.modal-actions{display:flex;gap:8px}
+.modal-save{flex:1;background:var(--g);color:#000;border:none;border-radius:8px;
+  font-family:'DM Mono',monospace;font-weight:500;font-size:11px;letter-spacing:0.1em;
+  padding:12px;cursor:pointer;transition:opacity 0.2s}
+.modal-save:hover{opacity:0.85}
+.modal-cancel{padding:12px 18px;border-radius:8px;border:1px solid var(--border);
+  background:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.15s}
+.modal-cancel:hover{border-color:var(--r);color:var(--r)}
+
+/* ── HOW IT WORKS ── */
+.how{padding:64px 0 20px;text-align:center}
+.how-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.28em;
+  color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+.how-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,4vw,42px);
+  letter-spacing:0.04em;margin-bottom:32px}
+.how-title em{color:var(--g);font-style:normal}
+.how-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:900px;margin:0 auto}
+@media(max-width:800px){.how-steps{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.how-steps{grid-template-columns:1fr}}
+.how-step{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:22px 18px;text-align:left;transition:border-color 0.2s;position:relative;overflow:hidden}
+.how-step::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--g),transparent)}
+.how-n{font-family:'DM Mono',monospace;font-size:10px;color:var(--g);
+  letter-spacing:0.14em;margin-bottom:12px;opacity:0.7}
+.how-icon{font-size:24px;margin-bottom:10px;display:block}
+.how-t{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:0.05em;
+  margin-bottom:6px;line-height:1.2}
+.how-d{font-size:11px;color:var(--muted);line-height:1.65;font-weight:300}
+
+::-webkit-scrollbar{width:4px;height:4px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface2);border:1px solid rgba(0,229,160,0.3);
+  color:var(--g);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;
+  padding:12px 24px;border-radius:30px;z-index:999;
+  opacity:0;transition:all 0.3s ease;pointer-events:none;white-space:nowrap;
+  box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">SCAN<span>MY TRADE</span></div>
+  <div class="nav-right">
+    <div class="nav-badge">BETA · CSP & CC</div>
+    <button class="nav-journal-btn" id="nav-journal-btn" onclick="showJournal()">📋 JOURNAL</button>
+    <button class="nav-scan-btn" id="nav-dashboard-btn" onclick="goToDashboard()">◈ MY TRADES</button>
+  </div>
+</nav>
+
+<!-- CAROUSEL -->
+<div class="carousel-wrap" id="carousel-wrap">
+  <div class="carousel-label">OPEN POSITIONS — CLICK TO JUMP</div>
+  <div class="carousel-track" id="carousel-track"></div>
+</div>
+
+<div class="wrap">
+
+  <!-- HERO + UPLOAD -->
+  <div class="hero" id="hero">
+    <div class="hero-eyebrow"><span>●</span> FOR OPTIONS TRADERS · CSP & COVERED CALLS</div>
+    <h1 class="hero-h">KNOW YOUR<br><em>TRADE</em></h1>
+    <p class="hero-sub">Built for options traders. Upload a screenshot of your positions — we turn each trade into plain English so you know exactly what you own, what you risk, and what you make.</p>
+
+    <div class="hero-trust">
+      <div class="hero-trust-item"><span>✓</span> CSP & Covered Calls</div>
+      <div class="hero-trust-item"><span>✓</span> No login required</div>
+      <div class="hero-trust-item"><span>✓</span> Screenshots never stored</div>
+    </div>
+
+    <div class="drop-zone" id="drop-zone"
+      onclick="document.getElementById('file-input').click()"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="handleDrop(event)">
+      <div class="dz-icon">📷</div>
+      <div class="dz-title">DROP YOUR BROKER SCREENSHOT HERE</div>
+      <div class="dz-sub">Take a screenshot of your options positions page in your broker app.<br>Works with Cash Secured Puts, Covered Calls and short options.</div>
+      <div class="dz-chips">
+        <span class="dz-chip">TASTYTRADE</span>
+        <span class="dz-chip">THINKORSWIM</span>
+        <span class="dz-chip">IBKR</span>
+        <span class="dz-chip">ROBINHOOD</span>
+        <span class="dz-chip">WEBULL</span>
+        <span class="dz-chip">E*TRADE</span>
+      </div>
+      <div class="demo-link" onclick="event.stopPropagation();loadDemo()">▶ Load demo trades instead</div>
+    </div>
+
+    <div class="screenshot-tip">
+      <span style="font-size:15px;flex-shrink:0">💡</span>
+      <div><strong>Not sure what to screenshot?</strong> In your broker app, go to <strong>Positions</strong>, <strong>Portfolio</strong>, or <strong>Activity</strong> and screenshot that page. The more trades visible the better.</div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFile(event)">
+  </div>
+
+  <!-- PARSING -->
+  <div class="parsing" id="parsing">
+    <div class="spin"></div>
+    <div class="parse-step" id="parse-step">READING SCREENSHOT...</div>
+    <div class="parse-sub">AI is identifying your positions — takes about 5 seconds</div>
+  </div>
+
+  <!-- SCREENSHOT THUMB -->
+  <div class="ss-thumb" id="ss-thumb">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="ss-label" style="margin-bottom:0">YOUR SCREENSHOT</div>
+      <button onclick="resetUpload()" style="background:rgba(255,58,92,0.08);border:1px solid rgba(255,58,92,0.25);color:rgba(255,58,92,0.7);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;padding:4px 10px;border-radius:6px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.color='var(--r)'" onmouseout="this.style.color='rgba(255,58,92,0.7)'">✕ CLEAR</button>
+    </div>
+    <img class="ss-img" id="ss-img" src="" alt="" onclick="openLightbox()" title="Click to zoom">
+  </div>
+
+  <!-- ══ REVIEW / CONFIRMATION TABLE ══ -->
+  <div class="review-section" id="review-section">
+    <div class="review-hint">
+      <div class="hint-icon">💡</div>
+      <div>Check each row carefully — correct anything the AI got wrong before building your cards. Strike price and stock price are the most important to verify.</div>
+    </div>
+    <div class="review-header">
+      <div>
+        <div class="review-title">REVIEW YOUR <span>TRADES</span></div>
+        <div class="review-subtitle">AI has read your screenshot. Check each row, edit anything wrong, then confirm.</div>
+      </div>
+      <div class="review-actions">
+        <button class="btn-add" onclick="addBlankRow()">+ ADD ROW</button>
+        <button class="btn-confirm" onclick="confirmTrades()">✓ LOOKS GOOD — BUILD MY CARDS</button>
+      </div>
+    </div>
+    <div class="review-table-wrap">
+      <table id="review-table">
+        <thead>
+          <tr>
+            <th>SYMBOL</th>
+            <th>TYPE</th>
+            <th>DIRECTION</th>
+            <th>STRIKE $</th>
+            <th>STOCK PRICE $</th>
+            <th>PREMIUM $</th>
+            <th>DTE</th>
+            <th>CONTRACTS</th>
+            <th>IV %</th>
+            <th>CONFIDENCE</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="review-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- WHO IT'S FOR -->
+  <div style="max-width:560px;margin:0 auto 40px;padding:0 20px;text-align:center">
+    <p style="font-size:12px;color:var(--dim);line-height:1.8;font-weight:300">
+      Scan My Trade is built for <strong style="color:var(--muted)">options traders</strong> selling Cash Secured Puts and Covered Calls.
+      Not designed for swing traders, long-term stock holders, or complex multi-leg strategies.
+    </p>
+  </div>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div id="dashboard" style="display:none">
+    <div class="sec-hdr">
+      <div class="sec-title">YOUR <span>POSITIONS</span></div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div class="sec-meta" id="trade-count">0 OPEN</div>
+        <div class="grid-selector">
+          <span class="grid-label">COLUMNS:</span>
+          <button class="grid-btn" data-cols="1" onclick="setGrid(1)">1</button>
+          <button class="grid-btn active" data-cols="2" onclick="setGrid(2)">2</button>
+          <button class="grid-btn" data-cols="3" onclick="setGrid(3)">3</button>
+          <button class="grid-btn" data-cols="4" onclick="setGrid(4)">4</button>
+        </div>
+        <button class="scan-again-btn" onclick="showUpload()">📷 SCAN MORE TRADES</button>
+      </div>
+    </div>
+    <div class="port-bar">
+      <div class="port-stat"><div class="ps-label">TOTAL PREMIUM IN</div><div class="ps-value" id="pb-prem">—</div></div>
+      <div class="port-stat"><div class="ps-label">BUY BACK NOW</div><div class="ps-value" id="pb-bb">—</div></div>
+      <div class="port-stat"><div class="ps-label">YOU KEEP</div><div class="ps-value" id="pb-keep" style="color:var(--g)">—</div></div>
+      <div class="port-stat"><div class="ps-label">AVG CAPTURE</div><div class="ps-value" id="pb-cap">—</div></div>
+    </div>
+    <div class="cards" id="cards" style="grid-template-columns:repeat(2,1fr)"></div>
+  </div>
+
+  <!-- ── JOURNAL SECTION ── -->
+  <div class="journal-section wrap" id="journal-section">
+    <div class="journal-hdr">
+      <div>
+        <div class="journal-title">TRADE <span>JOURNAL</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Every trade auto-logged · Newest first</div>
+      </div>
+      <div class="journal-actions">
+        <button class="journal-export-btn" onclick="exportCSV()">⬇ EXPORT CSV</button>
+        <button class="scan-again-btn" onclick="showUpload()">📷 SCAN NEW TRADES</button>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="j-stats" id="j-stats">
+      <div class="j-stat"><div class="j-stat-label">TOTAL TRADES</div><div class="j-stat-value" id="j-total">0</div></div>
+      <div class="j-stat"><div class="j-stat-label">OPEN</div><div class="j-stat-value" id="j-open">0</div></div>
+      <div class="j-stat"><div class="j-stat-label">CLOSED</div><div class="j-stat-value" id="j-closed-count">0</div></div>
+      <div class="j-stat"><div class="j-stat-label">WIN RATE</div><div class="j-stat-value" id="j-winrate">—</div></div>
+      <div class="j-stat"><div class="j-stat-label">TOTAL PREMIUM</div><div class="j-stat-value" id="j-premium">$0</div></div>
+    </div>
+
+    <!-- Table -->
+    <div class="j-table-wrap">
+      <table class="j-table">
+        <thead>
+          <tr>
+            <th>DATE OPENED</th>
+            <th>SYMBOL</th>
+            <th>TYPE</th>
+            <th>DIRECTION</th>
+            <th>STRIKE</th>
+            <th>PREMIUM</th>
+            <th>CONTRACTS</th>
+            <th>EXPIRY / DTE</th>
+            <th>STATUS</th>
+            <th>P&amp;L</th>
+            <th>CAPTURE %</th>
+            <th>NOTES</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="j-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how" id="how-section">
+    <div class="how-label">HOW IT WORKS</div>
+    <div class="how-title">BUILT FOR <em>OPTIONS TRADERS</em></div>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-n">01 —</div>
+        <span class="how-icon">📱</span>
+        <div class="how-t">SCREENSHOT YOUR BROKER</div>
+        <div class="how-d">Open your broker app. Go to Positions or Activity. Take a screenshot. Any broker works — IBKR, Tastytrade, Robinhood, ThinkorSwim.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-n">02 —</div>
+        <span class="how-icon">🤖</span>
+        <div class="how-t">AI READS YOUR TRADES</div>
+        <div class="how-d">Upload the screenshot here. AI identifies every position — strike, expiry, type, premium. Takes about 5 seconds.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-n">03 —</div>
+        <span class="how-icon">✓</span>
+        <div class="how-t">REVIEW & CONFIRM</div>
+        <div class="how-d">Check the table, fix anything the AI got wrong, then confirm. Your data stays on your device. No account needed.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-n">04 —</div>
+        <span class="how-icon">📊</span>
+        <div class="how-t">UNDERSTAND INSTANTLY</div>
+        <div class="how-d">Each card shows your breakeven, profit map, buyback cost, and exactly how much premium you keep. Built for CSP and Covered Call sellers.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">EDIT TRADE</div>
+    <div class="modal-sub">Update any details for this position</div>
+    <div class="modal-grid">
+      <div class="modal-field">
+        <div class="modal-label">SYMBOL</div>
+        <input class="modal-input" id="edit-symbol" type="text" placeholder="TSLA" style="text-transform:uppercase">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">STOCK PRICE $</div>
+        <input class="modal-input" id="edit-stock" type="number" step="0.01" placeholder="380.00">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">TYPE</div>
+        <select class="modal-select" id="edit-type">
+          <option value="put">PUT</option>
+          <option value="call">CALL</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">DIRECTION</div>
+        <select class="modal-select" id="edit-direction">
+          <option value="short">SHORT (selling)</option>
+          <option value="long">LONG (buying)</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">STRIKE $</div>
+        <input class="modal-input" id="edit-strike" type="number" step="0.5" placeholder="340">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">PREMIUM $ (per share)</div>
+        <input class="modal-input" id="edit-premium" type="number" step="0.01" placeholder="4.20">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">DTE (days left)</div>
+        <input class="modal-input" id="edit-dte" type="number" step="1" placeholder="28">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">CONTRACTS</div>
+        <input class="modal-input" id="edit-contracts" type="number" step="1" placeholder="1">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">IV %</div>
+        <input class="modal-input" id="edit-iv" type="number" step="0.5" placeholder="30">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">VOLUME</div>
+        <input class="modal-input" id="edit-volume" type="number" step="1" placeholder="0">
+      </div>
+      <div class="modal-field full">
+        <div class="modal-label">NOTES</div>
+        <input class="modal-input" id="edit-notes" type="text" placeholder="e.g. Cash-secured put">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeEditModal()">CANCEL</button>
+      <button class="modal-save" onclick="saveEdit()">SAVE CHANGES</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// BLACK-SCHOLES
+// ══════════════════════════════════════════════════════
+function ncdf(x){const a1=.254829592,a2=-.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=.3275911,s=x<0?-1:1;x=Math.abs(x)/Math.sqrt(2);const t=1/(1+p*x);return .5*(1+s*(1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x)))}
+function npdf(x){return Math.exp(-.5*x*x)/Math.sqrt(2*Math.PI)}
+function bsc(S,K,T,sig,type){
+  // Clamp inputs to prevent instability
+  T = Math.max(T, 0.0001);
+  sig = Math.max(sig, 0.01);
+  S = Math.max(S, 0.01);
+  K = Math.max(K, 0.01);
+  
+  // For very deep ITM/OTM options use intrinsic value to prevent oscillation
+  const moneyness = Math.abs(Math.log(S/K));
+  if(moneyness > 2.0 || T <= 0.0001){
+    const i=type==='put'?Math.max(K-S,0):Math.max(S-K,0);
+    const delta=type==='put'?(S<K?-1:0):(S>K?1:0);
+    return{price:i,delta,theta:0,vega:0,gamma:0}
+  }
+  
+  const r=.05,d1=(Math.log(S/K)+(r+.5*sig*sig)*T)/(sig*Math.sqrt(T)),d2=d1-sig*Math.sqrt(T);
+  const iC=type!=='put';
+  const price=iC?S*ncdf(d1)-K*Math.exp(-r*T)*ncdf(d2):K*Math.exp(-r*T)*ncdf(-d2)-S*ncdf(-d1);
+  return{price:Math.max(price,0),delta:iC?ncdf(d1):ncdf(d1)-1,
+    theta:(-(S*npdf(d1)*sig)/(2*Math.sqrt(T))-r*K*Math.exp(-r*T)*(iC?ncdf(d2):ncdf(-d2)))/365,
+    vega:S*npdf(d1)*Math.sqrt(T)/100,gamma:npdf(d1)/(S*sig*Math.sqrt(T))}
+}
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let savedTrades = JSON.parse(localStorage.getItem('smt_v1') || '[]');
+let closedTrades = JSON.parse(localStorage.getItem('smt_v1_closed') || '[]');
+let editingId = null;
+
+// ══════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════
+function resetUpload(){
+  // Clear screenshot, review table, and start fresh
+  document.getElementById('ss-img').src='';
+  document.getElementById('ss-thumb').classList.remove('show');
+  document.getElementById('review-section').classList.remove('show');
+  document.getElementById('drop-zone').style.display='';
+  document.getElementById('parsing').classList.remove('show');
+  document.getElementById('hero').style.display='';
+  document.getElementById('file-input').value='';
+  const dupe=document.getElementById('dupe-warning');
+  if(dupe)dupe.remove();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goToDashboard(){
+  // If trades exist go to dashboard, otherwise go to upload
+  hideJournal();
+  if(savedTrades.length){
+    document.getElementById('hero').style.display='none';
+    document.getElementById('how-section').style.display='none';
+    document.getElementById('parsing').classList.remove('show');
+    document.getElementById('ss-thumb').classList.remove('show');
+    document.getElementById('review-section').classList.remove('show');
+    showDashboard();
+  } else {
+    showUpload();
+  }
+}
+
+function showUpload(){
+  document.getElementById('hero').style.display='';
+  document.getElementById('drop-zone').style.display='';
+  document.getElementById('parsing').classList.remove('show');
+  document.getElementById('ss-thumb').classList.remove('show');
+  document.getElementById('review-section').classList.remove('show');
+  document.getElementById('how-section').style.display='none';
+  // Clear file input so same screenshot can be re-uploaded
+  document.getElementById('file-input').value='';
+  // Clear old review table and warnings
+  document.getElementById('review-tbody').innerHTML='';
+  const dupe=document.getElementById('dupe-warning');
+  if(dupe)dupe.remove();
+  // Hide journal
+  hideJournal();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══════════════════════════════════════════════════════
+// FILE HANDLING
+// ══════════════════════════════════════════════════════
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith('image/'))processFile(f);
+}
+function handleFile(e){const f=e.target.files[0];if(f)processFile(f)}
+
+function processFile(file){
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    // Reset any previous state before processing new screenshot
+    document.getElementById('review-section').classList.remove('show');
+    document.getElementById('parsing').classList.remove('show');
+    const dupe=document.getElementById('dupe-warning');
+    if(dupe)dupe.remove();
+    document.getElementById('review-tbody').innerHTML='';
+
+    // Now set up new upload
+    document.getElementById('ss-img').src=ev.target.result;
+    document.getElementById('ss-thumb').classList.add('show');
+    document.getElementById('drop-zone').style.display='none';
+    document.getElementById('parsing').classList.add('show');
+    document.getElementById('how-section').style.display='none';
+    parseWithAI(ev.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+// ══════════════════════════════════════════════════════
+// AI PARSING
+// ══════════════════════════════════════════════════════
+async function parseWithAI(dataUrl){
+  const steps=['READING SCREENSHOT...','IDENTIFYING POSITIONS...','EXTRACTING TRADE DATA...','ALMOST DONE...'];
+  let si=0;
+  const stepEl=document.getElementById('parse-step');
+  const timer=setInterval(()=>{si=(si+1)%steps.length;stepEl.textContent=steps[si];},1400);
+
+  try{
+    const base64=dataUrl.split(',')[1];
+    const mediaType=dataUrl.split(';')[0].split(':')[1];
+
+        const today = new Date().toISOString().slice(0,10);
+    const prompt=`Analyse this broker screenshot and extract ALL options positions. Return ONLY a valid JSON array, no markdown, no explanation.
+
+Today's date is ${today}. Use this to calculate DTE accurately.
+
+Each object must have:
+- symbol: ticker only e.g. "TSLA"
+- type: CRITICAL — "put" if the option symbol ends in P, "call" if it ends in C. "IWM 12JUN26 265 P" = PUT. "TSLA 26MAY26 440 C" = CALL. The FINAL LETTER before any spaces determines type. P = put, C = call. Never guess — read the last letter.
+- direction: "short" if SELL/selling/writing, "long" if BUY/buying. Negative quantity = short.
+- action: "open" if opening a new position, "close" if closing/expired/assigned. Code O = open, C/C;Ep/A;C = close.
+- strike: the number immediately before the final C or P in the symbol. "IWM 12JUN26 265 P" = strike 265. "TSLA 26MAY26 440 C" = strike 440.
+- stock: set to 0 — fetched automatically
+- premium: ALWAYS positive, between 0.01 and 30.00 per share. Use T.Price or Price column. NEVER use Proceeds.
+- dte: CRITICAL — calculate days from today (${today}) to the expiry date in the symbol. "12JUN26" = June 12 2026. Count exact days. "IWM 12JUN26 265 P" with today ${today} = count days from today to June 12 2026. Never leave blank, never put 0 unless truly expired today.
+- contracts: absolute value of quantity
+- iv: estimate 35 for stocks, 18 for ETFs (IWM/SPY/QQQ/XLE etc)
+- volume: 0 if not shown
+- notes: empty string
+- confidence: "high" if type/strike/expiry clearly readable, "medium" if inferred
+
+DTE CALCULATION EXAMPLES (today is ${today}):
+- "12JUN26" = June 12 2026 — count days from ${today} to June 12 2026
+- "29MAY26" = May 29 2026 — count days from ${today} to May 29 2026  
+- "18DEC26" = December 18 2026 — count days from ${today} to Dec 18 2026
+- If DTE column shows directly (e.g. "16d") use that number
+- DTE must ALWAYS be positive (minimum 1) unless the option literally expired today
+- Do NOT use the Trade Date or Settlement Date to calculate DTE — use the EXPIRY date in the symbol
+- IBKR symbol format: "IREN 26JUN26 55 P" — expiry is 26JUN26 = June 26 2026. Count days from ${today} to June 26 2026.
+- "26JUN26" = June 26 2026. "12JUN26" = June 12 2026. "17JUN27" = June 17 2027.
+- Today is ${today}. Count carefully — do not confuse trade date with expiry date.
+- If DTE comes out as 0 or negative, you used the wrong date. Recount from the expiry date in the SYMBOL.
+- Tastytrade DTE column = days to expiry (use this). D'sOpn = days position has been open (ignore).
+- LEAPS expiring in 2027 will have DTE of 300-500+ days. This is correct.
+- Always verify: parse the expiry from the symbol string and count days from ${today}
+
+TYPE DETERMINATION — READ CAREFULLY:
+- Last letter of option symbol = type. P = PUT. C = CALL. This is definitive.
+- "IWM 12JUN26 265 P" → type: "put" ← P at end = PUT
+- "TSLA 26MAY26 440 C" → type: "call" ← C at end = CALL
+- "AAPL 20JUN26 185 P" → type: "put" ← P at end = PUT
+- Do NOT confuse the ticker symbol with the option type
+
+PREMIUM RULES — CRITICAL:
+- Premium is ALWAYS between $0.01 and $25.00 per share. If your number exceeds $25, you have the wrong value.
+- IBKR T.Price column = premium per share (e.g. 2.3500 = $2.35, 1.0200 = $1.02). Never use Proceeds.
+
+TASTYTRADE PREMIUM — READ THIS CAREFULLY:
+- Sub-rows show: "QTY EXPIRY DTE STRIKE TYPE" e.g. "-4 May 29 29d 55 P"
+- The "Cst" column on sub-rows = TOTAL cost basis (NOT per share). Formula: premium/share = Cst ÷ (|contracts| × 100)
+  Example: Cst=136.00, contracts=4 → premium = 136 ÷ (4×100) = $0.34/share ✓
+  Example: Cst=498.00, contracts=6 → premium = 498 ÷ (6×100) = $0.83/share ✓
+  Example: Cst=264.00, contracts=4 → premium = 264 ÷ (4×100) = $0.66/share ✓
+- The "Last" column on sub-rows shows the CURRENT option price (not what you collected)
+- P/L Open = unrealised gain/loss — NEVER use as premium
+- Summary row Cst values (265.98, 961.00 etc) are PORTFOLIO TOTALS — ignore completely
+- After calculating, verify: is premium between $0.01 and $15.00? If not, recalculate using the formula above.
+
+BROKER FORMATS:
+
+IBKR positions: "IWM 12JUN26 265 P" = IWM, June 12 2026, $265 strike, PUT. Final letter = type (P=put, C=call).
+IBKR symbol parsing: The ticker is EVERYTHING before the date. "F 17JUN27 15 C" = ticker "F", expiry Jun 17 2027, strike $15, call. "IF 17JUN27 15 C" = ticker "IF". Do NOT confuse single-letter tickers (F, C, X) with the option type — the type is ONLY the very last letter after the strike price.
+IBKR activity report: Code O = open, C = close, C;Ep = expired, A;C = assigned, O;P = open partial.
+- SELL + Code O = new short position (action="open", direction="short") ← ADD THIS
+- BUY + Code C = buying back to close (action="close") ← DO NOT add as new trade
+- BUY + Code O = new long position (action="open", direction="long") ← only if genuinely opening
+- The key distinction: BUY rows that correspond to closing an existing short = action "close", NOT a new opening trade
+- If you see a BUY row for the same symbol/strike as a previous SELL row in the same report, it is a closing trade
+- Total rows (e.g. "Total IREN 260626P00055000") are summary rows — IGNORE THEM, do not extract as trades
+- T.Price = premium per share for individual rows
+
+Tastytrade positions: Sub-rows "-1 May 22 16d 566 P" = short 1, May 22, 16 days, $566 strike, PUT.
+Premium = Cst ÷ (|contracts| × 100). DTE column = days to expiry (not D'sOpn column).
+Final letter P = PUT, C = CALL. This is definitive.
+
+Robinhood activity (screenshot of spreadsheet):
+- Description: "HOOD 3/13/2026 Call $84.00" = ticker HOOD, expiry Mar 13 2026, Call type, $84 strike
+- Trans Code: STO = Sell to Open (action="open", direction="short"), BTC = Buy to Close (action="close", direction="long" — this is a closing trade not a new position), OEXP = Expired worthless (action="close", premium=0, direction="short")
+- Price column = premium per share already (use directly, no calculation needed)
+- Ignore rows with Trans Code: Buy, CFIR, MTCH, ACAT — not options trades
+- For OEXP: the option expired worthless, close price = 0
+
+Return ONLY the JSON array starting with [ and ending with ]. All numeric fields must be plain numbers — no dollar signs, no quotes around numbers, no NaN. Example: "premium": 1.02 not "premium": "$1.02"`;
+
+    const res=await fetch('/api/analyse',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({imageBase64:base64,mediaType,prompt})
+    });
+
+    clearInterval(timer);
+    const data = await res.json();
+
+    if(data.error){throw new Error(data.error)}
+
+    let text=data.content[0].text.trim().replace(/```json|```/g,'').trim();
+    // Sanitise common AI number formatting issues
+    text = text
+      .replace(/:\s*\$([0-9.]+)/g, ': $1')
+      .replace(/:\s*"(\d+\.?\d*)"/g, ': $1')
+      .replace(/:\s*NaN/g, ': 0')
+      .replace(/:\s*undefined/g, ': 0')
+      .replace(/:\s*null([,}])/g, ': 0$1')
+      .replace(/,\s*}/g, '}')
+      .replace(/,\s*]/g, ']');
+    const trades=JSON.parse(text);
+    showReviewTable(trades);
+
+  }catch(err){
+    clearInterval(timer);
+    console.error('Parse error:',err);
+    document.getElementById('parsing').classList.remove('show');
+    document.getElementById('drop-zone').style.display='';
+    alert('Could not parse screenshot.\n\nMake sure:\n1. node server.js is running\n2. API key is set in .env\n3. Screenshot shows your positions clearly\n\nOr click "Load demo trades" to test.');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// REVIEW TABLE
+// ══════════════════════════════════════════════════════
+function showReviewTable(trades){
+  document.getElementById('parsing').classList.remove('show');
+  document.getElementById('review-section').classList.add('show');
+  buildReviewTable(trades);
+  document.getElementById('review-section').scrollIntoView({behavior:'smooth',block:'start'});
+  // Fetch live prices after table renders
+  fetchLivePrices(trades);
+}
+
+function buildReviewTable(trades){
+  const tbody=document.getElementById('review-tbody');
+
+  // Split into opening and closing trades
+  const opening=[], closing=[];
+  trades.forEach((t,i)=>{
+    const tagged={
+      ...t,
+      _rowIdx:i,
+      isDuplicate: (t.action||'open')==='open' && isDuplicateTrade(t),
+      isPossibleRoll: (t.action||'open')==='open' && isPossibleRoll(t),
+      _matchedTrade: (t.action||'open')==='close' ? findMatchingOpenTrade(t) : null
+    };
+    if((t.action||'open')==='close') closing.push(tagged);
+    else opening.push(tagged);
+  });
+
+  // Remove old warnings
+  const existing=document.getElementById('dupe-warning');
+  if(existing)existing.remove();
+  const existingClose=document.getElementById('close-section');
+  if(existingClose)existingClose.remove();
+
+  // Build closing section if any
+  if(closing.length){
+    const closeSection=document.createElement('div');
+    closeSection.id='close-section';
+    closeSection.style.cssText='margin-bottom:20px';
+    closeSection.innerHTML=`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:12px;height:12px;border-radius:50%;background:var(--r);flex-shrink:0"></div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--r)">CLOSING TRADES DETECTED — ${closing.length} position${closing.length>1?'s':''} to close</div>
+      </div>
+      <div style="overflow-x:auto;border-radius:12px;border:1px solid rgba(255,58,92,0.25)">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:rgba(255,58,92,0.08);border-bottom:1px solid rgba(255,58,92,0.2)">
+              <th class="preview-th">SYMBOL</th>
+              <th class="preview-th">TYPE</th>
+              <th class="preview-th">STRIKE</th>
+              <th class="preview-th">CLOSE PRICE $</th>
+              <th class="preview-th">MATCHES OPEN TRADE</th>
+              <th class="preview-th">EST. P&L</th>
+              <th class="preview-th"></th>
+            </tr>
+          </thead>
+          <tbody id="close-tbody">
+            ${closing.map((t,i)=>buildCloseRow(t,i)).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    document.getElementById('review-section').querySelector('.review-table-wrap').before(closeSection);
+  }
+
+  // Build opening rows
+  tbody.innerHTML=opening.length
+    ? opening.map((t,i)=>buildReviewRow(t,i)).join('')
+    : `<tr><td colspan="11" style="padding:20px;text-align:center;color:var(--muted);font-size:12px">No new opening trades detected</td></tr>`;
+
+  // Duplicate/roll warnings
+  const dupes=opening.filter(t=>t.isDuplicate).length;
+  const rolls=opening.filter(t=>t.isPossibleRoll&&!t.isDuplicate).length;
+  if(dupes||rolls){
+    const banner=document.createElement('div');
+    banner.id='dupe-warning';
+    banner.style.cssText='background:rgba(255,181,71,0.08);border:1px solid rgba(255,181,71,0.3);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:rgba(255,181,71,0.9);display:flex;gap:10px;align-items:flex-start';
+    banner.innerHTML='<span style="font-size:16px;flex-shrink:0">⚠️</span><div>'
+      +(dupes?'<strong>'+dupes+' possible duplicate'+(dupes>1?'s':'')+' detected</strong> — highlighted in orange. Remove unless genuinely new.<br>':'')
+      +(rolls?'<strong>'+rolls+' possible roll</strong> — same ticker closed recently. Confirm before adding.':'')
+      +'</div>';
+    document.getElementById('review-section').querySelector('.review-table-wrap').before(banner);
+  }
+}
+
+// Find a matching open trade for a closing trade
+function findMatchingOpenTrade(t){
+  return savedTrades.find(s=>
+    s.symbol===String(t.symbol).toUpperCase() &&
+    s.type===t.type &&
+    Math.abs(s.strike-(parseFloat(t.strike)||0))<1
+  )||null;
+}
+
+// Build a closing trade row
+function buildCloseRow(t,i){
+  const match=t._matchedTrade;
+  const closePrice=parseFloat(t.premium)||0;
+  let estPnl=null, pnlStr='—', pnlCol='var(--muted)';
+  if(match){
+    estPnl=match.direction==='short'
+      ?(match.premium-closePrice)*100*match.contracts
+      :(closePrice-match.premium)*100*match.contracts;
+    pnlStr=(estPnl>=0?'+ ':'- ')+'$'+Math.abs(estPnl).toFixed(0);
+    pnlCol=estPnl>=0?'var(--g)':'var(--r)';
+  }
+  return `<tr id="close-row-${i}" style="border-bottom:1px solid rgba(255,58,92,0.1)">
+    <td class="j-td" style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--r)">${t.symbol}</td>
+    <td class="j-td j-muted">${t.type.toUpperCase()}</td>
+    <td class="j-td" style="font-family:'DM Mono',monospace;font-weight:500">$${t.strike}</td>
+    <td class="j-td">
+      <input class="cell-input" type="number" value="${closePrice.toFixed(2)}" step="0.01" style="width:80px"
+        oninput="updateCloseRowPnl(${i},this.value,'${match?match.id:''}')">
+    </td>
+    <td class="j-td" style="font-size:11px">
+      ${match
+        ? `<span style="color:var(--g)">✓ ${match.symbol} $${match.strike} ${match.type.toUpperCase()} (${match.contracts} contract${match.contracts>1?'s':''})</span>`
+        : `<span style="color:var(--y)">⚠ No match found — will skip</span>`}
+    </td>
+    <td class="j-td" id="close-pnl-${i}" style="font-family:'DM Mono',monospace;font-weight:500;color:${pnlCol}">${pnlStr}</td>
+    <td class="j-td"><button class="j-del" onclick="removeCloseRow(${i})" title="Remove">✕</button></td>
+  </tr>`;
+}
+
+function updateCloseRowPnl(i, closePrice, matchId){
+  if(!matchId)return;
+  const match=savedTrades.find(s=>String(s.id)===String(matchId));
+  if(!match)return;
+  const cp=parseFloat(closePrice)||0;
+  const pnl=match.direction==='short'
+    ?(match.premium-cp)*100*match.contracts
+    :(cp-match.premium)*100*match.contracts;
+  const el=document.getElementById('close-pnl-'+i);
+  if(el){
+    el.textContent=(pnl>=0?'+ ':'- ')+'$'+Math.abs(pnl).toFixed(0);
+    el.style.color=pnl>=0?'var(--g)':'var(--r)';
+  }
+}
+
+function removeCloseRow(i){
+  const row=document.getElementById('close-row-'+i);
+  if(row)row.remove();
+}
+
+// Duplicate = same symbol + strike + type + direction + premium already in savedTrades
+function isDuplicateTrade(t){
+  return savedTrades.some(function(s){
+    return s.symbol===String(t.symbol).toUpperCase()
+      && Math.abs(s.strike-(parseFloat(t.strike)||0))<0.5
+      && s.type===t.type
+      && s.direction===t.direction
+      && Math.abs(s.premium-(parseFloat(t.premium)||0))<0.10;
+  });
+}
+
+// Possible roll = same ticker + type closed within last 14 days
+function isPossibleRoll(t){
+  if(!closedTrades||!closedTrades.length)return false;
+  var cutoff=Date.now()-(14*24*60*60*1000);
+  return closedTrades.some(function(s){
+    return s.symbol===String(t.symbol).toUpperCase()
+      && s.type===t.type
+      && (s.closeTimestamp||0)>cutoff;
+  });
+}
+
+async function fetchLivePrices(trades){
+  // Get unique symbols
+  const symbols=[...new Set(trades.map(t=>t.symbol.toUpperCase()).filter(Boolean))];
+  if(!symbols.length)return;
+
+  // Show loading state on stock price cells
+  const rows=document.getElementById('review-tbody').rows;
+  for(let row of rows){
+    const stockInput=row.querySelectorAll('input')[2];
+    if(stockInput){
+      stockInput.placeholder='fetching...';
+      stockInput.style.color='var(--muted)';
+    }
+  }
+
+  try{
+    const res=await fetch('/api/prices',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({symbols})
+    });
+    const data=await res.json();
+    const prices=data.prices||{};
+
+    // Update each row's stock price input
+    const tbody=document.getElementById('review-tbody');
+    const allRows=tbody.rows;
+    let rowIdx=0;
+    for(let row of allRows){
+      const symInput=row.querySelectorAll('input')[0];
+      const stockInput=row.querySelectorAll('input')[2];
+      if(!symInput||!stockInput)continue;
+      const sym=symInput.value.toUpperCase();
+      const livePrice=prices[sym];
+      if(livePrice){
+        stockInput.value=livePrice;
+        stockInput.style.color='var(--g)';
+        stockInput.style.borderColor='rgba(0,229,160,0.3)';
+        stockInput.title='Live price from Yahoo Finance';
+      } else {
+        stockInput.style.color='var(--y)';
+        stockInput.placeholder='enter manually';
+        stockInput.style.borderColor='rgba(255,181,71,0.4)';
+        stockInput.title='Could not fetch — enter manually';
+      }
+      rowIdx++;
+    }
+
+    // Show how many prices were fetched
+    const fetched=Object.values(prices).filter(p=>p!==null).length;
+    const hint=document.querySelector('.review-hint div:last-child');
+    if(hint){
+      hint.innerHTML=`Check each row carefully — correct anything the AI got wrong before building your cards. <strong style="color:var(--g)">✓ ${fetched}/${symbols.length} live prices loaded.</strong> Strike price and DTE are the most important to verify.`;
+    }
+
+  }catch(err){
+    console.error('Price fetch error:',err);
+    // Clear loading state
+    const allRows=document.getElementById('review-tbody').rows;
+    for(let row of allRows){
+      const stockInput=row.querySelectorAll('input')[2];
+      if(stockInput){
+        stockInput.placeholder='enter manually';
+        stockInput.style.color='var(--y)';
+      }
+    }
+  }
+}
+
+function buildReviewRow(t,i){
+  const conf=t.confidence||'medium';
+  const confClass=conf==='high'?'ai-high':conf==='medium'?'ai-med':'ai-low';
+  // Override confidence badge for dupes and rolls
+  const badgeClass=t.isDuplicate?'ai-low':t.isPossibleRoll?'ai-med':confClass;
+  const badgeLabel=t.isDuplicate?'POSSIBLE DUPLICATE':t.isPossibleRoll?'POSSIBLE ROLL':conf==='high'?'AI CONFIDENT':conf==='medium'?'PLEASE CHECK':'NEEDS REVIEW';
+  // Row highlight: orange for dupe/roll, green for clean
+  // DTE missing — AI couldn't read expiry date
+  const dteMissing = (parseFloat(t.dte)||0) <= 0;
+  const rowStyle=t.isDuplicate?'background:rgba(255,181,71,0.06);border-left:3px solid rgba(255,181,71,0.6)':
+                 dteMissing?'background:rgba(255,181,71,0.04);border-left:3px solid rgba(255,181,71,0.4)':
+                 t.isPossibleRoll?'background:rgba(77,159,255,0.04);border-left:3px solid rgba(77,159,255,0.4)':
+                 'border-left:3px solid rgba(0,229,160,0.4)';
+  // Override badge for missing DTE
+  const finalBadgeClass = dteMissing?'ai-med':badgeClass;
+  const finalBadgeLabel = dteMissing?'ENTER DTE':badgeLabel;
+  return `<tr id="review-row-${i}" style="${rowStyle}">
+    <td><input class="cell-input" value="${t.symbol||''}" style="text-transform:uppercase;width:80px" oninput="this.value=this.value.toUpperCase()"></td>
+    <td><select class="cell-select">
+      <option value="put" ${t.type==='put'?'selected':''}>PUT</option>
+      <option value="call" ${t.type==='call'?'selected':''}>CALL</option>
+    </select></td>
+    <td><select class="cell-select">
+      <option value="short" ${t.direction==='short'?'selected':''}>SHORT</option>
+      <option value="long" ${t.direction==='long'?'selected':''}>LONG</option>
+    </select></td>
+    <td><input class="cell-input" type="number" value="${t.strike||''}" step="0.5" style="width:75px"></td>
+    <td><input class="cell-input" type="number" value="${t.stock||''}" step="0.01" style="width:85px;${!t.stock||t.stock===t.strike?'border-color:rgba(255,181,71,0.4);':''}"></td>
+    <td><input class="cell-input" type="number" value="${t.premium||''}" step="0.01" style="width:75px"></td>
+    <td><input class="cell-input" type="number" value="${t.dte||''}" step="1" style="width:60px;${!t.dte||t.dte===0?'border-color:rgba(255,181,71,0.4);':''}"></td>
+    <td><input class="cell-input" type="number" value="${t.contracts||1}" step="1" style="width:60px"></td>
+    <td><input class="cell-input" type="number" value="${t.iv||30}" step="0.5" style="width:60px"></td>
+    <td><span class="ai-badge ${finalBadgeClass}">${finalBadgeLabel}</span></td>
+    <td><button class="del-btn" onclick="deleteReviewRow(${i})" title="Remove">✕</button></td>
+  </tr>`;
+}
+
+function addBlankRow(){
+  const tbody=document.getElementById('review-tbody');
+  const i=tbody.rows.length;
+  const blank={symbol:'',type:'put',direction:'short',strike:'',stock:'',premium:'',dte:'',contracts:1,iv:30,confidence:'low'};
+  const row=document.createElement('tr');
+  row.className='row-warn';
+  row.id='review-row-'+i;
+  row.innerHTML=buildReviewRow(blank,i).replace(`<tr class="row-warn" id="review-row-${i}">`,'');
+  tbody.appendChild(row);
+}
+
+function deleteReviewRow(i){
+  const row=document.getElementById('review-row-'+i);
+  if(row)row.remove();
+}
+
+function getReviewTrades(){
+  const rows=document.getElementById('review-tbody').rows;
+  const trades=[];
+  let rowIdx=0;
+  for(let row of rows){
+    const inputs=row.querySelectorAll('input,select');
+    const sym=inputs[0].value.trim().toUpperCase();
+    if(!sym)continue;
+    // Check if this row was a demo trade
+    const origTrade = (typeof pendingTrades !== 'undefined' && pendingTrades[rowIdx]) || null;
+    const isDemo = origTrade?._isDemo || false;
+    rowIdx++;
+    trades.push({
+      id:Date.now()+Math.random(),
+      symbol:sym,
+      type:inputs[1].value,
+      direction:inputs[2].value,
+      strike:parseFloat(inputs[3].value)||0,
+      stock:parseFloat(inputs[4].value)||parseFloat(inputs[3].value)||100,
+      premium:parseFloat(inputs[5].value)||0,
+      dte:Math.max(1,parseInt(inputs[6].value)||1),
+      contracts:parseInt(inputs[7].value)||1,
+      iv:parseFloat(inputs[8].value)||30,
+      volume:0,
+      notes:'',
+      openDate:new Date().toISOString().slice(0,10),
+      _isDemo:isDemo
+    });
+  }
+  return trades;
+}
+
+function confirmTrades(){
+  const openingTrades=getReviewTrades();
+  const closingRows=document.getElementById('close-tbody');
+
+  // Process closing trades first
+  let closedCount=0;
+  if(closingRows){
+    const rows=closingRows.querySelectorAll('tr[id^="close-row-"]');
+    rows.forEach(row=>{
+      const priceInput=row.querySelector('input[type="number"]');
+      const matchSpan=row.querySelector('td:nth-child(5) span');
+      if(!priceInput||!matchSpan)return;
+      const closePrice=parseFloat(priceInput.value)||0;
+      if(!closePrice)return;
+      // Find the matched trade by looking at the green span text
+      const matchText=matchSpan.textContent;
+      if(!matchText.includes('✓'))return; // no match found
+      // Find matching open trade
+      const match=savedTrades.find(s=>{
+        const symMatch=matchText.includes(s.symbol);
+        const strikeMatch=matchText.includes('$'+s.strike);
+        return symMatch&&strikeMatch;
+      });
+      if(!match)return;
+      // Calculate P&L
+      const pnl=match.direction==='short'
+        ?(match.premium-closePrice)*100*match.contracts
+        :(closePrice-match.premium)*100*match.contracts;
+      const pct=match.premium>0?((match.premium-closePrice)/match.premium*100):0;
+      // Archive to closed trades
+      const closed={
+        ...match,
+        closePrice,
+        closeDate:new Date().toISOString().slice(0,10),
+        closeTimestamp:Date.now(),
+        realisedPnl:pnl,
+        capturedPct:pct,
+        status:'closed'
+      };
+      closedTrades.push(closed);
+      // Remove from open trades
+      savedTrades=savedTrades.filter(s=>String(s.id)!==String(match.id));
+      closedCount++;
+    });
+    if(closedCount){
+      localStorage.setItem('smt_v1_closed',JSON.stringify(closedTrades));
+      localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
+    }
+  }
+
+  // Process opening trades — filter out LONG legs that are part of a spread
+  if(openingTrades.length){
+    const issues=openingTrades.filter(t=>!t.strike||!t.premium);
+    if(issues.length){
+      const names=issues.map(t=>t.symbol).join(', ');
+      if(!confirm(`Some trades are missing strike or premium data (${names}). Build cards anyway?`))return;
+    }
+    // Suppress LONG legs that match a SHORT leg (same ticker + type + expiry = spread)
+    const shortLegs=openingTrades.filter(t=>t.direction==='short');
+    const filteredTrades=openingTrades.filter(t=>{
+      if(t.direction!=='long')return true; // keep all shorts
+      // Check if a matching short exists (same symbol + type)
+      const matchingShort=shortLegs.find(s=>
+        s.symbol===t.symbol &&
+        s.type===t.type &&
+        Math.abs(s.dte-(t.dte||0))<7 // same expiry ± 7 days
+      );
+      if(matchingShort){
+        console.log('Spread detected — suppressing LONG leg:',t.symbol,t.type,'$'+t.strike);
+        return false;
+      }
+      return true;
+    });
+    // Also check against existing saved trades
+    const finalTrades=filteredTrades.filter(t=>{
+      if(t.direction!=='long')return true;
+      const matchingShort=savedTrades.find(s=>
+        s.symbol===t.symbol &&
+        s.type===t.type &&
+        s.direction==='short' &&
+        Math.abs(s.dte-(t.dte||0))<7
+      );
+      if(matchingShort){
+        console.log('Spread detected vs existing — suppressing LONG leg:',t.symbol,t.type,'$'+t.strike);
+        return false;
+      }
+      return true;
+    });
+    savedTrades=[...savedTrades,...finalTrades];
+    localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
+  }
+
+  if(!openingTrades.length&&!closedCount){
+    alert('No trades to confirm. Add at least one row.');return;
+  }
+
+  // Summary message
+  const parts=[];
+  if(openingTrades.length)parts.push(openingTrades.length+' trade'+(openingTrades.length>1?'s':'')+' opened');
+  if(closedCount)parts.push(closedCount+' trade'+(closedCount>1?'s':'')+' closed');
+
+  // Hide review
+  document.getElementById('review-section').classList.remove('show');
+  document.getElementById('ss-thumb').classList.remove('show');
+  document.getElementById('hero').style.display='none';
+  document.getElementById('how-section').style.display='none';
+  const closeSection=document.getElementById('close-section');
+  if(closeSection)closeSection.remove();
+
+  showDashboard();
+
+  // Show summary toast
+  if(parts.length){
+    showToast('✓ '+parts.join(' · '));
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════
+function showDashboard(){
+  hideJournal();
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('trade-count').textContent=savedTrades.length+' OPEN';
+  renderAll(savedTrades);
+  // Show demo banner if any demo trades present
+  if(savedTrades.some(t=>t._isDemo)) showDemoBanner();
+  document.getElementById('dashboard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderAll(trades){
+  const cardsEl = document.getElementById('cards');
+  cardsEl.style.gridTemplateColumns = `repeat(${currentGrid},1fr)`;
+  cardsEl.innerHTML = trades.map((t,i) => buildCard(t,i)).join('');
+  updatePortBar(trades);
+  renderCarousel(trades);
+  // Restore grid button state
+  document.querySelectorAll('.grid-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.cols) === currentGrid);
+  });
+}
+
+function toggleCard(id,event){
+  if(event&&event.target.closest('button,.foot-btn'))return;
+  const expanded=document.getElementById('expanded-'+id);
+  const expandBtn=document.getElementById('expand-btn-'+id);
+  const card=document.getElementById('card-'+id);
+  if(!expanded)return;
+  const isOpen=expanded.style.display!=='none';
+  const cardsEl=document.getElementById('cards');
+
+  if(isOpen){
+    expanded.style.display='none';
+    if(expandBtn){expandBtn.innerHTML='▼ full details';expandBtn.classList.remove('expanded');}
+    if(card)card.style.borderTopWidth='';
+    const anyOpen=[...document.querySelectorAll('[id^="expanded-"]')].some(el=>el.style.display!=='none');
+    if(!anyOpen&&cardsEl){cardsEl.classList.remove('single-col');cardsEl.style.gridTemplateColumns='';}
+  } else {
+    // Collapse all others first
+    document.querySelectorAll('[id^="expanded-"]').forEach(el=>{
+      if(el.style.display!=='none'){
+        el.style.display='none';
+        const oid=el.id.replace('expanded-','');
+        const ob=document.getElementById('expand-btn-'+oid);
+        if(ob){ob.innerHTML='▼ full details';ob.classList.remove('expanded');}
+        const oc=document.getElementById('card-'+oid);
+        if(oc)oc.style.borderTopWidth='';
+      }
+    });
+    // Expand this card
+    expanded.style.display='block';
+    if(expandBtn){expandBtn.innerHTML='▲ expanded';expandBtn.classList.add('expanded');}
+    if(card)card.style.borderTopWidth='3px';
+    if(cardsEl){cardsEl.classList.add('single-col');cardsEl.style.gridTemplateColumns='1fr';}
+    // Build the interactive curve now that the SVG is visible
+    if(typeof curveInit==='function')setTimeout(()=>curveInit(id),20);
+    setTimeout(()=>{
+      if(card)card.scrollIntoView({behavior:'smooth',block:'start'});
+    },60);
+  }
+}
+
+// ── INTERACTIVE PROFIT CURVE ──────────────────────────
+const _cvCache={};
+
+function cvBuild(id){
+  const svg=document.getElementById('cv-svg-'+id);
+  if(!svg)return null;
+  const K=+svg.dataset.strike, prem=+svg.dataset.premium, n=+svg.dataset.contracts;
+  const dte=+svg.dataset.dte, iv=+svg.dataset.iv, type=svg.dataset.type, dir=svg.dataset.dir;
+  const stock=+svg.dataset.stock, be=+svg.dataset.be;
+  const isShort=dir==='short', isPut=type==='put';
+  const premIn=prem*100*n;
+  const T=Math.max((dte===0?0.5:dte)/365,.0001), sig=Math.max(iv/100,0.01);
+
+  // Price range — focused on the action
+  const padR=Math.max(Math.abs(stock-K)*1.8, stock*0.14);
+  const lo=Math.max(0.01, Math.min(stock,K)-padR);
+  const hi=Math.max(stock,K)+padR;
+
+  function keepAt(S){const o=bsc(S,K,T,sig,type).price;return isShort?premIn-o*100*n:o*100*n-premIn;}
+
+  // Sample curve
+  const xs=[],keeps=[];
+  for(let i=0;i<=120;i++){const S=lo+(hi-lo)*i/120;xs.push(S);keeps.push(keepAt(S));}
+  const kMax=Math.max(...keeps), kMin=Math.min(...keeps);
+  const span=Math.max(kMax-kMin,1);
+  const yHi=kMax+span*0.30, yLo=kMin-span*0.18;
+
+  const PL=44,PR=584,PT=20,PB=212;
+  const sx=S=>PL+(S-lo)/(hi-lo)*(PR-PL);
+  const sy=v=>PT+(yHi-v)/(yHi-yLo)*(PB-PT);
+  const zeroY=sy(0), xBe=sx(be), xK=sx(K);
+
+  // Zones by trade type (x-position bands)
+  let bands;
+  if(isShort&&isPut) bands=[[PL,xBe,'dangerGrad'],[xBe,xK,'warnGrad'],[xK,PR,'safeGrad']];
+  else if(isShort) bands=[[PL,xK,'safeGrad'],[xK,xBe,'warnGrad'],[xBe,PR,'dangerGrad']];
+  else if(isPut) bands=[[PL,xBe,'safeGrad'],[xBe,PR,'dangerGrad']];
+  else bands=[[PL,xBe,'dangerGrad'],[xBe,PR,'safeGrad']];
+  const bandSvg=bands.map(b=>`<rect x="${b[0].toFixed(1)}" y="${PT}" width="${(b[1]-b[0]).toFixed(1)}" height="${PB-PT}" fill="url(#${b[2]})"/>`).join('');
+
+  // Curve path
+  let d='';
+  xs.forEach((S,i)=>{d+=(i?'L':'M')+sx(S).toFixed(1)+','+sy(keeps[i]).toFixed(1)+' ';});
+  const areaD=d+'L'+sx(hi).toFixed(1)+','+zeroY.toFixed(1)+' L'+sx(lo).toFixed(1)+','+zeroY.toFixed(1)+' Z';
+
+  // Axis labels
+  const yTopY=sy(kMax)+3, yBotY=sy(kMin)+3;
+  const safeLabel=isShort&&!isPut?'← SAFE':'SAFE →';
+  const safeX=isShort&&!isPut?PL+8:PR-8;
+  const safeAnchor=isShort&&!isPut?'start':'end';
+
+  svg.innerHTML=`
+    <defs>
+      <clipPath id="pc-${id}"><rect x="0" y="${PT}" width="600" height="${(zeroY-PT).toFixed(1)}"/></clipPath>
+      <clipPath id="lc-${id}"><rect x="0" y="${zeroY.toFixed(1)}" width="600" height="${(PB-zeroY).toFixed(1)}"/></clipPath>
+      <linearGradient id="safeGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5a0" stop-opacity="0.15"/><stop offset="100%" stop-color="#00e5a0" stop-opacity="0.02"/></linearGradient>
+      <linearGradient id="warnGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffb547" stop-opacity="0.15"/><stop offset="100%" stop-color="#ffb547" stop-opacity="0.02"/></linearGradient>
+      <linearGradient id="dangerGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff3a5c" stop-opacity="0.17"/><stop offset="100%" stop-color="#ff3a5c" stop-opacity="0.03"/></linearGradient>
+    </defs>
+    <rect x="${PL}" y="${PT}" width="${PR-PL}" height="${PB-PT}" rx="8" fill="rgba(0,0,0,0.25)"/>
+    ${bandSvg}
+    <line x1="${PL}" x2="${PR}" y1="${zeroY.toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4 4"/>
+    <path d="${areaD}" fill="#00e5a0" opacity="0.13" clip-path="url(#pc-${id})"/>
+    <path d="${areaD}" fill="#ff3a5c" opacity="0.13" clip-path="url(#lc-${id})"/>
+    <path d="${d}" fill="none" stroke="#ff3a5c" stroke-width="3.5" stroke-linecap="round" clip-path="url(#lc-${id})"/>
+    <path d="${d}" fill="none" stroke="#00e5a0" stroke-width="3.5" stroke-linecap="round" clip-path="url(#pc-${id})"/>
+    <line x1="${xBe.toFixed(1)}" x2="${xBe.toFixed(1)}" y1="${PT}" y2="${PB+12}" stroke="rgba(255,181,71,0.7)" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <line x1="${xK.toFixed(1)}" x2="${xK.toFixed(1)}" y1="${PT}" y2="${PB+12}" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-dasharray="2 3"/>
+    <text x="${xBe.toFixed(1)}" y="${(zeroY-8).toFixed(1)}" font-family="monospace" font-size="10" fill="rgba(255,181,71,0.9)" text-anchor="middle">b/e $${be.toFixed(2)}</text>
+    <text x="${xK.toFixed(1)}" y="${PB+24}" font-family="monospace" font-size="10" fill="rgba(255,255,255,0.4)" text-anchor="middle">strike $${K}</text>
+    <text x="${safeX}" y="${PT+16}" font-family="monospace" font-size="9" fill="#00e5a0" opacity="0.6" text-anchor="${safeAnchor}">${safeLabel}</text>
+    <text x="40" y="${yTopY.toFixed(1)}" font-family="monospace" font-size="9" fill="rgba(0,229,160,0.5)" text-anchor="end">+$${Math.round(kMax)}</text>
+    <text x="40" y="${yBotY.toFixed(1)}" font-family="monospace" font-size="9" fill="rgba(255,58,92,0.5)" text-anchor="end">${kMin<0?'-$':'+$'}${Math.abs(Math.round(kMin))}</text>
+    <text x="${(PL+18)}" y="248" font-family="monospace" font-size="9" fill="rgba(255,255,255,0.22)" text-anchor="middle">$${Math.round(lo)}</text>
+    <text x="${PR-18}" y="248" font-family="monospace" font-size="9" fill="rgba(255,255,255,0.22)" text-anchor="middle">$${Math.round(hi)}</text>
+    <line id="cv-probeline-${id}" x1="0" x2="0" y1="${PT}" y2="${PB+12}" stroke="rgba(255,255,255,0.4)" stroke-width="1" opacity="0.4"/>
+    <circle id="cv-dot-${id}" r="7.5" fill="#e8eaf2" stroke="rgba(0,0,0,0.5)" stroke-width="2.5"/>
+    <text id="cv-dotlabel-${id}" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle"></text>`;
+
+  const cache={K,prem,n,T,sig,type,dir,isShort,isPut,premIn,lo,hi,kMax,kMin,PL,PR,PT,PB,sx,sy,zeroY,keepAt,stock,be};
+  _cvCache[id]=cache;
+  return cache;
+}
+
+function curveUpdate(id, sliderVal){
+  let c=_cvCache[id];
+  if(!c)c=cvBuild(id);
+  if(!c)return;
+  const S=c.lo+(c.hi-c.lo)*(sliderVal/100);
+  const k=c.keepAt(S);
+  const opt=bsc(S,c.K,c.T,c.sig,c.type).price;
+  const cur=opt*100*c.n;
+  const cap=c.premIn>0?Math.round(k/c.premIn*100):0;
+  const x=c.sx(S), y=c.sy(k);
+
+  const dot=document.getElementById('cv-dot-'+id);
+  const pl=document.getElementById('cv-probeline-'+id);
+  const dl=document.getElementById('cv-dotlabel-'+id);
+  if(dot){dot.setAttribute('cx',x.toFixed(1));dot.setAttribute('cy',y.toFixed(1));dot.setAttribute('fill',k>=0?'#00e5a0':'#ff3a5c');}
+  if(pl){pl.setAttribute('x1',x.toFixed(1));pl.setAttribute('x2',x.toFixed(1));}
+  if(dl){
+    dl.setAttribute('x',Math.max(c.PL+26,Math.min(c.PR-26,x)).toFixed(1));
+    dl.setAttribute('y',(y>c.zeroY?y+20:y-13).toFixed(1));
+    dl.setAttribute('fill',k>=0?'#00e5a0':'#ff3a5c');
+    dl.textContent=(k>=0?'+$':'-$')+Math.abs(Math.round(k)).toLocaleString();
+  }
+
+  const pe=document.getElementById('cv-price-'+id);if(pe)pe.textContent='$'+S.toFixed(2);
+  const bb=document.getElementById('cv-bb-'+id);if(bb){bb.textContent=(c.isShort?'-$':'$')+Math.round(cur).toLocaleString();bb.style.color=c.isShort&&cur>c.premIn?'var(--r)':'var(--muted)';}
+  const kp=document.getElementById('cv-keep-'+id);if(kp){kp.textContent=(k>=0?'+$':'-$')+Math.abs(Math.round(k)).toLocaleString();kp.style.color=k>=0?'var(--g)':'var(--r)';}
+  const ce=document.getElementById('cv-cap-'+id);if(ce){ce.textContent=(k>=0?'▲ ':'▼ ')+Math.abs(cap)+'% '+(k>=0?'captured':'underwater');ce.style.color=k<0?'var(--r)':cap>=80?'var(--g)':'var(--y)';}
+
+  const a=document.getElementById('cv-action-'+id);
+  if(a){
+    const itm=(c.type==='put'&&S<c.K)||(c.type==='call'&&S>c.K);
+    let bg,bd,col,html;
+    if(c.isShort){
+      if(k<0){bg='rgba(255,58,92,0.06)';bd='rgba(255,58,92,0.25)';col='rgba(255,58,92,0.9)';html='⚠ <strong>Underwater by $'+Math.abs(Math.round(k)).toLocaleString()+'</strong> at this price — close to cap the loss, or roll for time and new premium.';}
+      else if(itm){bg='rgba(255,181,71,0.06)';bd='rgba(255,181,71,0.25)';col='rgba(255,181,71,0.85)';html='◈ <strong>Past your strike</strong> — still keeping $'+Math.round(k).toLocaleString()+' ('+cap+'%) but assignment risk is real here. Watch closely or roll.';}
+      else if(cap>=80){bg='rgba(0,229,160,0.05)';bd='rgba(0,229,160,0.2)';col='rgba(0,229,160,0.85)';html='✓ <strong>'+Math.min(cap,100)+'% captured</strong> at this price — good capture. Consider closing or rolling here.';}
+      else{bg='rgba(255,181,71,0.05)';bd='rgba(255,181,71,0.18)';col='rgba(255,181,71,0.8)';html='⏱ <strong>'+cap+'% captured</strong> at this price — below the 80% sweet spot. Time decay keeps working if the stock holds.';}
+    } else {
+      if(k>0){bg='rgba(167,139,250,0.06)';bd='rgba(167,139,250,0.2)';col='rgba(167,139,250,0.85)';html='📈 <strong>In profit by $'+Math.round(k).toLocaleString()+'</strong> at this price — worth more than you paid.';}
+      else{bg='rgba(255,181,71,0.05)';bd='rgba(255,181,71,0.18)';col='rgba(255,181,71,0.8)';html='⏱ <strong>Down $'+Math.abs(Math.round(k)).toLocaleString()+'</strong> at this price — close to cut loss or hold for the move.';}
+    }
+    a.style.background=bg;a.style.borderColor=bd;a.style.color=col;a.innerHTML=html;
+  }
+}
+
+function curveInit(id){
+  const c=cvBuild(id);
+  if(!c)return;
+  // Set slider to current stock price position
+  const startPct=Math.max(0,Math.min(100,(c.stock-c.lo)/(c.hi-c.lo)*100));
+  const sl=document.getElementById('cv-slider-'+id);
+  if(sl)sl.value=startPct;
+  curveUpdate(id,startPct);
+  // Drag on SVG
+  const svg=document.getElementById('cv-svg-'+id);
+  if(svg&&!svg.dataset.bound){
+    svg.dataset.bound='1';
+    let drag=false;
+    const fromX=cx=>{
+      const r=svg.getBoundingClientRect();
+      const vx=(cx-r.left)/r.width*600;
+      const pct=Math.max(0,Math.min(100,(vx-c.PL)/(c.PR-c.PL)*100));
+      if(sl)sl.value=pct;
+      curveUpdate(id,pct);
+    };
+    svg.addEventListener('pointerdown',e=>{drag=true;fromX(e.clientX);svg.setPointerCapture(e.pointerId);});
+    svg.addEventListener('pointermove',e=>{if(drag)fromX(e.clientX);});
+    svg.addEventListener('pointerup',()=>drag=false);
+    svg.addEventListener('pointercancel',()=>drag=false);
+  }
+}
+
+
+function updatePortBar(trades){
+  let totalPrem=0,totalBB=0,totalCap=0,capCount=0;
+  trades.forEach(t=>{
+    const T=Math.max((t.dte===0?0.5:t.dte)/365,.0001); // Use 0.5 days on expiry day to keep BS stable
+    const b=bsc(t.stock,t.strike,T,t.iv/100,t.type);
+    const bbCost=b.price*100*t.contracts;
+    const premIn=t.premium*100*t.contracts;
+    totalPrem+=premIn; totalBB+=bbCost;
+    if(premIn>0){totalCap+=Math.min(150,Math.max(-50,(premIn-bbCost)/premIn*100));capCount++;}
+  });
+  const keep=totalPrem-totalBB;
+  document.getElementById('pb-prem').textContent='$'+totalPrem.toFixed(0);
+  document.getElementById('pb-bb').textContent='$'+totalBB.toFixed(0);
+  document.getElementById('pb-keep').textContent=(keep>=0?'+':'-')+'$'+Math.abs(keep).toFixed(0);
+  document.getElementById('pb-keep').style.color=keep>=0?'var(--g)':'var(--r)';
+  document.getElementById('pb-cap').textContent=capCount?Math.round(totalCap/capCount)+'%':'—';
+}
+
+// ══════════════════════════════════════════════════════
+// BUILD CARD
+// ══════════════════════════════════════════════════════
+
+function buildCard(t,idx){
+  const isPut=t.type==='put';
+  const isShort=t.direction==='short';
+  const T=Math.max((t.dte===0?0.5:t.dte)/365,.0001);
+  const sig=Math.max(t.iv/100,0.01);
+  const b=bsc(t.stock,t.strike,T,sig,t.type);
+  const accent=!isShort?'#a78bfa':isPut?'#ff9500':'#4d9fff';
+  const be=isPut?t.strike-t.premium:t.strike+t.premium;
+  const beBreached=isPut?t.stock<be:t.stock>be;
+  const premIn=t.premium*100*t.contracts;
+  const bbCost=b.price*100*t.contracts;
+  const keep=premIn-bbCost;
+  const pctCap=premIn>0?Math.min(150,Math.max(-50,keep/premIn*100)):0;
+  const dailyTheta=Math.abs(b.theta)*100*t.contracts;
+  const cardId='card-'+t.id;
+
+  // Protection line text
+  const dist=Math.abs(t.stock-be);
+  const distStr='$'+dist.toFixed(2);
+  const safeDir=isPut?(t.stock>be?'above':'below'):(t.stock<be?'below':'above');
+  const safCol=isPut?(t.stock>be?'var(--g)':'var(--r)'):(t.stock<be?'var(--g)':'var(--r)');
+  const protLine=isShort
+    ?`Protection line <strong style="color:${accent}">${isPut?'$'+be.toFixed(2):'$'+be.toFixed(2)}</strong> · stock is <strong style="color:${safCol}">${distStr} ${safeDir}</strong> your risk zone${beBreached?' — <span style="color:var(--r)">breached</span>':''}`
+    :`Profit if stock ${isPut?'falls below':'rises above'} <strong style="color:${accent}">$${be.toFixed(2)}</strong> · currently <strong style="color:${safCol}">${distStr} ${isPut?t.stock<be?'below':'above':t.stock>be?'above':'below'}</strong>`;
+
+  // Tracker pill
+  const pillColor=pctCap>=80?'var(--g)':pctCap>=50?'var(--y)':pctCap>=0?'rgba(255,181,71,0.7)':'var(--r)';
+  const pillBg=pctCap>=80?'rgba(0,229,160,0.1)':pctCap>=50?'rgba(255,181,71,0.1)':pctCap>=0?'rgba(255,181,71,0.07)':'rgba(255,58,92,0.1)';
+  const pillBorder=pctCap>=80?'rgba(0,229,160,0.25)':pctCap>=50?'rgba(255,181,71,0.25)':pctCap>=0?'rgba(255,181,71,0.2)':'rgba(255,58,92,0.25)';
+  const pillText=pctCap>=0?`▲ ${pctCap.toFixed(0)}% captured`:`▼ ${Math.abs(pctCap).toFixed(0)}% underwater`;
+
+  // Bar fill
+  const barFill=pctCap>=0
+    ?`<div class="tracker-bar-fill" style="left:50%;width:${Math.min(50,pctCap/2)}%;background:var(--g)"></div>`
+    :`<div class="tracker-bar-fill" style="right:50%;width:${Math.min(50,Math.abs(pctCap)/2)}%;background:linear-gradient(270deg,rgba(255,181,71,0.7),rgba(255,58,92,0.9));position:absolute;right:50%;left:auto;border-radius:3px 0 0 3px"></div>`;
+
+  // Action message
+  const urgency=t.dte<=3&&t.dte>=0;
+  let actionColor,actionBg,actionBorder,actionIcon,actionText;
+  if(pctCap>=80&&pctCap<100){
+    actionColor='rgba(0,229,160,0.85)';actionBg='rgba(0,229,160,0.05)';actionBorder='rgba(0,229,160,0.18)';actionIcon='✓';
+    actionText=`<strong>${pctCap.toFixed(0)}% captured</strong> — consider closing or rolling. Buy back costs just $${bbCost.toFixed(0)}. Most traders act above 80%.`;
+  } else if(pctCap>=100){
+    actionColor='rgba(0,229,160,0.85)';actionBg='rgba(0,229,160,0.05)';actionBorder='rgba(0,229,160,0.18)';actionIcon='✓';
+    actionText=`<strong>Fully captured</strong> — premium is yours. Close now for full profit or roll to collect more.`;
+  } else if(pctCap>=50){
+    actionColor='rgba(255,181,71,0.85)';actionBg='rgba(255,181,71,0.05)';actionBorder='rgba(255,181,71,0.2)';actionIcon='◈';
+    actionText=`<strong>Target 80% before acting</strong> — ${t.dte} days of decay still ahead.${beBreached?' Stock is near your strike — watch closely.':''}`;
+  } else if(pctCap>=0){
+    actionColor='rgba(255,181,71,0.7)';actionBg='rgba(255,181,71,0.04)';actionBorder='rgba(255,181,71,0.15)';actionIcon='⏱';
+    actionText=`<strong>Let time work</strong> — target 50–80% capture before closing or rolling.`;
+  } else {
+    actionColor='rgba(255,58,92,0.9)';actionBg='rgba(255,58,92,0.06)';actionBorder='rgba(255,58,92,0.25)';actionIcon='⚠';
+    actionText=`<div style="font-weight:600;margin-bottom:3px">${urgency?'Act today':'Trade is underwater'} — close or roll</div><span style="font-size:10px;color:rgba(255,255,255,0.5)">Closing now costs <strong style="color:rgba(255,58,92,0.85)">$${(bbCost-premIn).toFixed(0)} more</strong> than you collected. ${urgency?'Expires soon — decide before close.':'Rolling to next expiry buys time and new premium.'}</span>`;
+  }
+  if(urgency&&pctCap>=0){
+    actionColor='rgba(255,181,71,0.9)';actionBg='rgba(255,181,71,0.06)';actionBorder='rgba(255,181,71,0.25)';actionIcon='⚠';
+    actionText=`<strong>${t.dte===0?'Expires today':'Expires in '+t.dte+' day'+(t.dte>1?'s':'')}</strong> — decide now. ${pctCap>=80?'You\'re at '+pctCap.toFixed(0)+'% — close or let expire.':'Close to lock in $'+keep.toFixed(0)+' or let it expire.'}`;
+  }
+
+  // Scenario chips (2)
+  const upPrice=+(t.stock*1.10).toFixed(2);
+  const downPrice=+(t.stock*0.90).toFixed(2);
+  function sPnl(S){const o=bsc(S,t.strike,T,sig,t.type).price;return isShort?(t.premium-o)*100*t.contracts:(o-t.premium)*100*t.contracts;}
+  const scGood=isPut?downPrice:upPrice; // direction that helps
+  const scBad=isPut?upPrice:downPrice;  // direction that hurts
+  const scGoodPnl=sPnl(scGood),scBadPnl=sPnl(scBad);
+  const fmtPnl=v=>(v>=0?'+':'')+' $'+Math.abs(v).toFixed(0);
+  const goodDir=isPut?'drops 10%':'rises 10%';
+  const badDir=isPut?'rises 10%':'drops 10%';
+  const goodNote=isPut?'Moving away from strike — safer':'Moving away from strike — safer';
+  const badNote=isPut?'Closer to strike — watch closely':'Closer to strike — watch closely';
+
+  // Five price chips for expanded view
+  const maxLossPrice=isPut?Math.max(0.01,t.strike*0.7):t.strike*1.3;
+  const chipPrices=[
+    {price:maxLossPrice,label:isPut?'-30%':'+30%'},
+    {price:be,label:'B/E'},
+    {price:t.strike,label:'STRIKE'},
+    {price:t.stock,label:'NOW'},
+    {price:isPut?t.stock*1.15:t.stock*0.85,label:isPut?'+15%':'-15%'},
+  ];
+  const chips=chipPrices.map(cp=>{
+    const pnl=sPnl(cp.price);
+    const cls=pnl>5?'g':pnl<-5?'r':'y';
+    return `<div class="price-chip ${cls}">
+      <div class="price-chip-price">$${cp.price.toFixed(0)}</div>
+      <div class="price-chip-label">${cp.label}</div>
+      <div class="price-chip-outcome">${fmtPnl(pnl)}</div>
+    </div>`;
+  }).join('');
+
+  const pe=buildPE(t,b,premIn,bbCost,keep,pctCap,be,beBreached,dailyTheta,isPut,isShort);
+  // IV/vol
+  const ivColor=t.iv<25?'var(--g)':t.iv<50?'var(--y)':'var(--r)';
+  const ivPct=Math.min(100,t.iv/80*100);
+  const fmtVol=v=>v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'K':v>0?v.toString():'—';
+
+  return `
+<div class="card" style="--accent:${accent};animation-delay:${idx*0.06}s" id="${cardId}" >
+
+  <!-- COLLAPSED HEADER — always visible -->
+  <div class="card-hdr">
+    <div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">
+        <span class="card-sym">${t.symbol}</span>
+        <span class="card-stock-price">$${t.stock.toFixed(2)}</span>
+      </div>
+      <div class="card-detail">$${t.strike} ${t.type.toUpperCase()} · ${isShort?'SHORT':'LONG'} · ${t.contracts} contract${t.contracts>1?'s':''}</div>
+      <div class="card-dte">${t.dte===0?'<span style="color:var(--y)">expires today</span>':t.dte+'d left'} · opened $${t.premium.toFixed(2)}/share</div>
+    </div>
+    <div class="card-right">
+      <div class="card-pnl" style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</div>
+      <div class="card-pnl-of">of $${premIn.toFixed(0)} ${isShort?'collected':'paid'}</div>
+      <div class="card-badges">
+        <span class="badge" style="color:${accent}">${t.type.toUpperCase()}</span>
+        <span class="badge" style="color:var(--muted);border-color:var(--border)">${isShort?'SHORT':'LONG'}</span>
+        ${beBreached?'<span class="badge" style="color:var(--r);border-color:var(--r)">⚠ B/E</span>':''}
+      </div>
+    </div>
+  </div>
+
+  <!-- PROTECTION LINE -->
+  <div class="card-protection">${protLine}</div>
+
+  <!-- TRACKER — always visible -->
+  <div class="card-tracker">
+    <div class="tracker-top">
+      <span class="tracker-label">PREMIUM CAPTURED</span>
+      <span class="tracker-pill" style="background:${pillBg};color:${pillColor};border:1px solid ${pillBorder}">${pillText}</span>
+    </div>
+    <div class="tracker-bar">
+      ${barFill}
+      <div class="tracker-bar-tick" style="left:50%;background:rgba(255,255,255,0.2)"></div>
+      <div class="tracker-bar-tick" style="left:75%;background:rgba(255,255,255,0.12)"></div>
+      <div class="tracker-bar-tick" style="left:90%;background:rgba(255,255,255,0.12)"></div>
+    </div>
+    <div class="tracker-bar-labels">
+      <span style="color:rgba(255,58,92,0.45)">← max loss</span>
+      <span>0%</span>
+      <span style="color:rgba(0,229,160,0.45)">100% →</span>
+    </div>
+    <div class="tracker-stats">
+      <span style="color:var(--muted)">Buy back: <strong style="color:var(--text)">$${bbCost.toFixed(0)}</strong></span>
+      <span style="color:var(--muted)">Close now, keep: <strong style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</strong></span>
+    </div>
+    <div class="tracker-action" style="background:${actionBg};border:1px solid ${actionBorder}">
+      <span style="color:${actionColor};font-size:13px;flex-shrink:0">${actionIcon}</span>
+      <span style="color:${actionColor};font-size:11px">${actionText}</span>
+    </div>
+  </div>
+
+  <!-- 2 SCENARIO CHIPS — always visible -->
+  <div class="card-scenarios">
+    <div class="sc-chip" style="background:rgba(0,229,160,0.03);border-color:rgba(0,229,160,0.15)">
+      <div class="sc-chip-dir" style="color:rgba(0,229,160,0.7)">if ${t.symbol} ${goodDir}</div>
+      <div class="sc-chip-result" style="color:${scGoodPnl>=0?'var(--g)':'var(--r)'}">${fmtPnl(scGoodPnl)}</div>
+      <div class="sc-chip-note">${goodNote}</div>
+    </div>
+    <div class="sc-chip" style="background:rgba(255,58,92,0.03);border-color:rgba(255,58,92,0.15)">
+      <div class="sc-chip-dir" style="color:rgba(255,58,92,0.7)">if ${t.symbol} ${badDir}</div>
+      <div class="sc-chip-result" style="color:${scBadPnl>=0?'var(--g)':'var(--r)'}">${fmtPnl(scBadPnl)}</div>
+      <div class="sc-chip-note">${badNote}</div>
+    </div>
+  </div>
+
+  <!-- COLLAPSED FOOTER -->
+  <div class="card-foot-collapsed">
+    <span style="color:var(--muted);font-size:11px">theta ${isShort?'+':'-'} $${dailyTheta.toFixed(2)}/day</span>
+    <span class="card-expand-btn" id="expand-btn-${t.id}" data-tid="${t.id}" onclick="toggleCard(this.dataset.tid,event)">▼ full details</span>
+  </div>
+
+  <!-- ── EXPANDED SECTION (hidden by default) ── -->
+  <div class="card-expanded" id="expanded-${t.id}" style="display:none">
+
+    <!-- IV row -->
+    <div class="iv-vol-row">
+      <div class="ivv-item">
+        <span class="ivv-label">IV</span>
+        <span class="ivv-val" style="color:${ivColor}">${t.iv}%</span>
+        <div class="ivv-bar"><div class="ivv-bar-fill" style="width:${ivPct}%;background:${ivColor}"></div></div>
+      </div>
+      <div class="iv-divider"></div>
+      <div class="ivv-item">
+        <span class="ivv-label">VOL</span>
+        <span class="ivv-val" style="color:var(--muted)">${fmtVol(t.volume)}</span>
+      </div>
+      <div class="iv-divider"></div>
+      <div class="ivv-item">
+        <span class="ivv-label">THETA</span>
+        <span class="ivv-val" style="color:${isShort?'var(--g)':'var(--r)'}"> ${isShort?'+':'-'} $${dailyTheta.toFixed(2)}/day</span>
+      </div>
+    </div>
+
+    <!-- Three stat boxes -->
+    <div class="stat-boxes">
+      <div class="stat-box">
+        <div class="stat-box-label">YOU KEEP NOW</div>
+        <div class="stat-box-val" style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</div>
+        <div class="stat-box-sub">${pctCap.toFixed(0)}% captured</div>
+      </div>
+      <div class="stat-box" style="border-left:1px solid var(--border)">
+        <div class="stat-box-label">TIME LEFT</div>
+        <div class="stat-box-val" style="color:${t.dte===0?'var(--y)':t.dte<=7?'var(--r)':t.dte<=21?'var(--y)':'var(--text)'}">${t.dte===0?'TODAY':t.dte+' days'}</div>
+        <div class="stat-box-sub">${t.dte===0?'⚠ expires at close':t.dte<=7?'⚠ expiring soon':t.dte<=21?'watch closely':'time cushion ok'}</div>
+      </div>
+      <div class="stat-box" style="border-left:1px solid var(--border)">
+        <div class="stat-box-label">MAX RISK</div>
+        <div class="stat-box-val" style="color:var(--r)">${isShort&&isPut?'-$'+(t.strike-t.premium).toFixed(0)+'00':isShort?'Unlimited':'-$'+premIn.toFixed(0)}</div>
+        <div class="stat-box-sub">${isShort&&isPut?'if stock hits $0':isShort?'if called away':'premium paid'}</div>
+      </div>
+    </div>
+
+    <!-- Expanded tracker with rows -->
+    <div class="exp-tracker">
+      <div class="tracker-top" style="margin-bottom:10px">
+        <span class="tracker-label">LIVE PREMIUM TRACKER</span>
+        <span class="tracker-pill" style="background:${pillBg};color:${pillColor};border:1px solid ${pillBorder}">${pillText}</span>
+      </div>
+      <div class="exp-tracker-rows">
+        <div class="exp-tracker-row">
+          <span class="exp-tracker-label">${isShort?'Premium collected':'Premium paid'}</span>
+          <span style="color:${isShort?'var(--g)':'var(--muted)'}">  ${isShort?'+$':'-$'}${premIn.toFixed(0)}</span>
+        </div>
+        <div class="exp-tracker-row">
+          <span class="exp-tracker-label">${isShort?'Buy back now costs':'Current value'}</span>
+          <span style="color:${bbCost>premIn&&isShort?'var(--r)':'var(--muted)'}">-$${bbCost.toFixed(0)}</span>
+        </div>
+      </div>
+      <div class="tracker-bar">
+        ${barFill}
+        <div class="tracker-bar-tick" style="left:50%;background:rgba(255,255,255,0.2)"></div>
+        <div class="tracker-bar-tick" style="left:75%;background:rgba(255,255,255,0.12)"></div>
+        <div class="tracker-bar-tick" style="left:90%;background:rgba(255,255,255,0.12)"></div>
+      </div>
+      <div class="tracker-bar-labels">
+        <span style="color:rgba(255,58,92,0.45)">← max loss</span>
+        <span>0%</span>
+        <span style="color:rgba(0,229,160,0.45)">100% →</span>
+      </div>
+      <div class="tracker-action" style="background:${actionBg};border:1px solid ${actionBorder};margin-top:8px">
+        <span style="color:${actionColor};font-size:13px;flex-shrink:0">${actionIcon}</span>
+        <span style="color:${actionColor};font-size:11px">${actionText}</span>
+      </div>
+      <div class="exp-tracker-keep">
+        <span>You keep right now</span>
+        <span style="color:${keep>=0?'var(--g)':'var(--r)'}">${keep>=0?'+':''} $${Math.abs(keep).toFixed(0)}</span>
+      </div>
+    </div>
+
+        <!-- PROFIT MAP — interactive drag curve -->
+    <div class="curve-explorer">
+      <div class="chart-label">PROFIT MAP — DRAG TO TEST ANY PRICE</div>
+      <svg id="cv-svg-${t.id}" class="cv-svg" viewBox="0 0 600 290" data-tid="${t.id}"
+        data-strike="${t.strike}" data-premium="${t.premium}" data-contracts="${t.contracts}"
+        data-dte="${t.dte}" data-iv="${t.iv}" data-type="${t.type}" data-dir="${t.direction}"
+        data-stock="${t.stock}" data-be="${be.toFixed(4)}"
+        style="width:100%;height:auto;display:block;cursor:ew-resize;touch-action:none">
+      </svg>
+      <input type="range" id="cv-slider-${t.id}" min="0" max="100" step="0.5" value="50"
+        class="cv-slider" oninput="curveUpdate('${t.id}', +this.value)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:9px 0 11px">
+        <span id="cv-cap-${t.id}" style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:${pctCap>=80?'var(--g)':pctCap>=0?'var(--y)':'var(--r)'}">${pctCap>=0?'▲':'▼'} ${Math.abs(pctCap).toFixed(0)}% ${pctCap>=0?'captured':'underwater'}</span>
+        <span style="font-size:10px;color:var(--dim)">80%+ = good time to close or roll</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px">
+        <div class="cv-stat"><div class="cv-stat-l">AT PRICE</div><div id="cv-price-${t.id}" class="cv-stat-v">$${t.stock.toFixed(2)}</div></div>
+        <div class="cv-stat"><div class="cv-stat-l">${isShort?'YOU COLLECTED':'YOU PAID'}</div><div class="cv-stat-v" style="color:${isShort?'var(--g)':'var(--muted)'}">${isShort?'+':'-'}$${premIn.toFixed(0)}</div></div>
+        <div class="cv-stat"><div class="cv-stat-l">${isShort?'BUY BACK':'VALUE'}</div><div id="cv-bb-${t.id}" class="cv-stat-v" style="color:var(--muted)">-$${bbCost.toFixed(0)}</div></div>
+        <div class="cv-stat"><div class="cv-stat-l">YOU KEEP</div><div id="cv-keep-${t.id}" class="cv-stat-v" style="color:${keep>=0?'var(--g)':'var(--r)'};font-weight:700">${keep>=0?'+':'-'}$${Math.abs(keep).toFixed(0)}</div></div>
+      </div>
+      <div id="cv-action-${t.id}" style="padding:8px 11px;border-radius:8px;font-size:11px;line-height:1.6;background:${actionBg};border:1px solid ${actionBorder};color:${actionColor}">${typeof actionText==='string'?actionText:''}</div>
+    </div>
+
+    <!-- 5 Price chips -->
+    <div class="price-chips">
+      <div class="price-chips-label">WHAT HAPPENS AT THESE PRICES?</div>
+      <div class="price-chips-row">${chips}</div>
+    </div>
+
+    <!-- Plain English -->
+    <div class="pe-section">${pe}</div>
+
+    <!-- Expanded footer — small boxed actions -->
+    <div class="card-foot-expanded">
+      <div class="foot-theta">Theta <strong style="color:${isShort?'var(--g)':'var(--r)'}">${isShort?'+':'-'} $${dailyTheta.toFixed(2)}/day</strong> ${isShort?'working for you':'working against you'}</div>
+      <div class="foot-right">
+        <div class="foot-btn-group">
+          <button class="foot-btn" onclick="openEditModal('${t.id}')">edit</button>
+          <button class="foot-btn remove-btn" onclick="expireWorthless('${t.id}')">remove</button>
+          <button class="foot-btn close-btn" onclick="closeTrade('${t.id}')">close trade</button>
+        </div>
+        <span class="foot-collapse" data-tid="${t.id}" onclick="toggleCard(this.dataset.tid,event)">▲ collapse</span>
+      </div>
+    </div>
+
+  </div>
+</div>`;
+}
+
+
+// ══════════════════════════════════════════════════════
+// CHART
+// ══════════════════════════════════════════════════════
+function buildChart(t,b,be,T,sig,accent,isPut,isShort){
+  const W=560, H=120;
+  const PL=44, PR=12, PT=18, PB=28; // bottom 28 = axis labels(10) + legend row(10) + gap(8)
+  const PW=W-PL-PR, PH=H-PT-PB;
+
+  const S=t.stock, K=t.strike;
+  const spread=Math.abs(S-K);
+  const padding=Math.max(spread*1.8,S*0.12);
+  const lo=Math.max(0.01,Math.min(S,K)-padding);
+  const hi=Math.max(S,K)+padding;
+  const range=hi-lo;
+
+  const px=p=>PL+((p-lo)/range)*PW;
+
+  // Build P&L points
+  const nPts=80;
+  const pts=[];
+  for(let i=0;i<=nPts;i++){
+    const price=lo+(hi-lo)*(i/nPts);
+    const opt=bsc(price,t.strike,T,sig,t.type).price;
+    const pnl=isShort?(t.premium-opt)*100*t.contracts:(opt-t.premium)*100*t.contracts;
+    pts.push({price,pnl,x:px(price)});
+  }
+
+  const allPnls=pts.map(p=>p.pnl);
+  const maxP=Math.max(...allPnls), minP=Math.min(...allPnls);
+  const pad=(maxP-minP)*0.18;
+  const yHi=maxP+pad, yLo=minP-pad;
+  const yRange=yHi-yLo;
+  const py=p=>PT+PH-((p-yLo)/yRange)*PH;
+  const pyC=p=>Math.max(PT+1,Math.min(PT+PH-1,py(p)));
+  pts.forEach(p=>p.y=pyC(p.pnl));
+
+  const zeroY=pyC(0);
+
+  // Split into profit/loss segments
+  function pathStr(arr){return arr.map((p,i)=>(i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`)).join(' ')}
+  const profitSegs=[],lossSegs=[];
+  let curP=[],curL=[];
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i];
+    if(i>0&&((pts[i-1].pnl>=0)!==(p.pnl>=0))){
+      const prev=pts[i-1];
+      const frac=Math.abs(prev.pnl)/(Math.abs(prev.pnl)+Math.abs(p.pnl));
+      const cross={x:prev.x+(p.x-prev.x)*frac,y:zeroY,pnl:0};
+      if(prev.pnl>=0){curP.push(cross);profitSegs.push(curP);curP=[];curL=[cross];}
+      else{curL.push(cross);lossSegs.push(curL);curL=[];curP=[cross];}
+    }
+    p.pnl>=0?curP.push(p):curL.push(p);
+  }
+  if(curP.length)profitSegs.push(curP);
+  if(curL.length)lossSegs.push(curL);
+
+  const fillP=profitSegs.map(s=>{if(s.length<2)return'';const d=pathStr(s)+` L${s[s.length-1].x.toFixed(1)},${zeroY.toFixed(1)} L${s[0].x.toFixed(1)},${zeroY.toFixed(1)} Z`;return`<path d="${d}" fill="rgba(0,229,160,0.08)" stroke="none"/>`;}).join('');
+  const fillL=lossSegs.map(s=>{if(s.length<2)return'';const d=pathStr(s)+` L${s[s.length-1].x.toFixed(1)},${zeroY.toFixed(1)} L${s[0].x.toFixed(1)},${zeroY.toFixed(1)} Z`;return`<path d="${d}" fill="rgba(255,58,92,0.08)" stroke="none"/>`;}).join('');
+  const pathP=profitSegs.map(s=>`<path d="${pathStr(s)}" fill="none" stroke="rgba(0,229,160,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+  const pathL=lossSegs.map(s=>`<path d="${pathStr(s)}" fill="none" stroke="rgba(255,58,92,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+
+  const zeroLine=`<line x1="${PL}" y1="${zeroY.toFixed(1)}" x2="${W-PR}" y2="${zeroY.toFixed(1)}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="4,4"/>`;
+
+  // Y axis — 3 labels left-aligned, right-justified to PL-4
+  const yLabels=[
+    {val:maxP,col:'rgba(0,229,160,0.45)'},
+    {val:0,col:'rgba(255,255,255,0.2)'},
+    {val:minP,col:'rgba(255,58,92,0.45)'}
+  ];
+  const yAxis=yLabels.map(({val,col})=>{
+    const y=pyC(val);
+    const label=val===0?'$0':val>0?'+$'+Math.abs(val).toFixed(0):'-$'+Math.abs(val).toFixed(0);
+    return`<text x="${PL-4}" y="${y.toFixed(1)}" fill="${col}" font-size="9" font-family="monospace" text-anchor="end" dominant-baseline="middle">${label}</text>`;
+  }).join('');
+
+  // Key dots — NOW, STRIKE, B/E — with collision-safe labels
+  const keyDots=[
+    {price:S,label:'NOW',col:'#00e5a0',r:5,priority:0},
+    {price:K,label:'STRIKE',col:'rgba(255,180,0,0.9)',r:4,priority:1},
+    {price:be,label:'B/E',col:'rgba(255,255,255,0.55)',r:3.5,priority:2},
+  ];
+  const dotItems=keyDots.map(kp=>{
+    const opt=bsc(kp.price,t.strike,T,sig,t.type).price;
+    const pnl=isShort?(t.premium-opt)*100*t.contracts:(opt-t.premium)*100*t.contracts;
+    const x=Math.max(PL+2,Math.min(W-PR-2,px(kp.price)));
+    const y=pyC(pnl);
+    const pnlStr=(pnl>=0?'+ ':'')+' $'+Math.abs(pnl).toFixed(0);
+    const pnlCol=pnl>=0?'rgba(0,229,160,0.95)':'rgba(255,58,92,0.95)';
+    return{...kp,x,y,pnl,pnlStr,pnlCol};
+  }).filter(d=>d.x>=PL&&d.x<=W-PR);
+
+  // Alternate labels above/below with collision detection
+  const placed=[];
+  const dotSVG=dotItems.map((d,i)=>{
+    const lw=d.label==='STRIKE'?36:d.label==='NOW'?24:18;
+    const lx=Math.max(PL+lw/2+2,Math.min(W-PR-lw/2-2,d.x));
+    let ly=i%2===0?d.y-16:d.y+24;
+    if(ly<PT+8)ly=d.y+24;
+    if(ly>PT+PH-12)ly=d.y-16;
+    for(const p of placed){
+      if(Math.abs(lx-p.x)<48&&Math.abs(ly-p.y)<16){
+        ly=p.y+(ly>p.y?20:-20);
+        ly=Math.max(PT+8,Math.min(PT+PH-12,ly));
+      }
+    }
+    placed.push({x:lx,y:ly});
+    const connY=ly>d.y?d.y+d.r:d.y-d.r;
+    return`
+    <line x1="${d.x.toFixed(1)}" y1="${connY.toFixed(1)}" x2="${lx.toFixed(1)}" y2="${(ly-7).toFixed(1)}" stroke="${d.col}" stroke-width="1" opacity="0.3"/>
+    <circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="${d.r}" fill="${d.col}" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>
+    <text x="${lx.toFixed(1)}" y="${(ly-3).toFixed(1)}" fill="${d.col}" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">${d.label}</text>
+    <text x="${lx.toFixed(1)}" y="${(ly+7).toFixed(1)}" fill="${d.pnlCol}" font-size="10" font-weight="bold" font-family="monospace" text-anchor="middle">${d.pnlStr}</text>`;
+  }).join('');
+
+  // X axis — 3 price labels, bottom of PH area (not legend row)
+  const axisY=PT+PH+10;
+  const axisItems=[
+    {price:lo+range*0.1},
+    {price:S},
+    {price:hi-range*0.1}
+  ];
+  const axisEl=axisItems.map(a=>{
+    const ax=Math.max(PL+12,Math.min(W-PR-12,px(a.price)));
+    return`<text x="${ax.toFixed(1)}" y="${axisY}" fill="rgba(255,255,255,0.22)" font-size="9" font-family="monospace" text-anchor="middle">$${Math.round(a.price)}</text>`;
+  }).join('');
+
+  // Legend — own row at very bottom, clear of axis labels
+  const legendY=H-4;
+  const legend=`
+    <circle cx="${W-PR-72}" cy="${legendY}" r="3.5" fill="rgba(0,229,160,0.75)"/>
+    <text x="${W-PR-66}" y="${legendY}" fill="rgba(255,255,255,0.25)" font-size="8" font-family="monospace" dominant-baseline="middle">profit</text>
+    <circle cx="${W-PR-30}" cy="${legendY}" r="3.5" fill="rgba(255,58,92,0.75)"/>
+    <text x="${W-PR-24}" y="${legendY}" fill="rgba(255,255,255,0.25)" font-size="8" font-family="monospace" dominant-baseline="middle">loss</text>`;
+
+  return`<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="height:auto;display:block;width:100%">
+  <rect width="${W}" height="${H}" fill="rgba(0,0,0,0.28)" rx="8"/>
+  ${fillP}${fillL}
+  ${zeroLine}
+  ${pathP}${pathL}
+  ${yAxis}
+  ${dotSVG}
+  ${axisEl}
+  ${legend}
+</svg>`;
+}
+
+// ══════════════════════════════════════════════════════
+// PLAIN ENGLISH
+// ══════════════════════════════════════════════════════
+function buildPE(t,b,premIn,bbCost,keep,pctCap,be,beBreached,dailyTheta,isPut,isShort){
+  const sym=`<strong>${t.symbol}</strong>`;
+  if(isShort&&isPut)return `You sold someone the right to make you buy ${sym} at <span class="hl-b">$${t.strike}</span> — and they paid you <span class="hl-g">+$${premIn.toFixed(0)}</span> for that deal upfront. ${beBreached?`<span class="hl-r">The stock has dropped below your safety line — the trade is under pressure.</span>`:`Right now the stock is at <span class="hl-b">$${t.stock.toFixed(2)}</span>, which is <span class="hl-g">$${(t.stock-be).toFixed(2)} above</span> your safety line of $${be.toFixed(2)}. As long as it stays there, you keep all the cash.`} Every day that passes, time works <span class="hl-g">in your favour</span> — earning you <span class="hl-g">+$${dailyTheta.toFixed(2)}/day</span>.`;
+  if(isShort&&!isPut)return `You own ${sym} shares and sold someone the right to buy them at <span class="hl-b">$${t.strike}</span>. They paid you <span class="hl-g">+$${premIn.toFixed(0)}</span>. ${beBreached?`<span class="hl-r">The stock has risen above your level — you may be called out of your shares soon.</span>`:`Stock is at <span class="hl-b">$${t.stock.toFixed(2)}</span> — <span class="hl-g">$${(be-t.stock).toFixed(2)} below</span> the level where you'd lose your shares.`} Time decay earns you <span class="hl-g">+$${dailyTheta.toFixed(2)}/day</span>.`;
+  if(!isShort&&isPut)return `You're betting ${sym} will fall. You paid <span class="hl-r">$${premIn.toFixed(0)}</span> for the right to profit below <span class="hl-b">$${be.toFixed(2)}</span>. ${keep>=0?`<span class="hl-g">You're currently in profit.</span>`:`<span class="hl-r">Not yet profitable — stock needs to fall further.</span>`} Warning: time costs you <span class="hl-r">$${dailyTheta.toFixed(2)}/day</span>.`;
+  return `You're betting ${sym} will rise. You paid <span class="hl-r">$${premIn.toFixed(0)}</span> for the right to profit above <span class="hl-b">$${be.toFixed(2)}</span>. ${keep>=0?`<span class="hl-g">Currently in profit.</span>`:`<span class="hl-r">Not yet profitable.</span>`} Time costs you <span class="hl-r">$${dailyTheta.toFixed(2)}/day</span>.`;
+}
+
+// ══════════════════════════════════════════════════════
+// EDIT MODAL
+// ══════════════════════════════════════════════════════
+function openEditModal(id){
+  const t=savedTrades.find(x=>String(x.id)===String(id))
+    ||closedTrades.find(x=>String(x.id)===String(id));
+  if(!t)return;
+  editingId=id;
+  document.getElementById('edit-symbol').value=t.symbol;
+  document.getElementById('edit-stock').value=t.stock;
+  document.getElementById('edit-type').value=t.type;
+  document.getElementById('edit-direction').value=t.direction;
+  document.getElementById('edit-strike').value=t.strike;
+  document.getElementById('edit-premium').value=t.premium;
+  document.getElementById('edit-dte').value=t.dte;
+  document.getElementById('edit-contracts').value=t.contracts;
+  document.getElementById('edit-iv').value=t.iv;
+  document.getElementById('edit-volume').value=t.volume||0;
+  document.getElementById('edit-notes').value=t.notes||'';
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEditModal(){
+  document.getElementById('edit-modal').classList.remove('open');
+  editingId=null;
+}
+
+function saveEdit(){
+  if(!editingId)return;
+  const idx=savedTrades.findIndex(x=>String(x.id)===String(editingId));
+  // Check both open and closed trades
+  let isClosed = false;
+  if(idx===-1){
+    idx=closedTrades.findIndex(x=>String(x.id)===String(editingId));
+    isClosed=true;
+  }
+  if(idx===-1)return;
+  const tradeList = isClosed ? closedTrades : savedTrades;
+  tradeList[idx]={
+    ...savedTrades[idx],
+    symbol:document.getElementById('edit-symbol').value.toUpperCase(),
+    stock:parseFloat(document.getElementById('edit-stock').value)||savedTrades[idx].stock,
+    type:document.getElementById('edit-type').value,
+    direction:document.getElementById('edit-direction').value,
+    strike:parseFloat(document.getElementById('edit-strike').value)||savedTrades[idx].strike,
+    premium:parseFloat(document.getElementById('edit-premium').value)||savedTrades[idx].premium,
+    dte:parseInt(document.getElementById('edit-dte').value)||savedTrades[idx].dte,
+    contracts:parseInt(document.getElementById('edit-contracts').value)||1,
+    iv:parseFloat(document.getElementById('edit-iv').value)||savedTrades[idx].iv,
+    volume:parseInt(document.getElementById('edit-volume').value)||0,
+    notes:document.getElementById('edit-notes').value,
+  };
+  if(isClosed){
+    localStorage.setItem('smt_v1_closed',JSON.stringify(closedTrades));
+  } else {
+    localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
+  }
+  closeEditModal();
+  // Re-render whichever view is active
+  if(document.getElementById('journal-section').classList.contains('show')){
+    renderJournal();
+  } else {
+    renderAll(savedTrades);
+  }
+}
+
+document.getElementById('edit-modal').addEventListener('click',e=>{
+  if(e.target===e.currentTarget)closeEditModal();
+});
+
+// ══════════════════════════════════════════════════════
+// CLOSE TRADE
+// ══════════════════════════════════════════════════════
+// ── CLOSE TRADE MODAL ──────────────────────────────
+let _closeTradeId = null;
+
+function closeTrade(id){
+  const t=savedTrades.find(x=>String(x.id)===String(id));
+  if(!t)return;
+  _closeTradeId = id;
+
+  // Populate modal
+  const isPut=t.type==='put';
+  const accent=isPut?'#ff9500':'#4d9fff';
+  document.getElementById('cm-sym').textContent=t.symbol;
+  document.getElementById('cm-sym').style.color=accent;
+  document.getElementById('cm-meta').textContent=`$${t.strike} ${t.type.toUpperCase()} · ${t.direction.toUpperCase()} · ${t.contracts} contract${t.contracts>1?'s':''}`;
+  document.getElementById('cm-collected').textContent='$'+t.premium.toFixed(2);
+  document.getElementById('cm-prem').textContent='+$'+(t.premium*100*t.contracts).toFixed(0);
+  document.getElementById('cm-price').value='';
+  document.getElementById('cm-cost').textContent='-$0';
+  document.getElementById('cm-pnl').textContent='$0';
+  document.getElementById('cm-pnl').style.color='var(--muted)';
+
+  document.getElementById('close-modal-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('cm-price').focus(),100);
+}
+
+function updateClosePreview(){
+  const t=savedTrades.find(x=>String(x.id)===String(_closeTradeId));
+  if(!t)return;
+  const cp=parseFloat(document.getElementById('cm-price').value)||0;
+  const cost=cp*100*t.contracts;
+  const pnl=(t.direction==='short'?t.premium-cp:cp-t.premium)*100*t.contracts;
+  document.getElementById('cm-cost').textContent='-$'+cost.toFixed(0);
+  document.getElementById('cm-cost').style.color=cost>0?'var(--r)':'var(--muted)';
+  document.getElementById('cm-pnl').textContent=(pnl>=0?'+ ':'')+' $'+Math.abs(pnl).toFixed(0);
+  document.getElementById('cm-pnl').style.color=pnl>=0?'var(--g)':'var(--r)';
+  document.getElementById('cm-pnl').style.fontSize=Math.abs(pnl)>999?'16px':'20px';
+}
+
+function closeTradeModal(){
+  document.getElementById('close-modal-overlay').classList.remove('show');
+  _closeTradeId=null;
+}
+
+function confirmCloseTrade(){
+  const t=savedTrades.find(x=>String(x.id)===String(_closeTradeId));
+  if(!t)return;
+  const cp=parseFloat(document.getElementById('cm-price').value);
+  if(isNaN(cp)||cp<0){
+    document.getElementById('cm-price').style.borderColor='var(--r)';
+    setTimeout(()=>document.getElementById('cm-price').style.borderColor='',1000);
+    return;
+  }
+  const pnl=(t.direction==='short'?t.premium-cp:cp-t.premium)*100*t.contracts;
+  const pct=t.premium>0?((t.premium-cp)/t.premium*100):0;
+  const closed={...t,closePrice:cp,closeDate:new Date().toISOString().slice(0,10),
+    closeTimestamp:Date.now(),realisedPnl:pnl,capturedPct:pct};
+  closedTrades.push(closed);
+  localStorage.setItem('smt_v1_closed',JSON.stringify(closedTrades));
+  savedTrades=savedTrades.filter(x=>String(x.id)!==String(_closeTradeId));
+  localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
+  closeTradeModal();
+  renderAll(savedTrades);
+  document.getElementById('trade-count').textContent=savedTrades.length+' OPEN';
+  showToast(`${t.symbol} closed · ${pnl>=0?'WIN':'LOSS'} · ${pnl>=0?'+':''} $${Math.abs(pnl).toFixed(0)}`);
+}
+
+// ══════════════════════════════════════════════════════
+// DEMO DATA
+// ══════════════════════════════════════════════════════
+function loadDemo(){
+  document.getElementById('how-section').style.display='none';
+  document.getElementById('hero').style.display='none';
+  const demo=[
+    {id:1,symbol:'TSLA',type:'put',direction:'short',strike:340,stock:380,premium:4.20,dte:28,contracts:1,iv:52,volume:18420,notes:'Cash-secured put',confidence:'high'},
+    {id:2,symbol:'AAPL',type:'put',direction:'short',strike:190,stock:213,premium:1.85,dte:21,contracts:2,iv:22,volume:32100,notes:'CSP below support',confidence:'high'},
+    {id:3,symbol:'NVDA',type:'call',direction:'short',strike:920,stock:875,premium:7.40,dte:35,contracts:1,iv:46,volume:9870,notes:'Covered call',confidence:'high'},
+    {id:4,symbol:'XLE',type:'put',direction:'short',strike:55,stock:57.56,premium:0.36,dte:7,contracts:2,iv:10,volume:4200,notes:'Short put — 7 days',confidence:'high'},
+  ];
+  // Mark as demo so they can be cleared
+  const demoTagged = demo.map(t=>({...t,_isDemo:true}));
+  showReviewTable(demoTagged);
+}
+
+function showDemoBanner(){
+  const existing=document.getElementById('demo-banner');
+  if(existing)return;
+  const cardsEl=document.getElementById('cards');
+  if(!cardsEl)return;
+  const banner=document.createElement('div');
+  banner.id='demo-banner';
+  banner.style.cssText='background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-radius:10px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;color:rgba(77,159,255,0.8)';
+  banner.innerHTML=`<div><strong style="color:var(--b)">📊 DEMO TRADES</strong> — Example positions to explore the app.</div><button onclick="clearAllDemoTrades()" style="background:rgba(255,58,92,0.1);border:1px solid rgba(255,58,92,0.3);color:var(--r);font-size:9px;padding:7px 14px;border-radius:7px;cursor:pointer;white-space:nowrap;flex-shrink:0">✕ CLEAR ALL DEMOS</button>`;
+  cardsEl.parentNode.insertBefore(banner,cardsEl);
+}
+
+function clearAllDemoTrades(){
+  pendingTrades=[];
+  savedTrades=savedTrades.filter(t=>!t._isDemo);
+  localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
+  const banner=document.getElementById('demo-banner');
+  if(banner)banner.remove();
+  document.getElementById('confirm-banner').classList.remove('show');
+  renderAll(savedTrades);
+  if(!savedTrades.length){
+    document.getElementById('dashboard').style.display='none';
+    document.getElementById('hero').style.display='';
+    document.getElementById('how-section').style.display='';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  showToast('Demo trades cleared');
+}
+
+// ══════════════════════════════════════════════════════
+// JOURNAL
+// ══════════════════════════════════════════════════════
+function showJournal(){
+  // Hide everything else
+  document.getElementById('hero').style.display='none';
+  document.getElementById('parsing').classList.remove('show');
+  document.getElementById('ss-thumb').classList.remove('show');
+  document.getElementById('review-section').classList.remove('show');
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('how-section').style.display='none';
+  // Show journal
+  document.getElementById('journal-section').classList.add('show');
+  // Active state on nav button
+  document.getElementById('nav-journal-btn').classList.add('active');
+  renderJournal();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function hideJournal(){
+  document.getElementById('journal-section').classList.remove('show');
+  document.getElementById('nav-journal-btn').classList.remove('active');
+}
+
+function renderJournal(){
+  const tbody = document.getElementById('j-tbody');
+  const all = [
+    ...savedTrades.map(t=>({...t,_status:'open'})),
+    ...closedTrades.map(t=>({...t,_status:'closed'}))
+  ].sort((a,b)=>{
+    const da = new Date(a.openDate||0), db = new Date(b.openDate||0);
+    return db-da;
+  });
+
+  if(!all.length){
+    tbody.innerHTML=`<tr><td colspan="13">
+      <div class="j-empty">
+        <div class="j-empty-icon">📋</div>
+        <div class="j-empty-title">NO TRADES YET</div>
+        <div class="j-empty-sub">Upload a screenshot to start your journal</div>
+      </div>
+    </td></tr>`;
+    updateJournalStats([]);
+    return;
+  }
+
+  tbody.innerHTML = all.map(t => buildJournalRow(t)).join('');
+  updateJournalStats(all);
+}
+
+function buildJournalRow(t){
+  const isPut = t.type==='put';
+  const isShort = t.direction==='short';
+  const isClosed = t._status==='closed';
+  const T = Math.max((t.dte||1)/365, 0.0001);
+  const sig = Math.max((t.iv||30)/100, 0.01);
+  const premIn = t.premium*100*t.contracts;
+
+  // P&L
+  let pnlVal=0, capPct=null, pnlStr='—';
+  if(isClosed){
+    pnlVal = t.realisedPnl||0;
+    capPct = t.capturedPct||0;
+    pnlStr = (pnlVal>=0?'+':'')+' $'+Math.abs(pnlVal).toFixed(0);
+  } else {
+    const b = bsc(t.stock,t.strike,T,sig,t.type);
+    pnlVal = isShort?(t.premium-b.price)*100*t.contracts:(b.price-t.premium)*100*t.contracts;
+    capPct = premIn>0?Math.min(150,Math.max(-150,pnlVal/premIn*100)):0;
+    pnlStr = (pnlVal>=0?'+':'')+' $'+Math.abs(pnlVal).toFixed(0);
+  }
+
+  const pnlClass = pnlVal>=0?'j-pnl-pos':'j-pnl-neg';
+  const accentColor = isPut?(isShort?'var(--g)':'var(--r)'):(isShort?'var(--b)':'var(--y)');
+  const symClass = isPut?'':'call';
+
+  // Expiry — calculate from DTE and open date
+  const openD = t.openDate ? new Date(t.openDate) : new Date();
+  const expiryD = new Date(openD.getTime()+(t.dte||0)*24*60*60*1000);
+  const expiryStr = expiryD.toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'2-digit'});
+
+  return `<tr class="${isClosed?'j-closed':''}" id="jrow-${t.id}">
+    <td class="j-td j-muted">${t.openDate||'—'}</td>
+    <td class="j-td"><span class="j-sym ${symClass}">${t.symbol}</span></td>
+    <td class="j-td"><span class="j-badge" style="color:${accentColor};border-color:${accentColor};background:${accentColor}18">${t.type.toUpperCase()}</span></td>
+    <td class="j-td j-muted">${isShort?'SHORT':'LONG'}</td>
+    <td class="j-td" style="font-family:'DM Mono',monospace;font-weight:500">$${t.strike}</td>
+    <td class="j-td" style="font-family:'DM Mono',monospace;color:var(--g)">$${t.premium.toFixed(2)}</td>
+    <td class="j-td j-muted">${t.contracts}</td>
+    <td class="j-td j-muted">${expiryStr} <span style="color:var(--dim)">(${t.dte}d)</span></td>
+    <td class="j-td"><span class="j-badge ${isClosed?'j-status-closed':'j-status-open'}">${isClosed?'CLOSED':'OPEN'}</span></td>
+    <td class="j-td ${pnlClass}">${pnlStr}</td>
+    <td class="j-td" style="font-family:'DM Mono',monospace;color:${capPct!==null&&capPct>=80?'var(--g)':capPct!==null&&capPct>=50?'var(--b)':'var(--muted)'}">${capPct!==null?capPct.toFixed(0)+'%':'—'}</td>
+    <td class="j-td j-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${t.notes||''}</td>
+    <td class="j-td" style="display:flex;gap:6px;align-items:center">
+      <button class="j-edit" onclick="openEditModal('${t.id}')" title="Edit">✎</button>
+      <button class="j-del" onclick="deleteJournalEntry('${t.id}','${t._status}')" title="Remove">✕</button>
+    </td>
+  </tr>`;
+}
+
+function updateJournalStats(all){
+  const open = all.filter(t=>t._status==='open');
+  const closed = all.filter(t=>t._status==='closed');
+  const wins = closed.filter(t=>(t.realisedPnl||0)>=0).length;
+  const winRate = closed.length?Math.round(wins/closed.length*100):null;
+  const totalPrem = all.reduce((s,t)=>s+t.premium*100*t.contracts,0);
+
+  document.getElementById('j-total').textContent=all.length;
+  document.getElementById('j-open').textContent=open.length;
+  document.getElementById('j-closed-count').textContent=closed.length;
+  document.getElementById('j-winrate').textContent=winRate!==null?winRate+'%':'—';
+  document.getElementById('j-winrate').style.color=winRate>=60?'var(--g)':winRate>=40?'var(--y)':'var(--muted)';
+  document.getElementById('j-premium').textContent='$'+totalPrem.toFixed(0);
+}
+
+function deleteJournalEntry(id,status){
+  if(!confirm('Remove this trade from your journal?'))return;
+  if(status==='open'){
+    savedTrades=savedTrades.filter(t=>String(t.id)!==String(id));
+    localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
+  } else {
+    closedTrades=closedTrades.filter(t=>String(t.id)!==String(id));
+    localStorage.setItem('smt_v1_closed',JSON.stringify(closedTrades));
+  }
+  renderJournal();
+}
+
+// ── CSV EXPORT ────────────────────────────────────────
+function exportCSV(){
+  const all=[
+    ...savedTrades.map(t=>({...t,_status:'open'})),
+    ...closedTrades.map(t=>({...t,_status:'closed'}))
+  ].sort((a,b)=>new Date(b.openDate||0)-new Date(a.openDate||0));
+
+  if(!all.length){alert('No trades to export yet.');return;}
+
+  const headers=['Date Opened','Symbol','Type','Direction','Strike','Premium','Contracts',
+    'DTE','IV %','Status','Realised P&L','Capture %','Notes'];
+
+  const rows=all.map(t=>{
+    const isClosed=t._status==='closed';
+    const pnl=isClosed?(t.realisedPnl||0).toFixed(2):'';
+    const cap=isClosed?(t.capturedPct||0).toFixed(0)+'%':'';
+    return [
+      t.openDate||'',t.symbol,t.type,t.direction,
+      t.strike,t.premium.toFixed(2),t.contracts,
+      t.dte,t.iv||30,
+      isClosed?'Closed':'Open',
+      pnl,cap,
+      (t.notes||'').replace(/,/g,' ')
+    ].join(',');
+  });
+
+  const csv=[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='options-desk-journal-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════════════════
+// GRID SELECTOR
+// ══════════════════════════════════════════════════════
+let currentGrid = parseInt(localStorage.getItem('smt_grid') || '2');
+
+function setGrid(n){
+  currentGrid = n;
+  localStorage.setItem('smt_grid', n);
+  document.querySelectorAll('.grid-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.cols) === n);
+  });
+  const cards = document.getElementById('cards');
+  if(cards) cards.style.gridTemplateColumns = `repeat(${n},1fr)`;
+}
+
+// ══════════════════════════════════════════════════════
+// CAROUSEL
+// ══════════════════════════════════════════════════════
+function renderCarousel(trades){
+  const wrap = document.getElementById('carousel-wrap');
+  const track = document.getElementById('carousel-track');
+  if(!wrap || !track) return;
+
+  if(!trades || !trades.length){
+    wrap.classList.remove('show');
+    return;
+  }
+
+  wrap.classList.add('show');
+  track.innerHTML = trades.map(t => {
+    const T = Math.max(t.dte/365, 0.0001);
+    const b = bsc(t.stock, t.strike, T, Math.max(t.iv/100, 0.01), t.type);
+    const isPut = t.type === 'put';
+    const isShort = t.direction === 'short';
+    const pnl = isShort ? (t.premium - b.price)*100*t.contracts : (b.price - t.premium)*100*t.contracts;
+    const cc = isPut ? (isShort ? '#ff9500' : '#ff6b35') : (isShort ? '#4d9fff' : '#a78bfa');
+    const pnlStr = (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toFixed(0);
+    return `<div class="c-chip" style="--cc:${cc}" onclick="jumpToCard('${t.id}')">
+      <div class="c-sym">${t.symbol}</div>
+      <div class="c-pnl" style="color:${pnl >= 0 ? 'var(--g)' : 'var(--r)'}">${pnlStr}</div>
+      <div class="c-type">${t.type.toUpperCase()}</div>
+    </div>`;
+  }).join('');
+}
+
+function jumpToCard(id){
+  const el = document.getElementById('card-' + id);
+  if(el){
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.style.boxShadow = '0 0 0 2px var(--g)';
+    setTimeout(() => el.style.boxShadow = '', 1500);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// EXPIRE WORTHLESS / REMOVE TRADE
+// ══════════════════════════════════════════════════════
+function expireWorthless(id){
+  const t=savedTrades.find(x=>String(x.id)===String(id));
+  if(!t)return;
+  const choice=confirm(`Remove ${t.symbol} from your dashboard?\n\nClick OK to remove this trade.\nIf it expired worthless it will be recorded as $0 close (100% capture).\nIf it was a mistake, it will simply be deleted.`);
+  if(!choice)return;
+  // Archive as expired worthless (close at 0, 100% capture)
+  const closed={
+    ...t,
+    closePrice:0,
+    closeDate:new Date().toISOString().slice(0,10),
+    closeTimestamp:Date.now(),
+    realisedPnl:t.premium*100*t.contracts,
+    capturedPct:100,
+    notes:(t.notes||'')+' (expired worthless)',
+    status:'closed'
+  };
+  closedTrades.push(closed);
+  localStorage.setItem('smt_v1_closed',JSON.stringify(closedTrades));
+  savedTrades=savedTrades.filter(x=>String(x.id)!==String(id));
+  localStorage.setItem('smt_v1',JSON.stringify(savedTrades));
+  renderAll(savedTrades);
+  document.getElementById('trade-count').textContent=savedTrades.length+' OPEN';
+  showToast('Trade removed — recorded as expired worthless');
+}
+
+// ══════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════
+function openLightbox(){
+  const src = document.getElementById('ss-img').src;
+  if(!src) return;
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('ss-lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox(){
+  document.getElementById('ss-lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Close lightbox on escape key
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeLightbox(); });
+
+function showToast(msg, duration=3000){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), duration);
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+if(savedTrades.length){
+  document.getElementById('how-section').style.display='none';
+  document.getElementById('hero').style.display='none';
+  showDashboard();
+}
+</script>
+  <!-- CLOSE TRADE MODAL -->
+  <div class="close-modal-overlay" id="close-modal-overlay" onclick="if(event.target===this)closeTradeModal()">
+    <div class="close-modal" id="close-modal">
+      <div class="close-modal-hdr">
+        <div class="close-modal-sym" id="cm-sym">TSLA</div>
+        <div class="close-modal-meta" id="cm-meta">$440 CALL · SHORT · 1 contract</div>
+      </div>
+      <div class="close-modal-body">
+        <div class="close-modal-label">What price did you close at? (per share)</div>
+        <input class="close-modal-input" id="cm-price" type="number" step="0.01" min="0"
+          placeholder="0.00" oninput="updateClosePreview()">
+        <div class="close-modal-hint" id="cm-hint">You collected <span id="cm-collected">$0.00</span>/share</div>
+        <div class="close-modal-preview">
+          <div class="close-modal-preview-row">
+            <span style="color:var(--muted)">Premium collected</span>
+            <span id="cm-prem" style="color:var(--g)">+$0</span>
+          </div>
+          <div class="close-modal-preview-row">
+            <span style="color:var(--muted)">Cost to close</span>
+            <span id="cm-cost" style="color:var(--muted)">-$0</span>
+          </div>
+          <div class="close-modal-preview-row">
+            <span>Your P&L</span>
+            <span id="cm-pnl" style="font-size:20px">$0</span>
+          </div>
+        </div>
+      </div>
+      <div class="close-modal-footer">
+        <button class="close-modal-cancel" onclick="closeTradeModal()">CANCEL</button>
+        <button class="close-modal-confirm" id="cm-confirm" onclick="confirmCloseTrade()">◆ CONFIRM CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="ss-lightbox" id="ss-lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Screenshot">
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+</body>
+</html>
