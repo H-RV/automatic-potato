@@ -12,21 +12,21 @@
   --green:#3fb950;--green-dim:#0a2212;--green-bright:#56d364;
   --blue:#58a6ff;--blue-dim:#0a1628;
   --amber:#e3b341;--amber-dim:#1e1400;
-  --red:#f85149;--red-dim:#2d0f0e;
+  --red:#ff6259;--red-dim:#2d0f0e;
   --purple:#bc8cff;--purple-dim:#1e1040;
-  --text:#e6edf3;--text-dim:#8b949e;--text-muted:#484f58;
+  --text:#e6edf3;--text-dim:#8b949e;--text-muted:#6e7681;
 
   /* SPACING SCALE — 4/8/12/16/24 */
   --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-6:24px;
 
   /* TYPE SCALE — 9/11/13/15/20 */
-  --fs-1:9px;--fs-2:11px;--fs-3:13px;--fs-4:15px;--fs-5:20px;
+  --fs-1:11px;--fs-2:13px;--fs-3:15px;--fs-4:17px;--fs-5:22px;
 
   /* RADIUS TOKENS */
   --r-sm:6px;--r-md:8px;--r-pill:20px;
 
   /* dot sizes (traffic-light dots — enlarged per rebuild spec) */
-  --dot-lg:12px;--dot-sm:9px;
+  --dot-lg:16px;--dot-sm:11px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg0);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;font-size:var(--fs-3);line-height:1.5;min-height:100vh}
@@ -64,7 +64,7 @@ body{background:var(--bg0);color:var(--text);font-family:-apple-system,BlinkMacS
 /* SESSION BAR */
 .sbar{display:grid;grid-template-columns:90px 1fr 1fr 1fr;gap:var(--sp-2);margin-bottom:var(--sp-3);background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);align-items:start}
 .sg{display:flex;flex-direction:column;gap:3px}
-.sg label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;text-transform:uppercase}
+.sg label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;text-transform:uppercase;min-height:26px;display:flex;align-items:flex-end}
 .sg input,.sg select{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:var(--sp-1) var(--sp-2);border-radius:var(--r-sm);font-family:inherit;font-size:var(--fs-2);width:100%}
 .sg select option{background:var(--bg2)}
 .rbadge{font-size:var(--fs-1);padding:var(--sp-1) var(--sp-3);border-radius:12px;font-weight:500;display:inline-block;margin-top:2px}
@@ -86,9 +86,9 @@ body{background:var(--bg0);color:var(--text);font-family:-apple-system,BlinkMacS
 .pc-ticker{font-size:var(--fs-3);font-weight:600;color:var(--text);margin-bottom:2px}
 .pc-name{font-size:var(--fs-1);color:var(--text-muted);margin-bottom:var(--sp-1)}
 .pc-dots{display:flex;justify-content:center;gap:5px;margin-bottom:var(--sp-1)}
-.pd{width:var(--dot-lg);height:var(--dot-lg);border-radius:50%;transition:transform .1s}
+.pd{width:var(--dot-lg);height:var(--dot-lg);border-radius:50%;transition:transform .1s;box-shadow:0 0 0 1.5px rgba(255,255,255,0.12)}
 .pd:hover{transform:scale(1.25)}
-.pd-g{background:var(--green)}.pd-a{background:var(--amber)}.pd-r{background:var(--red)}.pd-x{background:var(--amber);opacity:0.5}
+.pd-g{background:var(--green)}.pd-a{background:var(--amber)}.pd-r{background:var(--red);box-shadow:0 0 0 1.5px rgba(255,255,255,0.25)}.pd-x{background:var(--amber);opacity:0.5}
 .pc-price{font-size:var(--fs-1);color:var(--text-muted)}
 
 /* CARD */
@@ -307,12 +307,12 @@ canvas{display:block;width:100%}
 
 <!-- DOT LEGEND -->
 <div class="legend">
-  <span style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px">FILTER DOTS:</span>
-  <div class="li"><div class="ld" style="background:var(--green)"></div>IVR</div>
-  <div class="li"><div class="ld" style="background:var(--blue)"></div>Trigger</div>
-  <div class="li"><div class="ld" style="background:var(--amber)"></div>Regime</div>
-  <div class="li"><div class="ld" style="background:var(--purple)"></div>Strike vs SD</div>
-  <span style="color:var(--text-muted);font-size:var(--fs-1);margin-left:var(--sp-2)">Hover over any pillar for detail</span>
+  <span style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px">4 DOTS PER PILLAR, LEFT TO RIGHT: IVR · TRIGGER · REGIME · STRIKE vs 1.3σ</span>
+  <div class="li"><div class="ld" style="background:var(--green)"></div>Pass</div>
+  <div class="li"><div class="ld" style="background:var(--amber)"></div>Caution / partial</div>
+  <div class="li"><div class="ld" style="background:var(--red)"></div>Fail</div>
+  <div class="li"><div class="ld" style="background:var(--amber);opacity:0.5"></div>Not yet checked</div>
+  <span style="color:var(--text-muted);font-size:var(--fs-1);margin-left:var(--sp-2)">Tap or hover a pillar for the detail behind each dot</span>
 </div>
 
 <!-- BACKBONE MODE -->
@@ -362,6 +362,7 @@ canvas{display:block;width:100%}
       <div id="tech-signals" style="display:none;margin-bottom:var(--sp-3)">
         <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">TECHNICAL SIGNALS</div>
         <div class="flex-c gap-2" id="tech-signals-row" style="flex-wrap:wrap"></div>
+        <div id="tech-signals-explain" style="margin-top:var(--sp-2);font-size:var(--fs-2);line-height:1.6;color:var(--text-dim)"></div>
       </div>
       <!-- Gamma context (SPY only) -->
       <div id="gamma-ctx" class="flex-c gap-4" style="display:none;font-size:var(--fs-1);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-sm);background:var(--bg2);border:1px solid var(--border);margin-bottom:var(--sp-3);flex-wrap:wrap"></div>
@@ -800,7 +801,7 @@ async function autoDetectMove() {
 
     if (!prevClose || isNaN(prevClose)) {
       // No prev close available - show current price, ask user to select direction
-      statusEl.innerHTML = '<span style="color:var(--amber)">SPY $'+price.toFixed(2)+' — select move direction manually</span>';
+      statusEl.innerHTML = '<div style="display:inline-block;background:rgba(227,179,65,0.10);border:1px solid var(--amber);border-radius:var(--r-sm);padding:4px 10px;color:var(--amber);font-size:var(--fs-2)">SPY $'+price.toFixed(2)+' — select move direction manually</div>';
       detectedMove = 'flat';
       onSessChange();
       return;
@@ -837,6 +838,12 @@ function renderStrip() {
     var d3 = regime && RI[regime] ? 'g' : 'x';
     var d4 = d.beyondSD===true?'g':d.beyondSD===false?'a':'x';
     var isActive = activePillar === p.sym;
+    var dotArr = [d1,d2,d3,d4];
+    var greenCount = dotArr.filter(function(x){return x==='g';}).length;
+    var redCount = dotArr.filter(function(x){return x==='r';}).length;
+    var hasData = dotArr.some(function(x){return x!=='x';});
+    var compositeCol = !hasData ? 'var(--border)' : (greenCount>=3 ? 'var(--green)' : (redCount>=2 ? 'var(--red)' : 'rgba(227,179,65,0.45)'));
+    var compositeGlow = !hasData ? 'none' : (greenCount>=3 || redCount>=2) ? ('0 0 0 1.5px '+compositeCol+', 0 0 14px -4px '+compositeCol) : 'none';
     var t1 = ivr>0 ? 'IVR '+ivr+(ivr>=40?' ✓ T1 eligible':ivr>=25?' ✓ T2 eligible':' ✕ too low for T2') : 'IVR — not yet entered (get from IBKR)';
     var t2 = move==='down'?'Trigger ✓ red day':move==='up'?'Trigger ✓ green day':'Trigger — flat day';
     var t3 = regime&&RI[regime] ? 'Regime ✓ '+RI[regime].label+' — '+RI[regime].trade+' '+RI[regime].size+' size' : 'Regime — select from dropdown above';
@@ -852,7 +859,7 @@ function renderStrip() {
           : ' <span style="color:'+(vpVal>=2?'var(--green)':vpVal>=0?'var(--amber)':'var(--text-muted)')+'">VP'+(vpVal>=0?'+':'')+vpVal+'</span>';
       }
     }
-    return '<div class="pc'+(isActive?' active':'')+'" onclick="selectPillar(\''+p.sym+'\')" title="'+t1+' | '+t2+' | '+t3+' | '+t4+'">'
+    return '<div class="pc'+(isActive?' active':'')+'" onclick="selectPillar(\''+p.sym+'\')" style="border-color:'+compositeCol+';box-shadow:'+compositeGlow+'" title="'+t1+' | '+t2+' | '+t3+' | '+t4+'">'
       +'<div class="pc-ticker" style="color:'+(isActive?p.col:'var(--text)')+'">'+p.sym+'</div>'
       +'<div class="pc-name" style="color:'+(AUTO_PILLARS.indexOf(p.sym)>=0?'var(--text-muted)':'#4a3520')+'">'+p.name+(AUTO_PILLARS.indexOf(p.sym)<0?' ✎':' ')+'</div>'
       +'<div class="pc-dots">'
@@ -966,20 +973,14 @@ function renderT3Panel() {
 }
 
 // ── POSITION SIZING ───────────────────────────────────────────────────────────
+// Turned off (Sep 2026) — not usable without real live position tracking,
+// which needs the Income tab's IBKR-feed architecture that doesn't exist
+// yet. Left in place rather than deleted so it's easy to bring back once
+// that's built.
 function renderPositionSizing(sym, maxRiskPerContract) {
   var box = document.getElementById('sizing-box');
-  if (!box) return;
-  if (!maxRiskPerContract || maxRiskPerContract <= 0) { box.style.display = 'none'; return; }
-  box.style.display = 'flex';
-  var maxContracts = Math.max(1, Math.floor(MAX_RISK_PER_TRADE / maxRiskPerContract));
-  var open = (pillarData[sym] && pillarData[sym].openContracts) || 0;
-  var pct = Math.min(100, (open / maxContracts) * 100);
-  var fill = document.getElementById('sizing-fill');
-  fill.style.width = pct + '%';
-  fill.className = 'sizing-fill' + (pct>=100?' over':pct>=75?' warn':'');
-  document.getElementById('sizing-num').textContent = open + ' / ' + maxContracts + ' contracts';
-  var input = document.getElementById('p-open-contracts');
-  if (document.activeElement !== input) input.value = open || '';
+  if (box) box.style.display = 'none';
+  return;
 }
 function onOpenContractsInput() {
   var v = parseInt(document.getElementById('p-open-contracts').value) || 0;
@@ -1003,7 +1004,7 @@ async function fetchAndDrawChart(sym) {
     drawPriceChart(d.data, sym);
     if (d.signals) {
       drawMacdHistogram(d.data);
-      renderTechSignals(d.signals, sym);
+      renderTechSignals(d.signals, sym, d.data);
     }
   } catch(e) {
     // Silently fail — chart is supplementary
@@ -1161,7 +1162,7 @@ function drawMacdHistogram(data) {
 // ── TECHNICAL SIGNALS ROW ─────────────────────────────────────────────────────
 // EMA trend (existing regime read) + MACD + Stochastic + Volume, as a single
 // glance-able row of colored dot+label chips.
-function renderTechSignals(signals, sym) {
+function renderTechSignals(signals, sym, data) {
   var wrap = document.getElementById('tech-signals');
   var row = document.getElementById('tech-signals-row');
   if (!wrap || !row) return;
@@ -1192,6 +1193,58 @@ function renderTechSignals(signals, sym) {
     row.innerHTML += '<div style="display:flex;align-items:center;gap:5px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:var(--r-pill);padding:4px 10px;font-size:var(--fs-1);color:var(--amber)">'
       + '⚠ price up, volume falling — negative divergence</div>';
   }
+
+  // ── Plain-language explainer, tied to the actual live numbers ──
+  // Point is to learn from the specific reading in front of you, not a
+  // generic glossary definition — same number shown in the chip above,
+  // explained in context.
+  var explainEl = document.getElementById('tech-signals-explain');
+  if (!explainEl || !data || data.length < 6) return;
+
+  var lines = [];
+
+  // MACD: direction of the histogram itself (accelerating vs fading), not
+  // just its sign — this is the thing that actually changes what you'd do.
+  var histNow = signals.macdHistLatest;
+  var histWeekAgo = data[data.length - 6].macdHist;
+  var macdAccelerating = Math.abs(histNow) > Math.abs(histWeekAgo);
+  if (histNow >= 0) {
+    lines.push('<strong style="color:var(--text)">MACD ' + histNow.toFixed(2) + ':</strong> positive means the short-term trend (12-day) is running above the longer one (26-day) — bullish momentum. '
+      + (macdAccelerating ? 'It\'s grown since a week ago (' + histWeekAgo.toFixed(2) + ' → ' + histNow.toFixed(2) + '), so the push is strengthening, not just present.'
+                           : 'It\'s shrunk since a week ago (' + histWeekAgo.toFixed(2) + ' → ' + histNow.toFixed(2) + '), so the momentum is fading even though it\'s still positive — worth watching for a flip.'));
+  } else {
+    lines.push('<strong style="color:var(--text)">MACD ' + histNow.toFixed(2) + ':</strong> negative means the short-term trend is running below the longer one — bearish momentum. '
+      + (macdAccelerating ? 'It\'s gotten more negative since a week ago (' + histWeekAgo.toFixed(2) + ' → ' + histNow.toFixed(2) + '), so the downward push is accelerating.'
+                           : 'It\'s recovered some since a week ago (' + histWeekAgo.toFixed(2) + ' → ' + histNow.toFixed(2) + '), so the selling pressure is easing even though it\'s still negative.'));
+  }
+
+  // Stochastic: explain the actual band this reading sits in, not just bull/bear
+  var k = signals.stochKLatest;
+  if (k != null) {
+    if (k > 80) {
+      lines.push('<strong style="color:var(--text)">Stochastic ' + k.toFixed(0) + ':</strong> above 80 — sitting near the top of its own 14-day range. Read as bullish continuation here, not "overbought, about to fall" — it can stay elevated for a long stretch in a real uptrend.');
+    } else if (k < 20) {
+      lines.push('<strong style="color:var(--text)">Stochastic ' + k.toFixed(0) + ':</strong> below 20 — near the bottom of its 14-day range. Confirms a real downtrend rather than predicting an automatic bounce.');
+    } else {
+      var nearLine = k < 30 ? ' close to the oversold (20) line — worth watching for a cross below.' : (k > 70 ? ' close to the overbought (80) line — worth watching for a cross above.' : '.');
+      lines.push('<strong style="color:var(--text)">Stochastic ' + k.toFixed(0) + ':</strong> inside the neutral 20\u201380 band' + nearLine);
+    }
+  }
+
+  // Volume: what "rising/falling vs its own average" actually means for conviction
+  if (signals.volume === 'bullish') {
+    lines.push('<strong style="color:var(--text)">Volume:</strong> recent trading activity is running above its own 10-day average — more real participation behind the current move, which supports it being a genuine trend rather than a thin drift that reverses easily.');
+  } else if (signals.volume === 'bearish') {
+    lines.push('<strong style="color:var(--text)">Volume:</strong> recent activity is below its own 10-day average — less conviction behind the current move. If price is also moving hard here, that\'s a hint the move isn\'t fully backed by real selling or buying pressure.');
+  } else {
+    lines.push('<strong style="color:var(--text)">Volume:</strong> running close to its own 10-day average — no strong signal either way from participation right now.');
+  }
+
+  if (signals.volumeDivergenceWarning) {
+    lines.push('<strong style="color:var(--amber)">Divergence warning:</strong> price has been rising over the last few days while volume has been falling — the rally is running on thinner and thinner participation, a classic early sign it may be losing fuel.');
+  }
+
+  explainEl.innerHTML = lines.map(function(l){ return '<div style="margin-bottom:4px">'+l+'</div>'; }).join('');
 }
 
 // Pillars that get auto-fetched (5 free calls)
@@ -1264,16 +1317,27 @@ async function fetchAll() {
     if (sym === 'SPY' && d.gamma_flip) {
       var ctx = document.getElementById('gamma-ctx');
       if (ctx) {
-        ctx.style.display = 'flex';
+        ctx.style.display = 'block';
         var price = d.price || 0;
-        var flipCol = price > d.gamma_flip ? 'var(--green)' : 'var(--red)';
-        var flipLabel = price > d.gamma_flip ? 'ABOVE flip (positive gamma)' : 'BELOW flip (negative gamma — moves amplified)';
+        var aboveFlip = price > d.gamma_flip;
+        var flipCol = aboveFlip ? 'var(--green)' : 'var(--red)';
+        var flipLabel = aboveFlip ? 'Above flip' : 'Below flip';
+        var pcHigh = d.pc_ratio > 1;
         ctx.innerHTML =
-          '<span style="font-size:9px;color:var(--text-muted)">GAMMA CONTEXT (SPY):</span>'
-          +'<span style="color:'+flipCol+'">Flip $'+d.gamma_flip.toFixed(0)+' — '+flipLabel+'</span>'
-          +'<span style="color:var(--green)">Call wall $'+d.call_wall+'</span>'
-          +'<span style="color:var(--red)">Put wall $'+d.put_wall+'</span>'
-          +'<span style="color:var(--text-muted)">P/C ratio '+d.pc_ratio+'</span>';
+          '<div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">GAMMA CONTEXT — SPY</div>'
+          +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-2)">'
+          +'<div class="mt"><div class="mt-label">GAMMA FLIP</div><div class="mt-val" style="color:'+flipCol+'">$'+d.gamma_flip.toFixed(0)+'</div><div class="mt-sub" style="color:'+flipCol+'">'+flipLabel+'</div></div>'
+          +'<div class="mt"><div class="mt-label">CALL WALL</div><div class="mt-val" style="color:var(--green)">$'+d.call_wall+'</div><div class="mt-sub">resistance level</div></div>'
+          +'<div class="mt"><div class="mt-label">PUT WALL</div><div class="mt-val" style="color:var(--red)">$'+d.put_wall+'</div><div class="mt-sub">support level</div></div>'
+          +'<div class="mt"><div class="mt-label">P/C RATIO</div><div class="mt-val" style="color:'+(pcHigh?'var(--red)':'var(--green)')+'">'+d.pc_ratio+'</div><div class="mt-sub">'+(pcHigh?'put-heavy':'call-heavy')+'</div></div>'
+          +'</div>'
+          +'<div style="margin-top:var(--sp-2);font-size:var(--fs-2);line-height:1.6;color:var(--text-dim)">'
+          +(aboveFlip
+            ? '<div style="margin-bottom:3px"><strong style="color:var(--text)">Above the flip:</strong> dealer hedging currently dampens price moves — swings tend to be smaller and choppier than raw volatility would suggest.</div>'
+            : '<div style="margin-bottom:3px"><strong style="color:var(--text)">Below the flip:</strong> dealer hedging currently amplifies price moves — the same news can produce a bigger swing than it would above the flip.</div>')
+          +'<div style="margin-bottom:3px"><strong style="color:var(--text)">Call/put walls:</strong> price levels where dealer positioning tends to create resistance (call wall) or support (put wall) — not guarantees, but real friction points worth knowing before placing a strike near either.</div>'
+          +'<div><strong style="color:var(--text)">P/C ratio '+d.pc_ratio+':</strong> '+(pcHigh ? 'above 1 — more puts than calls in the mix, a hedging/bearish skew.' : 'below 1 — more calls than puts in the mix, a bullish skew.')+'</div>'
+          +'</div>';
       }
     }
 
@@ -1615,7 +1679,7 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
     // Tier strip
     var t1p=ivr>=40&&dte>=21&&dte<=45;
     var t2p=ivr>=25&&dte>=14&&dte<=45;
-    var t3p=(sym==='SPY')&&dte<=9;
+    var t3p=(sym==='SPY')&&dte<=9&&(getEffectiveMove()==='down');
     var ts=document.getElementById('tier-strip');
     ts.innerHTML=
       '<div class="ts-card '+(t1p?'ts-pass-t1':'')+'">'
@@ -1631,7 +1695,7 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
       +'<div class="ts-card '+(t3p?'ts-pass-t3':'')+'">'
       +'<div class="ts-name" style="color:'+(t3p?'#fcd34d':'var(--text-muted)')+'">T3 SPY WEEKLY</div>'
       +'<div class="ts-result" style="color:'+(t3p?'#fcd34d':'var(--text-muted)')+'">'+(t3p?'✓ PASS':'✕ FAIL')+'</div>'
-      +'<div class="ts-criteria" style="color:'+(t3p?'var(--amber)':'var(--text-muted)')+'">SPY only · DTE 7</div>'
+      +'<div class="ts-criteria" style="color:'+(t3p?'var(--amber)':'var(--text-muted)')+'">SPY only · DTE 7 · red day</div>'
       +'</div>';
     if(!pillarData[activePillar]) pillarData[activePillar]={};
     pillarData[activePillar].beyondSD = beyond13;
@@ -1783,24 +1847,51 @@ function drawPayoff(id, shortS, longS, credit, width, dir, spot, isIC) {
 }
 
 // ── EXPECTED MOVE BAR ─────────────────────────────────────────────────────────
+// Rebuilt: the bar's own range now extends to a genuine 2.0σ frame (derived
+// from the 1.3σ value passed in), so the "beyond 1.3σ" safe zone actually has
+// visible width instead of being squeezed into ~6% right at the edge — that
+// was the real bug behind "I can't tell what's in range." Two zones now tell
+// the whole story: amber wash from spot to the boundary (inside — thinner
+// cushion), green wash beyond the boundary (the actual safe target zone).
 function drawEMBar(barId, labelId, price, sd13, sd10, shortS, dir, beyond) {
   var wrap = document.getElementById(barId);
   var lbl = document.getElementById(labelId);
   if (!wrap) return;
-  var lo=price-sd13*1.15, hi=price+sd13*1.15, rng=hi-lo;
+  var sigma1 = sd13 / 1.3;
+  var sd20 = sigma1 * 2.0;
+  var boundary13 = dir==='put' ? price-sd13 : price+sd13;
+  var gap = Math.abs(shortS - boundary13);
+
+  var lo = price - sd20, hi = price + sd20, rng = hi - lo;
   function pct(v){return Math.max(0,Math.min(100,((v-lo)/rng)*100)).toFixed(1)+'%';}
-  var z13lo=pct(price-sd13),z13hi=pct(price+sd13);
-  var z10lo=pct(price-sd10),z10hi=pct(price+sd10);
-  var sPct=pct(shortS);
+  var bPct = parseFloat(pct(boundary13));
+  var sPct = pct(shortS);
   var col = beyond?'var(--green)':'var(--amber)';
+  var spotPct = parseFloat(pct(price));
+  var insideLo = dir==='put' ? bPct : spotPct;
+  var insideHi = dir==='put' ? spotPct : bPct;
+  var safeLo = dir==='put' ? 0 : bPct;
+  var safeHi = dir==='put' ? bPct : 100;
+
   wrap.innerHTML='<div class="em-track">'
-    +'<div class="em-zone" style="left:'+z13lo+';width:'+(parseFloat(z13hi)-parseFloat(z13lo))+'%;background:rgba(63,185,80,0.10)"></div>'
-    +'<div class="em-zone" style="left:'+z10lo+';width:'+(parseFloat(z10hi)-parseFloat(z10lo))+'%;background:rgba(63,185,80,0.06)"></div>'
+    +'<div class="em-zone" style="left:'+insideLo+'%;width:'+(insideHi-insideLo)+'%;background:rgba(227,179,65,0.10)"></div>'
+    +'<div class="em-zone" style="left:'+safeLo+'%;width:'+(safeHi-safeLo)+'%;background:rgba(63,185,80,0.16)"></div>'
     +'<div class="em-spot" style="left:'+pct(price)+'"></div>'
+    +'<div style="position:absolute;left:'+bPct+'%;top:-4px;width:2px;height:14px;background:var(--text-dim)"></div>'
     +'<div class="em-strike" style="left:'+sPct+';background:'+col+'"></div>'
     +'</div>'
-    +'<div class="em-labels"><span>$'+(price-sd13).toFixed(2)+'</span><span>$'+price.toFixed(2)+'</span><span>$'+(price+sd13).toFixed(2)+'</span></div>';
-  lbl.innerHTML='<span style="color:'+col+'">'+(beyond?'✓ Strike beyond 1.3σ boundary':'⚠ Strike inside 1.3σ — closer than ideal')+'</span>';
+    +'<div style="display:flex;font-size:var(--fs-1);color:var(--text-muted);margin-top:3px;gap:var(--sp-3)">'
+    +'<span><span style="display:inline-block;width:8px;height:8px;background:rgba(227,179,65,0.6);border-radius:2px;vertical-align:middle;margin-right:3px"></span>Inside 1.3σ — thinner cushion</span>'
+    +'<span><span style="display:inline-block;width:8px;height:8px;background:rgba(63,185,80,0.6);border-radius:2px;vertical-align:middle;margin-right:3px"></span>Beyond 1.3σ — safe zone</span>'
+    +'</div>'
+    +'<div class="em-labels"><span>$'+lo.toFixed(2)+'</span><span>spot $'+price.toFixed(2)+'</span><span>$'+hi.toFixed(2)+'</span></div>'
+    +'<div style="margin-top:6px;font-size:var(--fs-2)">'
+    +'<span style="color:'+col+';font-weight:600">STRIKE $'+shortS.toFixed(2)+'</span>'
+    +' &nbsp;·&nbsp; <span style="color:var(--text-dim)">1.3σ BOUNDARY $'+boundary13.toFixed(2)+'</span>'
+    +'</div>';
+  lbl.innerHTML = beyond
+    ? '<span style="color:'+col+'">✓ Strike is past the boundary, into the safe zone, by $'+gap.toFixed(2)+'</span>'
+    : '<span style="color:'+col+'">⚠ Strike is still $'+gap.toFixed(2)+' inside the boundary — needs to move that much further to reach the safe zone</span>';
 }
 
 // ── CFU ───────────────────────────────────────────────────────────────────────

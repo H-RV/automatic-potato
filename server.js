@@ -312,10 +312,10 @@ app.get('/api/chart/:symbol', async (req, res) => {
   const sym = req.params.symbol.toUpperCase();
   try {
     const key = process.env.TWELVE_DATA_API_KEY;
-    // 90 days fetched (not just the 30 displayed) so MACD's 26-period EMA and
-    // the signal line have real time to settle before the values we actually
-    // show — a 26-EMA computed from only 30 points of lead-in is noisy.
-    const url = `https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=90&apikey=${key}`;
+    // 300 days fetched (not just what's displayed) — a 200-period EMA needs
+    // real lead-in to converge; with only 90 points it barely stabilizes.
+    // Same one API call either way, so no reason to be stingy here.
+    const url = `https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=300&apikey=${key}`;
     const response = await fetch(url);
     const data = await response.json();
     if (!data.values || !data.values.length) {
@@ -323,28 +323,55 @@ app.get('/api/chart/:symbol', async (req, res) => {
     }
     const bars = data.values.reverse().map(v => ({
       date: v.datetime,
+      open: parseFloat(v.open),
       close: parseFloat(v.close),
       high: parseFloat(v.high),
       low: parseFloat(v.low),
       volume: parseFloat(v.volume) || 0,
     }));
 
-    // ── 21-day EMA (existing regime indicator) ──
-    const emaPeriod = 21;
-    const emaK = 2 / (emaPeriod + 1);
-    let ema21 = bars[0].close;
-    bars.forEach((bar, i) => {
-      if (i === 0) ema21 = bar.close; else ema21 = bar.close * emaK + ema21 * (1 - emaK);
-      bar.ema21 = ema21;
-    });
-
-    // ── MACD (12, 26, 9) ──
     function emaSeries(vals, period) {
       const k = 2 / (period + 1);
       let e = vals[0];
       return vals.map((v, i) => { e = i === 0 ? v : v * k + e * (1 - k); return e; });
     }
+    function smaSeries(vals, period) {
+      return vals.map((_, i) => {
+        if (i < period - 1) return null;
+        let sum = 0;
+        for (let j = i - period + 1; j <= i; j++) sum += vals[j];
+        return sum / period;
+      });
+    }
+    function stdevSeries(vals, period) {
+      return vals.map((_, i) => {
+        if (i < period - 1) return null;
+        const window = vals.slice(i - period + 1, i + 1);
+        const mean = window.reduce((a, b) => a + b, 0) / period;
+        const variance = window.reduce((a, b) => a + (b - mean) ** 2, 0) / period;
+        return Math.sqrt(variance);
+      });
+    }
+
     const closesArr = bars.map(b => b.close);
+
+    // ── Moving averages: EMA 8/21/34, SMA 50/200 ──
+    const ema8Arr = emaSeries(closesArr, 8);
+    const ema21Arr = emaSeries(closesArr, 21);
+    const ema34Arr = emaSeries(closesArr, 34);
+    const sma50Arr = smaSeries(closesArr, 50);
+    const ema200Arr = emaSeries(closesArr, 200);
+    bars.forEach((bar, i) => {
+      bar.ema8 = ema8Arr[i];
+      bar.ema21 = ema21Arr[i];
+      bar.ema34 = ema34Arr[i];
+      bar.sma50 = sma50Arr[i];
+      // EMA200 needs real lead-in — don't report it until there's at least
+      // 200 bars behind it, otherwise it's a number, just not a meaningful one
+      bar.ema200 = i >= 199 ? ema200Arr[i] : null;
+    });
+
+    // ── MACD (12, 26, 9) ──
     const ema12Arr = emaSeries(closesArr, 12);
     const ema26Arr = emaSeries(closesArr, 26);
     const macdLineArr = closesArr.map((_, i) => ema12Arr[i] - ema26Arr[i]);
@@ -370,6 +397,68 @@ app.get('/api/chart/:symbol', async (req, res) => {
       bar.stochD = window.reduce((a, b) => a + b, 0) / window.length;
     });
 
+    // ── ATR(20) — needed for Keltner Channels below ──
+    const atrPeriod = 20;
+    const trueRanges = bars.map((bar, i) => {
+      if (i === 0) return bar.high - bar.low;
+      const prevClose = bars[i - 1].close;
+      return Math.max(bar.high - bar.low, Math.abs(bar.high - prevClose), Math.abs(bar.low - prevClose));
+    });
+    const atrArr = bars.map(() => null);
+    if (bars.length >= atrPeriod) {
+      let sum = 0;
+      for (let i = 0; i < atrPeriod; i++) sum += trueRanges[i];
+      atrArr[atrPeriod - 1] = sum / atrPeriod;
+      for (let i = atrPeriod; i < bars.length; i++) {
+        atrArr[i] = (atrArr[i - 1] * (atrPeriod - 1) + trueRanges[i]) / atrPeriod;
+      }
+    }
+
+    // ── TTM Squeeze: Bollinger Bands(20,2) vs Keltner Channels(20 EMA, 1.5×ATR) ──
+    // "Squeeze on" = Bollinger bands compressed inside the Keltner channel —
+    // low realized volatility, often precedes a bigger move. "Fired" = bands
+    // have moved back outside — the compression has resolved into a move.
+    const bbMid = smaSeries(closesArr, 20);
+    const bbStd = stdevSeries(closesArr, 20);
+    const kcMid = emaSeries(closesArr, 20);
+    let barsInCurrentState = 0;
+    bars.forEach((bar, i) => {
+      if (bbMid[i] == null || atrArr[i] == null) { bar.squeezeOn = null; return; }
+      const bbUpper = bbMid[i] + 2 * bbStd[i];
+      const bbLower = bbMid[i] - 2 * bbStd[i];
+      const kcUpper = kcMid[i] + 1.5 * atrArr[i];
+      const kcLower = kcMid[i] - 1.5 * atrArr[i];
+      const isOn = bbUpper < kcUpper && bbLower > kcLower;
+      if (i === 0 || bars[i - 1].squeezeOn == null) {
+        barsInCurrentState = 1;
+      } else if (isOn === bars[i - 1].squeezeOn) {
+        barsInCurrentState++;
+      } else {
+        barsInCurrentState = 1;
+      }
+      bar.squeezeOn = isOn;
+      bar.squeezeBars = barsInCurrentState;
+    });
+
+    // ── Fibonacci retracement — 180-day swing high/low ──
+    const fibLookback = bars.slice(-180);
+    const swingHigh = Math.max(...fibLookback.map(b => b.high));
+    const swingLow = Math.min(...fibLookback.map(b => b.low));
+    const swingHighIdx = fibLookback.findIndex(b => b.high === swingHigh);
+    const swingLowIdx = fibLookback.findIndex(b => b.low === swingLow);
+    // If the low came after the high, the last major move was down and
+    // retracement measures UP from the low; otherwise it measures DOWN from
+    // the high (the more common convention — pullback within an uptrend).
+    const measureFromHigh = swingHighIdx >= swingLowIdx;
+    const fibRatios = [0.236, 0.382, 0.5, 0.618, 0.786];
+    const currentPrice = bars[bars.length - 1].close;
+    const fibLevels = fibRatios.map(ratio => {
+      const level = measureFromHigh
+        ? swingHigh - (swingHigh - swingLow) * ratio
+        : swingLow + (swingHigh - swingLow) * ratio;
+      return { ratio, level: parseFloat(level.toFixed(2)), distanceFromCurrent: parseFloat((level - currentPrice).toFixed(2)) };
+    });
+
     // ── Volume trend: is recent volume rising or falling vs its own 10-day average ──
     const last10Vol = bars.slice(-10).map(b => b.volume);
     const avgVol10 = last10Vol.reduce((a, b) => a + b, 0) / last10Vol.length;
@@ -377,14 +466,23 @@ app.get('/api/chart/:symbol', async (req, res) => {
     const avgVol3 = last3Vol.reduce((a, b) => a + b, 0) / last3Vol.length;
     const volumeTrend = avgVol3 > avgVol10 * 1.1 ? 'rising' : avgVol3 < avgVol10 * 0.9 ? 'falling' : 'flat';
 
-    // ── Display window: last 30 days only, matching the existing chart ──
-    const display = bars.slice(-30).map(b => ({
+    // ── Display window: last 130 trading days (~6 months), matching the
+    // richer chart's reference layout ──
+    const display = bars.slice(-130).map(b => ({
       date: b.date,
+      open: parseFloat(b.open.toFixed(2)),
+      high: parseFloat(b.high.toFixed(2)),
+      low: parseFloat(b.low.toFixed(2)),
       close: parseFloat(b.close.toFixed(2)),
+      ema8: b.ema8 != null ? parseFloat(b.ema8.toFixed(2)) : null,
       ema21: parseFloat(b.ema21.toFixed(2)),
+      ema34: b.ema34 != null ? parseFloat(b.ema34.toFixed(2)) : null,
+      sma50: b.sma50 != null ? parseFloat(b.sma50.toFixed(2)) : null,
+      ema200: b.ema200 != null ? parseFloat(b.ema200.toFixed(2)) : null,
       macdHist: parseFloat(b.macdHist.toFixed(4)),
       stochK: b.stochK != null ? parseFloat(b.stochK.toFixed(1)) : null,
       volume: b.volume,
+      squeezeOn: b.squeezeOn,
     }));
 
     const latest = bars[bars.length - 1];
@@ -400,7 +498,20 @@ app.get('/api/chart/:symbol', async (req, res) => {
       stochKLatest: latest.stochK != null ? parseFloat(latest.stochK.toFixed(1)) : null,
     };
 
-    res.json({ symbol: sym, data: display, signals });
+    const squeeze = {
+      on: latest.squeezeOn,
+      barsInState: latest.squeezeBars || null,
+      state: latest.squeezeOn ? 'ON — compressed, watch for a breakout' : 'FIRED — compression has resolved into a move',
+    };
+
+    const fib = {
+      swingHigh: parseFloat(swingHigh.toFixed(2)),
+      swingLow: parseFloat(swingLow.toFixed(2)),
+      measuredFrom: measureFromHigh ? 'high' : 'low',
+      levels: fibLevels,
+    };
+
+    res.json({ symbol: sym, data: display, signals, squeeze, fib, ema200Available: bars.length >= 200 });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
