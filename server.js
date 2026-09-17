@@ -738,18 +738,19 @@ app.get('/api/journal/summary', (req, res) => {
 });
 
 // ── POST /api/journal/notes ──────────────────────────────────────────────
-// Free-text notes per month (e.g. "watching XYZ for assignment risk"),
-// stored alongside the trade data on the same persistent volume.
+// Free-text notes keyed by anything — a month string ("2026-08", "ALL") for
+// the period-level note, or "trade:<sorted leg contracts>" for a per-trade
+// note. Same store, same endpoint — the key just means different things.
 app.post('/api/journal/notes', express.json(), (req, res) => {
   try {
-    const { month, text } = req.body;
-    if (!month || typeof text !== 'string') {
-      return res.status(400).json({ error: 'Expected { month, text }' });
+    const { key, text } = req.body;
+    if (!key || typeof text !== 'string') {
+      return res.status(400).json({ error: 'Expected { key, text }' });
     }
     const store = loadJournalStore();
-    store.notes[month] = text;
+    store.notes[key] = text;
     saveJournalStore(store);
-    res.json({ saved: true, month });
+    res.json({ saved: true, key });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

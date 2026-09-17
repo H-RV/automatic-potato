@@ -30,8 +30,8 @@ input[type=file]{display:none}
 .upload-status{font-size:var(--fs-1);color:var(--text-muted);text-align:center;margin-bottom:var(--sp-4);min-height:14px}
 
 .hero{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4);margin-bottom:var(--sp-3);text-align:center}
-.hero-label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-1)}
-.hero-num{font-size:var(--fs-6);font-weight:700;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.hero-label{font-size:var(--fs-2);color:var(--text-dim);letter-spacing:1px;font-weight:600;margin-bottom:var(--sp-1)}
+.hero-num{font-size:44px;font-weight:800;letter-spacing:-1.5px;font-variant-numeric:tabular-nums}
 .hero-sub{font-size:var(--fs-2);color:var(--text-muted);margin-top:4px}
 .split-row{display:flex;justify-content:center;gap:var(--sp-4);margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px solid var(--border);flex-wrap:wrap}
 .split-item{text-align:center}
@@ -51,7 +51,8 @@ input[type=file]{display:none}
 .toggle-btn{padding:3px var(--sp-3);border-radius:16px;border:none;font-family:inherit;font-size:var(--fs-1);font-weight:500;letter-spacing:.3px;cursor:pointer;background:transparent;color:var(--text-muted)}
 .toggle-btn.active{background:var(--bg3);color:var(--text)}
 
-.chart-wrap{display:flex;align-items:flex-end;gap:3px;height:100px;margin-bottom:var(--sp-2)}
+.chart-wrap{display:flex;align-items:flex-end;gap:3px;height:120px;margin-bottom:var(--sp-2)}
+.chart-bar-val{font-size:8px;font-weight:600;margin-bottom:3px;white-space:nowrap}
 .chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
 .chart-bar{width:70%;border-radius:2px 2px 0 0;min-height:2px}
 .chart-label{font-size:8px;color:var(--text-muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -85,6 +86,8 @@ tr:hover td{background:var(--bg2)}
 .badge-closed{background:var(--bg3);color:var(--text-dim)}
 .badge-naked{background:var(--red);color:var(--bg0)}
 .table-wrap{overflow-x:auto}
+.trade-note{background:var(--bg2);border:1px solid var(--border);color:var(--text-dim);padding:3px 8px;border-radius:4px;font-family:inherit;font-size:var(--fs-1);width:130px;transition:border-color .3s}
+.trade-note:focus{outline:none;border-color:var(--blue);color:var(--text)}
 
 .notes-area{width:100%;min-height:90px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:var(--r-sm);padding:var(--sp-3);font-family:inherit;font-size:var(--fs-2);resize:vertical}
 .notes-area:focus{outline:none;border-color:var(--blue)}
@@ -288,19 +291,19 @@ function render() {
   html += '<div class="chart-wrap">';
   pkeys.forEach(function(k){
     var v = periods[k];
-    var h = Math.max(4, Math.abs(v)/maxAbsP*90);
-    html += '<div class="chart-bar-col"><div class="chart-bar" style="height:' + h + 'px;background:' + (v>=0?'#3fb950':'#f85149') + '" title="' + k + ': $' + v.toFixed(0) + '"></div><div class="chart-label">' + k.replace('2026-','').replace('-W','W') + '</div></div>';
+    var h = Math.max(4, Math.abs(v)/maxAbsP*80);
+    html += '<div class="chart-bar-col"><div class="chart-bar-val" style="color:' + (v>=0?'var(--green-bright)':'var(--red)') + '">' + (v>=0?'+':'') + '$' + v.toFixed(0) + '</div><div class="chart-bar" style="height:' + h + 'px;background:' + (v>=0?'#3fb950':'#f85149') + '" title="' + k + ': $' + v.toFixed(0) + '"></div><div class="chart-label">' + k.replace('2026-','').replace('-W','W') + '</div></div>';
   });
   html += '</div></div>';
 
   var byTicker = {};
   journal.forEach(function(j){ byTicker[j.underlying] = (byTicker[j.underlying]||0) + j.pnl; });
-  var tickers = Object.keys(byTicker).sort(function(a,b){ return Math.abs(byTicker[b])-Math.abs(byTicker[a]); });
+  var tickers = Object.keys(byTicker).filter(function(t){ return Math.abs(byTicker[t]) > 0.001; }).sort(function(a,b){ return Math.abs(byTicker[b])-Math.abs(byTicker[a]); });
   var maxAbsT = Math.max.apply(null, tickers.map(function(t){return Math.abs(byTicker[t]);})) || 1;
 
   var byBucket = {};
   journal.forEach(function(j){ var key = j.bucket.replace(' (via roll)',''); byBucket[key] = (byBucket[key]||0) + j.pnl; });
-  var buckets = Object.keys(byBucket).sort(function(a,b){ return Math.abs(byBucket[b])-Math.abs(byBucket[a]); });
+  var buckets = Object.keys(byBucket).filter(function(b){ return Math.abs(byBucket[b]) > 0.001; }).sort(function(a,b){ return Math.abs(byBucket[b])-Math.abs(byBucket[a]); });
   var maxAbsB = Math.max.apply(null, buckets.map(function(b){return Math.abs(byBucket[b]);})) || 1;
 
   // Full-width, stacked — not side-by-side, so the bars actually get room to show proportional differences
@@ -332,7 +335,7 @@ function render() {
   html += '<div class="filter-row" id="statusFilters"></div>';
   html += '<div class="table-wrap"><table><thead><tr>'
     + '<th onclick="setSort(\'date\')">DATE</th><th onclick="setSort(\'underlying\')">TICKER</th><th onclick="setSort(\'bucket\')">STRATEGY</th>'
-    + '<th>STATUS</th><th onclick="setSort(\'daysHeld\')">DAYS</th><th onclick="setSort(\'pnl\')">P/L</th>'
+    + '<th>STATUS</th><th onclick="setSort(\'daysHeld\')">DAYS</th><th onclick="setSort(\'pnl\')">P/L</th><th>NOTE</th>'
     + '</tr></thead><tbody id="tradeRows"></tbody></table></div></div>';
 
   if (data.warnings && data.warnings.length) {
@@ -357,18 +360,26 @@ function saveNotes() {
   var text = document.getElementById('notes-input').value;
   var statusEl = document.getElementById('notes-status');
   statusEl.textContent = 'Saving...';
+  saveNoteKey(selectedMonth, text, function(ok){
+    statusEl.textContent = ok ? 'Saved' : 'Save failed';
+    if (ok) setTimeout(function(){ statusEl.textContent = ''; }, 2000);
+  });
+}
+
+// Shared save helper — used by both the month-level note and each per-trade
+// inline note, since the backend just stores whatever key it's given.
+function saveNoteKey(key, text, callback) {
   fetch('/api/journal/notes', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ month: selectedMonth, text: text })
+    body: JSON.stringify({ key: key, text: text })
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
     if (!currentData.notes) currentData.notes = {};
-    currentData.notes[selectedMonth] = text;
-    statusEl.textContent = 'Saved';
-    setTimeout(function(){ statusEl.textContent = ''; }, 2000);
+    currentData.notes[key] = text;
+    if (callback) callback(true);
   })
-  .catch(function(){ statusEl.textContent = 'Save failed'; });
+  .catch(function(){ if (callback) callback(false); });
 }
 
 function renderFilters(journal) {
@@ -417,9 +428,21 @@ function renderTable(journal) {
     if (j.bucket.indexOf('NAKED')>=0) badge += ' <span class="badge badge-naked">NAKED</span>';
     var days = j.daysHeld != null ? j.daysHeld : (j.status==='open' ? '\u2014' : '?');
     var pnlClass = j.pnl >= 0 ? 'pos' : 'neg';
+    var tradeKey = 'trade:' + j.legs.slice().sort().join('|');
+    var existingNote = ((currentData.notes && currentData.notes[tradeKey]) || '').replace(/"/g,'&quot;');
     return '<tr><td>' + j.date + '</td><td>' + j.underlying + '</td><td>' + j.bucket.replace(' (via roll)',' \u21bb') + '</td>'
-      + '<td>' + badge + '</td><td>' + days + '</td><td class="' + pnlClass + '">' + (j.pnl>=0?'+':'') + '$' + j.pnl.toFixed(2) + '</td></tr>';
+      + '<td>' + badge + '</td><td>' + days + '</td><td class="' + pnlClass + '">' + (j.pnl>=0?'+':'') + '$' + j.pnl.toFixed(2) + '</td>'
+      + '<td><input type="text" class="trade-note" placeholder="note..." value="' + existingNote + '" onblur="saveTradeNote(this,\'' + tradeKey.replace(/'/g,"\\'") + '\')"></td></tr>';
   }).join('');
+}
+
+function saveTradeNote(inputEl, key) {
+  var text = inputEl.value;
+  inputEl.style.borderColor = 'var(--amber)';
+  saveNoteKey(key, text, function(ok){
+    inputEl.style.borderColor = ok ? 'var(--green)' : 'var(--red)';
+    setTimeout(function(){ inputEl.style.borderColor = ''; }, 1200);
+  });
 }
 
 loadSummary();
