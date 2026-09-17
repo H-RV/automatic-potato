@@ -186,6 +186,45 @@ body{background:var(--bg0);color:var(--text);font-family:-apple-system,BlinkMacS
 .mt-label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.5px;margin-bottom:var(--sp-1)}
 .mt-val{font-size:var(--fs-4);font-weight:500;line-height:1.2}
 .mt-sub{font-size:var(--fs-1);color:var(--text-muted);margin-top:2px}
+.pb-rule{font-size:var(--fs-2);padding:5px 10px;border-left:2px solid var(--border);margin-bottom:3px;color:var(--text-dim)}
+.pb-rule strong{color:var(--text)}
+.pb-good{border-left-color:var(--green)}
+.pb-warn{border-left-color:var(--amber)}
+.pb-bad{border-left-color:var(--red)}
+.pb-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-3)}
+.pb-card-good{border-color:var(--green);background:rgba(63,185,80,0.06)}
+.pb-card-bad{border-color:var(--red);background:rgba(255,98,89,0.06)}
+.pb-sub{font-size:var(--fs-2);color:var(--text-dim);line-height:1.6;margin-bottom:4px}
+.pb-sub strong{color:var(--text)}
+.pb-sub em{color:var(--text-muted);font-style:italic}
+.pb-regime{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-2);text-align:center}
+.pb-regime.pb-good{border-color:var(--green);background:rgba(63,185,80,0.08)}
+.pb-regime.pb-warn{border-color:var(--amber);background:rgba(227,179,65,0.08)}
+.pb-regime.pb-bad{border-color:var(--red);background:rgba(255,98,89,0.08)}
+.pb-regime.pb-neutral{border-color:var(--blue);background:rgba(88,166,255,0.08)}
+.pb-regime-label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.3px;margin-bottom:4px}
+.pb-regime-strat{font-size:var(--fs-2);font-weight:600;color:var(--text)}
+.pb-regime-size{font-size:var(--fs-1);color:var(--text-dim);margin-top:2px}
+.pb-tier{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-3)}
+.pb-badge{font-size:var(--fs-1);font-weight:600;padding:2px 8px;border-radius:var(--r-pill)}
+.pb-spec{font-size:var(--fs-2);color:var(--text-dim);line-height:1.7;margin-top:6px}
+.pb-spec b{color:var(--text)}
+.pb-chart-label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.5px;margin-bottom:4px}
+.pb-mgmt{display:flex;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-3);font-size:var(--fs-2)}
+.pb-mgmt.pb-good{border-left:3px solid var(--green)}
+.pb-mgmt.pb-warn{border-left:3px solid var(--amber)}
+.pb-mgmt.pb-bad{border-left:3px solid var(--red)}
+.pb-icon{font-weight:700;flex-shrink:0}
+.pb-mgmt.pb-good .pb-icon{color:var(--green)}
+.pb-mgmt.pb-warn .pb-icon{color:var(--amber)}
+.pb-mgmt.pb-bad .pb-icon{color:var(--red)}
+.pb-sub-inline{font-size:var(--fs-1);color:var(--text-muted)}
+.pb-sub-inline em{color:var(--text-dim);font-style:italic}
+.pb-breaker{background:var(--bg2);border-left:2px solid var(--red);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-3)}
+.pb-breaker-h{font-size:var(--fs-2);font-weight:600;color:var(--red);margin-bottom:4px}
+.pb-check{display:flex;gap:8px;padding:4px 0;font-size:var(--fs-2);color:var(--text-dim)}
+.pb-num{color:var(--green);font-weight:600;flex-shrink:0;width:20px}
+.table-wrap{overflow-x:auto}
 .vg{color:var(--green)}.vr{color:var(--red)}.vb{color:#93c5fd}.va{color:var(--amber)}.vp{color:var(--purple)}
 
 /* VISUALS */
@@ -246,15 +285,9 @@ canvas{display:block;width:100%}
 <body>
 <div class="app">
 
-<!-- APP NAV — which tool, not to be confused with the Backbone/Single Ticker
-     mode toggle below, which is a different level of navigation -->
-<div style="display:flex;gap:var(--sp-2);margin-bottom:var(--sp-3)">
-  <a href="/backbone-pro.html" style="text-decoration:none;background:var(--bg2);border:1px solid var(--green);color:var(--green-bright);font-size:var(--fs-2);font-weight:600;padding:5px 14px;border-radius:var(--r-pill)">Backbone Pro</a>
-  <a href="/scan" style="text-decoration:none;background:var(--bg1);border:1px solid var(--border);color:var(--text-dim);font-size:var(--fs-2);padding:5px 14px;border-radius:var(--r-pill)">Scan</a>
-</div>
-
 <!-- HEADER -->
 <div class="header">
+
   <div class="flex-c gap-3">
     <div class="pulse"></div>
     <span class="htitle">Backbone Pro</span>
@@ -587,8 +620,170 @@ canvas{display:block;width:100%}
     </div>
   </div>
 </div>
-
 </div>
+
+<!-- ── PLAYBOOK — visual reference rules, collapsed by default ── -->
+<div class="app" style="margin-top:var(--sp-3)">
+  <div style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4)">
+    <div class="flex-c" style="justify-content:space-between;cursor:pointer" onclick="var b=document.getElementById('playbook-body');b.style.display=b.style.display==='none'?'block':'none';document.getElementById('playbook-arrow').textContent=b.style.display==='none'?'▸':'▾';">
+      <div style="font-size:var(--fs-2);font-weight:600;letter-spacing:.5px">📋 PLAYBOOK — REFERENCE RULES</div>
+      <span id="playbook-arrow" style="color:var(--text-muted)">▸</span>
+    </div>
+    <div id="playbook-body" style="display:none;margin-top:var(--sp-3)">
+
+      <!-- VIX ENVIRONMENT -->
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">VIX ENVIRONMENT — DETERMINES TIER AND SIZE</div>
+      <div class="pb-card" style="margin-bottom:var(--sp-3)">
+        <div style="display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap">
+          <div style="height:8px;flex:1;min-width:200px;border-radius:4px;background:linear-gradient(to right, var(--text-muted) 0%, var(--text-muted) 15%, var(--green) 15%, var(--green) 30%, var(--amber) 30%, var(--amber) 50%, var(--red) 50%, var(--red) 100%)"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:var(--fs-1);color:var(--text-muted);margin-top:6px">
+          <span>Below 15 — DEAD</span><span>15–20 — NORMAL</span><span>20–30 — HOT</span><span>30+ — DANGER</span>
+        </div>
+        <div style="font-size:var(--fs-2);color:var(--text-dim);margin-top:var(--sp-2)">15–20 (normal) is where T2 Backbone runs at full size across all 7 pillars. 20–30 is where T1's richer premium becomes available. Below 15, there often isn't enough IV anywhere to clear your cushion targets — this has been the actual environment most of tonight's live scans.</div>
+      </div>
+
+      <!-- 21-EMA REGIME ACTION GUIDE -->
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">21-DAY EMA REGIME — CHECK FIRST, EVERY SESSION</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:var(--sp-2);margin-bottom:var(--sp-2)">
+        <div class="pb-regime pb-good"><div class="pb-regime-label">ABOVE · RISING</div><div class="pb-regime-strat">BULL PUT</div><div class="pb-regime-size">FULL SIZE</div></div>
+        <div class="pb-regime pb-neutral"><div class="pb-regime-label">ABOVE · FLAT</div><div class="pb-regime-strat">IRON CONDOR</div><div class="pb-regime-size">FULL SIZE</div></div>
+        <div class="pb-regime pb-warn"><div class="pb-regime-label">ABOVE · DECLINING</div><div class="pb-regime-strat">IC / BEAR CALL</div><div class="pb-regime-size">HALF SIZE</div></div>
+        <div class="pb-regime pb-neutral"><div class="pb-regime-label">BELOW · FLAT/RISING</div><div class="pb-regime-strat">BULL PUT</div><div class="pb-regime-size">HALF SIZE ONLY</div></div>
+        <div class="pb-regime pb-bad"><div class="pb-regime-label">BELOW · DECLINING</div><div class="pb-regime-strat">BEAR CALL</div><div class="pb-regime-size">FULL SIZE</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2);margin-bottom:var(--sp-3)">
+        <div class="pb-card pb-card-good">
+          <div style="color:var(--green);font-weight:600;font-size:var(--fs-2);margin-bottom:6px">▸ PRICE ABOVE THE 21 EMA</div>
+          <div class="pb-sub"><strong>EMA rising:</strong> uptrend confirmed. Bull put spreads at full size. Sell the fear on red days, collect premium on the dip.</div>
+          <div class="pb-sub"><strong>EMA flat:</strong> market ranging. Iron condor — sell both sides, collect from both directions.</div>
+          <div class="pb-sub"><strong>EMA declining but price above:</strong> trend warning. Half size only. Favour bear call or IC over bull puts.</div>
+          <div style="font-size:var(--fs-1);color:var(--text-muted);margin-top:6px;font-style:italic">Price above a rising EMA = healthy trend. Price above a declining EMA = living on borrowed time.</div>
+        </div>
+        <div class="pb-card pb-card-bad">
+          <div style="color:var(--red);font-weight:600;font-size:var(--fs-2);margin-bottom:6px">▸ PRICE BELOW THE 21 EMA</div>
+          <div class="pb-sub"><strong>EMA declining:</strong> downtrend confirmed. Bear call spreads only — no bull puts under any circumstances.</div>
+          <div class="pb-sub"><strong>EMA flat or rising:</strong> pullback, not a trend. Bull puts at half size acceptable — this is where Feb–Mar 2025 and Mar 2026 losses came from.</div>
+          <div class="pb-sub"><strong>Already in a bull put:</strong> if price breaks below a declining EMA mid-trade, close immediately. Do not wait for the delta trigger.</div>
+          <div style="font-size:var(--fs-1);color:var(--text-muted);margin-top:6px;font-style:italic">Price below a declining EMA is the only truly dangerous condition. Every sustained loss cluster starts here.</div>
+        </div>
+      </div>
+
+      <!-- TIER REFERENCE -->
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">TIER REFERENCE — LIVE PASS/FAIL SHOWS ON THE ANALYSE SCREEN</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-2);margin-bottom:var(--sp-3)">
+        <div class="pb-tier" style="border-color:var(--green)">
+          <div class="flex-c" style="justify-content:space-between"><strong style="color:var(--green)">TIER 1 — PREMIUM HUNTER</strong><span class="pb-badge" style="background:var(--green-dim);color:var(--green)">PRIORITY</span></div>
+          <div class="pb-spec">IVR <b>40+</b> · DTE <b>21–45d</b> · Delta <b>0.16–0.20</b><br>Min credit <b>$0.80 / $175+</b> · VIX sweet spot <b>20–30</b></div>
+        </div>
+        <div class="pb-tier" style="border-color:var(--blue)">
+          <div class="flex-c" style="justify-content:space-between"><strong style="color:var(--blue)">TIER 2 — BACKBONE CORE</strong><span class="pb-badge" style="background:var(--blue-dim);color:var(--blue)">STANDARD</span></div>
+          <div class="pb-spec">IVR <b>25–40</b> · DTE <b>14–21d</b> · Delta <b>0.10–0.16</b><br>Min credit <b>$0.57 / $125+</b> · VIX sweet spot <b>15–25</b></div>
+        </div>
+        <div class="pb-tier" style="border-color:var(--amber)">
+          <div class="flex-c" style="justify-content:space-between"><strong style="color:var(--amber)">TIER 3 — SPY WEEKLY</strong><span class="pb-badge" style="background:var(--amber-dim);color:var(--amber)">FALLBACK</span></div>
+          <div class="pb-spec">SPY only · DTE <b>7d</b> · Delta <b>0.10–0.13</b> · <strong style="color:var(--amber)">Requires a red day</strong><br>Min credit <b>$0.50 / $100+</b> · Only if T1/T2 don't qualify</div>
+        </div>
+      </div>
+
+      <!-- CHARTING SETUP -->
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">CHARTING SETUP — UPDATED WITH WHAT'S LIVE NOW</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-2);margin-bottom:var(--sp-3)">
+        <div class="pb-card"><div class="pb-chart-label">REGIME CHECK — DAILY</div><div class="pb-sub">1D, 3–6mo lookback · 21 EMA · above/below? slope? · 30 sec, done first</div></div>
+        <div class="pb-card"><div class="pb-chart-label">MACRO CONFIRM — WEEKLY</div><div class="pb-sub">1W, 12–18mo lookback · 200MA + 20SMA · uptrend intact? below 200MA? · 60 sec, done second</div></div>
+        <div class="pb-card"><div class="pb-chart-label">T3 INTRADAY — 30 MIN</div><div class="pb-sub">30min, entry day only · move still in progress or exhausted? · T3 SPY entries only</div></div>
+      </div>
+      <div class="pb-card" style="margin-bottom:var(--sp-3)">
+        <div class="pb-chart-label" style="color:var(--green-bright)">NEW SINCE THIS SHEET WAS WRITTEN — NOW LIVE ON THE ANALYSE SCREEN</div>
+        <div class="pb-sub"><strong>MACD, Stochastic, Volume</strong> — all three now compute automatically on the price chart, each with a plain-language read of what the current number actually means, not just a signal light.</div>
+        <div class="pb-sub"><strong>TTM Squeeze</strong> — flags when volatility is compressed (often precedes a bigger move) vs. when that compression has just "fired" into a real move.</div>
+        <div class="pb-sub"><strong>Fibonacci retracement</strong> — real 180-day swing levels, not eyeballed, with the 38.2%/61.8% levels flagged as the ones that matter most.</div>
+        <div class="pb-sub"><strong>Expected Move</strong> — the sigma calculator below is now live on every Analyse screen with real strikes, so the standalone version that used to live here has been retired in favour of it.</div>
+      </div>
+
+      <!-- MANAGEMENT RULES -->
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">MANAGEMENT RULES</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2);margin-bottom:var(--sp-3)">
+        <div class="pb-mgmt pb-good"><span class="pb-icon">✓</span><div><strong>Spread at 50% profit</strong><br><span class="pb-sub-inline">CLOSE — take the win, no exceptions. <em>Live: shown automatically as the take-profit target on every suggested trade.</em></span></div></div>
+        <div class="pb-mgmt pb-warn"><span class="pb-icon">~</span><div><strong>Short delta crosses 0.25</strong><br><span class="pb-sub-inline">ROLL out 7 days, away, net credit only.</span></div></div>
+        <div class="pb-mgmt pb-warn"><span class="pb-icon">~</span><div><strong>Spread doubles to $1.00+</strong><br><span class="pb-sub-inline">ROLL 7 days further, 6–10pts away.</span></div></div>
+        <div class="pb-mgmt pb-bad"><span class="pb-icon">✕</span><div><strong>Regime flips mid-trade</strong><br><span class="pb-sub-inline">CLOSE immediately, no delta check needed.</span></div></div>
+        <div class="pb-mgmt pb-bad"><span class="pb-icon">✕</span><div><strong>Inside 7 DTE + threatened (T1/T2)</strong><br><span class="pb-sub-inline">CLOSE, no rolls, no exceptions. <em>Live: this is the actual close/roll checkpoint — the deliberate decision was to check live each session rather than automate a dollar-based stop.</em></span></div></div>
+        <div class="pb-mgmt pb-bad"><span class="pb-icon">✕</span><div><strong>Friday + any delta concern</strong><br><span class="pb-sub-inline">CLOSE, never hold threatened over the weekend.</span></div></div>
+        <div class="pb-mgmt pb-good"><span class="pb-icon">✓</span><div><strong>Big intraday reversal, spread $0.10–0.15</strong><br><span class="pb-sub-inline">CLOSE EARLY, 70–80% profit, take it.</span></div></div>
+        <div class="pb-mgmt pb-bad"><span class="pb-icon">✕</span><div><strong>T3 inside 3 DTE + threatened</strong><br><span class="pb-sub-inline">CLOSE, no rolls inside 3 DTE on weeklies.</span></div></div>
+      </div>
+
+      <!-- CAPITAL ALLOCATION -->
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">CAPITAL ALLOCATION — $250K REFERENCE</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-2);margin-bottom:var(--sp-3)">
+        <div class="mt"><div class="mt-label">MAX DEPLOYED</div><div class="mt-val" style="color:var(--green)">$125K</div><div class="mt-sub">50% · 7 pillars active</div></div>
+        <div class="mt"><div class="mt-label">RESERVE</div><div class="mt-val" style="color:var(--blue)">$75K</div><div class="mt-sub">30% · rolls + margin</div></div>
+        <div class="mt"><div class="mt-label">DRY POWDER</div><div class="mt-val" style="color:var(--amber)">$50K</div><div class="mt-sub">20% · VIX 25+ deploy</div></div>
+        <div class="mt"><div class="mt-label">MAX PER TRADE</div><div class="mt-val" style="color:var(--red)">$12.5K</div><div class="mt-sub">5% risk cap · hard limit</div></div>
+      </div>
+
+      <!-- CIRCUIT BREAKERS -->
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">CIRCUIT BREAKERS — NON-NEGOTIABLE</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-2);margin-bottom:var(--sp-3)">
+        <div class="pb-breaker"><div class="pb-breaker-h">DRAWDOWN 10%</div><div class="pb-sub">All new entries stop. Manage to close. Resume next month only.</div></div>
+        <div class="pb-breaker"><div class="pb-breaker-h">$5K TARGET HIT</div><div class="pb-sub">Shift to defensive. Smaller size, tighter delta, fewer entries.</div></div>
+        <div class="pb-breaker"><div class="pb-breaker-h">VIX 30+ (2 DAYS)</div><div class="pb-sub">Deploy $25K dry powder into T1. Wider strikes. Smaller size.</div></div>
+        <div class="pb-breaker"><div class="pb-breaker-h">SPY BELOW 200MA</div><div class="pb-sub">Minimum size only. Bear calls only. No bull puts until recovery.</div></div>
+      </div>
+
+      <!-- SESSION CHECKLIST + HARD RULES -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        <div>
+          <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">SESSION CHECKLIST</div>
+          <div class="pb-check"><span class="pb-num">01</span><div><strong>Regime:</strong> SPY daily 21 EMA — above/below? slope?</div></div>
+          <div class="pb-check"><span class="pb-num">02</span><div><strong>VIX:</strong> enter level above — determines which tier fires</div></div>
+          <div class="pb-check"><span class="pb-num">03</span><div><strong>SD calc:</strong> confirm short strike sits beyond 1.3σ — live on Analyse</div></div>
+          <div class="pb-check"><span class="pb-num">04</span><div><strong>Direction:</strong> SPY down 0.5%+ = BPS. Up near high = BCS. Flat = IC</div></div>
+          <div class="pb-check"><span class="pb-num">05</span><div><strong>T1 scan:</strong> IVR 40+? Delta 0.16–0.20? Credit $0.80+?</div></div>
+          <div class="pb-check"><span class="pb-num">06</span><div><strong>T2 scan:</strong> IVR 25+? Delta 0.10–0.16. Credit $0.57+?</div></div>
+          <div class="pb-check"><span class="pb-num">07</span><div><strong>T3 fallback:</strong> SPY only, red day, 7 DTE, $0.50+</div></div>
+          <div class="pb-check"><span class="pb-num">08</span><div><strong>Liquidity:</strong> OI above 500. Bid-ask under $0.10 SPY/QQQ, $0.20 EEM/XLE</div></div>
+          <div class="pb-check"><span class="pb-num">09</span><div><strong>CPI / Fed days:</strong> wait 15 min after the number before assessing</div></div>
+          <div class="pb-check"><span class="pb-num">10</span><div><strong>Enter:</strong> limit at mid, accept ±$0.02. Take-profit target shown automatically</div></div>
+          <div class="pb-check"><span class="pb-num">11</span><div><strong>Manage first:</strong> check all open positions before entering anything new</div></div>
+        </div>
+        <div>
+          <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">HARD RULES — NEVER BREAK THESE</div>
+          <div class="pb-rule pb-bad">Never open T1 + T2 on the same underlying simultaneously.</div>
+          <div class="pb-rule pb-bad">Never hold more than 3 bull puts open at the same time.</div>
+          <div class="pb-rule pb-bad">Never roll for a debit — close and accept the loss instead.</div>
+          <div class="pb-rule pb-bad">Never hold a threatened position into the weekend.</div>
+          <div class="pb-rule pb-bad">Never open bull puts when price is below a declining 21 EMA.</div>
+          <div class="pb-rule pb-bad">Never trade EEM or XLE without checking open interest first.</div>
+          <div class="pb-rule pb-good">A missed trade is always better than a wrong-direction trade.</div>
+          <div class="pb-rule pb-good">No entry across all tiers = valid outcome. Log and close.</div>
+          <div class="pb-rule pb-good">Monthly $5K target hit = shift to defensive. Protect the month.</div>
+          <div class="pb-rule pb-good">CPI / Fed day = wait 15 min after print, then assess cleanly.</div>
+        </div>
+      </div>
+
+      <!-- MONTHLY INCOME TARGETS -->
+      <div style="font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-2)">MONTHLY INCOME TARGETS — SCALE 3 → 5 → 10 CONTRACTS</div>
+      <div class="table-wrap" style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:var(--fs-2)">
+          <thead><tr style="color:var(--text-muted);font-size:var(--fs-1);text-align:left">
+            <th style="padding:4px">CONTRACTS</th><th style="padding:4px">T1 ×2/mo</th><th style="padding:4px">T2 ×4/mo</th><th style="padding:4px">T3 ×4/mo</th><th style="padding:4px">COMBINED</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:4px">3 (start)</td><td style="padding:4px">2×$262 = $525</td><td style="padding:4px">4×$171 = $684</td><td style="padding:4px">4×$150 = $600</td><td style="padding:4px;color:var(--green)">~$1,809</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:4px">5</td><td style="padding:4px">2×$437 = $875</td><td style="padding:4px">4×$285 = $1,140</td><td style="padding:4px">4×$250 = $1,000</td><td style="padding:4px;color:var(--green)">~$3,015</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:4px">10</td><td style="padding:4px">2×$875 = $1,750</td><td style="padding:4px">4×$570 = $2,280</td><td style="padding:4px">4×$500 = $2,000</td><td style="padding:4px;color:var(--green)">~$6,030</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:var(--fs-1);color:var(--text-muted);margin-top:6px">Start at 3, scale to 5 after $5K net banked, scale to 10 after $10K net banked. Max risk per trade $12.5K hard limit regardless of size.</div>
+
+    </div>
+  </div>
+</div>
+
+
 <script>
 var RAILWAY = 'https://automatic-potato-production-8488.up.railway.app/api/price/';
 var RAILWAY_BASE = 'https://automatic-potato-production-8488.up.railway.app/api/';
