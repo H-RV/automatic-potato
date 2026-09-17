@@ -89,12 +89,6 @@ tr:hover td{background:var(--bg2)}
 .trade-note{background:var(--bg2);border:1px solid var(--border);color:var(--text-dim);padding:3px 8px;border-radius:4px;font-family:inherit;font-size:var(--fs-1);width:130px;transition:border-color .3s}
 .trade-note:focus{outline:none;border-color:var(--blue);color:var(--text)}
 
-.notes-area{width:100%;min-height:90px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:var(--r-sm);padding:var(--sp-3);font-family:inherit;font-size:var(--fs-2);resize:vertical}
-.notes-area:focus{outline:none;border-color:var(--blue)}
-.notes-save{margin-top:var(--sp-2);background:var(--bg3);border:1px solid var(--border);color:var(--text-dim);padding:5px 16px;border-radius:var(--r-pill);font-family:inherit;font-size:var(--fs-1);cursor:pointer}
-.notes-save:hover{color:var(--text)}
-.notes-status{font-size:var(--fs-1);color:var(--green);margin-left:var(--sp-2)}
-
 .gap-note{font-size:var(--fs-1);color:var(--text-muted);line-height:1.6;padding:var(--sp-3);background:var(--bg2);border-radius:var(--r-sm);margin-top:var(--sp-3)}
 .empty{text-align:center;padding:var(--sp-6) var(--sp-4);color:var(--text-muted);font-size:var(--fs-3)}
 .pos{color:var(--green-bright)}.neg{color:var(--red)}
@@ -321,14 +315,6 @@ function render() {
   });
   html += '</div>';
 
-  // Notes — per selected period, saved to the server
-  var noteKey = selectedMonth;
-  var noteText = (data.notes && data.notes[noteKey]) || '';
-  html += '<div class="section"><div class="section-title" style="margin-bottom:var(--sp-3)">NOTES — ' + monthLabel(selectedMonth).toUpperCase() + '</div>'
-    + '<textarea class="notes-area" id="notes-input" placeholder="e.g. watching HOOD for assignment risk, GLD spread rolled early...">' + noteText.replace(/</g,'&lt;') + '</textarea>'
-    + '<div><button class="notes-save" onclick="saveNotes()">Save note</button><span class="notes-status" id="notes-status"></span></div>'
-    + '</div>';
-
   html += '<div class="section"><div class="section-head"><div class="section-title">' + (selectedMonth==='ALL' ? 'ALL TRADES' : monthLabel(selectedMonth).toUpperCase() + ' TRADES') + '</div>'
     + '<input type="text" class="search-input" id="search-input" placeholder="Search ticker or strategy..." value="' + searchText.replace(/"/g,'&quot;') + '" oninput="setSearch(this.value)"></div>';
   html += '<div class="filter-row" id="tickerFilters"></div>';
@@ -356,18 +342,8 @@ function getFilteredJournal() {
   return selectedMonth === 'ALL' ? allJournal : allJournal.filter(function(j){ return j.date.slice(0,7) === selectedMonth; });
 }
 
-function saveNotes() {
-  var text = document.getElementById('notes-input').value;
-  var statusEl = document.getElementById('notes-status');
-  statusEl.textContent = 'Saving...';
-  saveNoteKey(selectedMonth, text, function(ok){
-    statusEl.textContent = ok ? 'Saved' : 'Save failed';
-    if (ok) setTimeout(function(){ statusEl.textContent = ''; }, 2000);
-  });
-}
-
-// Shared save helper — used by both the month-level note and each per-trade
-// inline note, since the backend just stores whatever key it's given.
+// Shared save helper — used by each per-trade inline note (the backend just
+// stores whatever key it's given; "trade:<legs>" for these).
 function saveNoteKey(key, text, callback) {
   fetch('/api/journal/notes', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
