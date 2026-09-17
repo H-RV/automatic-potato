@@ -655,11 +655,13 @@ const JOURNAL_FILE = path.join(JOURNAL_DIR, 'raw-data.json');
 
 function loadJournalStore() {
   try {
-    if (!fs.existsSync(JOURNAL_FILE)) return { execs: [], realizedPnl: {}, sharesHeld: {} };
-    return JSON.parse(fs.readFileSync(JOURNAL_FILE, 'utf8'));
+    if (!fs.existsSync(JOURNAL_FILE)) return { execs: [], realizedPnl: {}, sharesHeld: {}, notes: {} };
+    const store = JSON.parse(fs.readFileSync(JOURNAL_FILE, 'utf8'));
+    if (!store.notes) store.notes = {}; // backward-compat for stores saved before notes existed
+    return store;
   } catch (e) {
     console.log('journal store read failed, starting fresh:', e.message);
-    return { execs: [], realizedPnl: {}, sharesHeld: {} };
+    return { execs: [], realizedPnl: {}, sharesHeld: {}, notes: {} };
   }
 }
 
@@ -728,7 +730,26 @@ app.get('/api/journal/summary', (req, res) => {
   try {
     const store = loadJournalStore();
     const result = classifyExecutions(store.execs, store.realizedPnl, store.sharesHeld);
+    result.notes = store.notes;
     res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── POST /api/journal/notes ──────────────────────────────────────────────
+// Free-text notes per month (e.g. "watching XYZ for assignment risk"),
+// stored alongside the trade data on the same persistent volume.
+app.post('/api/journal/notes', express.json(), (req, res) => {
+  try {
+    const { month, text } = req.body;
+    if (!month || typeof text !== 'string') {
+      return res.status(400).json({ error: 'Expected { month, text }' });
+    }
+    const store = loadJournalStore();
+    store.notes[month] = text;
+    saveJournalStore(store);
+    res.json({ saved: true, month });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

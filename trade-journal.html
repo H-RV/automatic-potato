@@ -16,7 +16,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg0);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;font-size:var(--fs-3);line-height:1.5;min-height:100vh}
-.app{max-width:900px;margin:0 auto;padding:var(--sp-4)}
+.app{max-width:1000px;margin:0 auto;padding:var(--sp-4)}
 
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4);padding-bottom:var(--sp-3);border-bottom:1px solid var(--border)}
 .htitle{font-size:var(--fs-4);font-weight:600;letter-spacing:-.3px}
@@ -33,15 +33,19 @@ input[type=file]{display:none}
 .hero-label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px;margin-bottom:var(--sp-1)}
 .hero-num{font-size:var(--fs-6);font-weight:700;letter-spacing:-1px;font-variant-numeric:tabular-nums}
 .hero-sub{font-size:var(--fs-2);color:var(--text-muted);margin-top:4px}
+.split-row{display:flex;justify-content:center;gap:var(--sp-4);margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px solid var(--border);flex-wrap:wrap}
+.split-item{text-align:center}
+.split-label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.5px}
+.split-val{font-size:var(--fs-4);font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
 
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-2);margin-bottom:var(--sp-3)}
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--sp-2);margin-bottom:var(--sp-3)}
 .stat{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-3) var(--sp-2);text-align:center}
 .stat-label{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.5px;margin-bottom:3px}
 .stat-num{font-size:var(--fs-4);font-weight:600;font-variant-numeric:tabular-nums}
 .stat-sub{font-size:var(--fs-1);color:var(--text-muted);margin-top:2px}
 
 .section{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4);margin-bottom:var(--sp-3)}
-.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-3)}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-3);flex-wrap:wrap;gap:var(--sp-2)}
 .section-title{font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.8px}
 .toggle{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-pill);padding:2px;gap:2px}
 .toggle-btn{padding:3px var(--sp-3);border-radius:16px;border:none;font-family:inherit;font-size:var(--fs-1);font-weight:500;letter-spacing:.3px;cursor:pointer;background:transparent;color:var(--text-muted)}
@@ -52,17 +56,23 @@ input[type=file]{display:none}
 .chart-bar{width:70%;border-radius:2px 2px 0 0;min-height:2px}
 .chart-label{font-size:8px;color:var(--text-muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)}
 .bucket-row{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) 0;border-bottom:1px solid var(--border)}
 .bucket-row:last-child{border-bottom:none}
-.bucket-name{flex:0 0 90px;font-size:var(--fs-2);color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bucket-bar-wrap{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
-.bucket-bar{height:100%;border-radius:3px}
-.bucket-val{flex:0 0 68px;text-align:right;font-size:var(--fs-2);font-weight:600;font-variant-numeric:tabular-nums}
+.bucket-name{flex:0 0 140px;font-size:var(--fs-2);color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bucket-bar-wrap{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.bucket-bar{height:100%;border-radius:4px}
+.bucket-val{flex:0 0 80px;text-align:right;font-size:var(--fs-2);font-weight:600;font-variant-numeric:tabular-nums}
 
-.filter-row{display:flex;gap:var(--sp-1);flex-wrap:wrap;margin-bottom:var(--sp-3)}
+.filter-row{display:flex;gap:var(--sp-1);flex-wrap:wrap;margin-bottom:var(--sp-3);align-items:center}
 .filter-pill{font-size:var(--fs-1);font-weight:500;padding:4px var(--sp-3);border-radius:var(--r-pill);background:var(--bg2);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;letter-spacing:.3px}
 .filter-pill.active{background:var(--bg3);border-color:var(--blue);color:var(--text)}
+.filter-pill.month-pos{border-color:rgba(63,185,80,0.4)}
+.filter-pill.month-neg{border-color:rgba(248,81,73,0.4)}
+.filter-pill.month-pos.active{border-color:var(--green)}
+.filter-pill.month-neg.active{border-color:var(--red)}
+
+.search-input{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:var(--r-pill);font-family:inherit;font-size:var(--fs-2);width:200px}
+.search-input:focus{outline:none;border-color:var(--blue)}
 
 table{width:100%;border-collapse:collapse;font-size:var(--fs-2)}
 th{text-align:left;font-size:var(--fs-1);color:var(--text-muted);letter-spacing:.5px;padding:var(--sp-1) var(--sp-2);border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap}
@@ -75,6 +85,12 @@ tr:hover td{background:var(--bg2)}
 .badge-closed{background:var(--bg3);color:var(--text-dim)}
 .badge-naked{background:var(--red);color:var(--bg0)}
 .table-wrap{overflow-x:auto}
+
+.notes-area{width:100%;min-height:90px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:var(--r-sm);padding:var(--sp-3);font-family:inherit;font-size:var(--fs-2);resize:vertical}
+.notes-area:focus{outline:none;border-color:var(--blue)}
+.notes-save{margin-top:var(--sp-2);background:var(--bg3);border:1px solid var(--border);color:var(--text-dim);padding:5px 16px;border-radius:var(--r-pill);font-family:inherit;font-size:var(--fs-1);cursor:pointer}
+.notes-save:hover{color:var(--text)}
+.notes-status{font-size:var(--fs-1);color:var(--green);margin-left:var(--sp-2)}
 
 .gap-note{font-size:var(--fs-1);color:var(--text-muted);line-height:1.6;padding:var(--sp-3);background:var(--bg2);border-radius:var(--r-sm);margin-top:var(--sp-3)}
 .empty{text-align:center;padding:var(--sp-6) var(--sp-4);color:var(--text-muted);font-size:var(--fs-3)}
@@ -109,7 +125,9 @@ var currentData = null;
 var periodMode = 'week';
 var tickerFilter = 'All';
 var statusFilter = 'All';
+var searchText = '';
 var sortCol = 'date', sortDir = -1;
+var selectedMonth = null; // null = not yet set; 'ALL' = lifetime view
 
 drop.addEventListener('click', function(){ fileInput.click(); });
 drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('over'); });
@@ -163,8 +181,6 @@ function bucketColor(name) {
   return '#484f58';
 }
 
-var selectedMonth = null; // null = not yet set; defaults to the latest month in the data
-
 function loadSummary() {
   fetch('/api/journal/summary')
     .then(function(r){ return r.json(); })
@@ -182,6 +198,7 @@ function isoWeek(dateStr) {
 }
 
 function monthLabel(m) {
+  if (m === 'ALL') return 'All Time';
   var parts = m.split('-');
   var names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return names[parseInt(parts[1],10)-1] + ' ' + parts[0];
@@ -197,15 +214,17 @@ function render() {
     return;
   }
 
-  // All-time running total — never filtered, this is the "track my progress"
-  // number that keeps accumulating regardless of which month is being viewed
   var allTimeTotal = allJournal.reduce(function(s,j){ return s+j.pnl; }, 0);
-
-  // Months present in the data, most recent first
   var months = Array.from(new Set(allJournal.map(function(j){ return j.date.slice(0,7); }))).sort().reverse();
-  if (!selectedMonth || months.indexOf(selectedMonth) === -1) selectedMonth = months[0];
+  if (!selectedMonth) selectedMonth = months[0];
 
-  var journal = allJournal.filter(function(j){ return j.date.slice(0,7) === selectedMonth; });
+  // Real total per month, used to color-code the pills at a glance
+  var monthTotals = {};
+  months.forEach(function(m){
+    monthTotals[m] = allJournal.filter(function(j){ return j.date.slice(0,7)===m; }).reduce(function(s,j){ return s+j.pnl; }, 0);
+  });
+
+  var journal = selectedMonth === 'ALL' ? allJournal : allJournal.filter(function(j){ return j.date.slice(0,7) === selectedMonth; });
 
   var wins = journal.filter(function(j){ return j.pnl > 0; });
   var losses = journal.filter(function(j){ return j.pnl < 0; });
@@ -214,26 +233,44 @@ function render() {
   var largestLoss = losses.length ? Math.min.apply(null, losses.map(function(j){return j.pnl;})) : 0;
   var knownHold = journal.filter(function(j){ return j.daysHeld != null; });
   var avgDays = knownHold.length ? (knownHold.reduce(function(s,j){return s+j.daysHeld;},0)/knownHold.length) : null;
+  var closedCount = wins.length + losses.length;
+  var avgPerTrade = closedCount ? (wins.reduce(function(s,j){return s+j.pnl;},0)+losses.reduce(function(s,j){return s+j.pnl;},0))/closedCount : 0;
 
-  var monthTotal = journal.reduce(function(s,j){ return s+j.pnl; }, 0);
-  var netClass = monthTotal >= 0 ? 'pos' : 'neg';
+  var periodTotal = journal.reduce(function(s,j){ return s+j.pnl; }, 0);
+  var netClass = periodTotal >= 0 ? 'pos' : 'neg';
   var html = '';
 
-  // Month selector — pills for every month present in the data
+  // Month selector — "All Time" first, then every real month, color-coded by sign
   html += '<div class="filter-row" style="margin-bottom:var(--sp-2)">';
+  html += '<button class="filter-pill' + (selectedMonth==='ALL'?' active':'') + '" onclick="setMonth(\'ALL\')">All Time</button>';
   months.forEach(function(m){
-    html += '<button class="filter-pill' + (m===selectedMonth?' active':'') + '" onclick="setMonth(\'' + m + '\')">' + monthLabel(m) + '</button>';
+    var cls = monthTotals[m] >= 0 ? 'month-pos' : 'month-neg';
+    html += '<button class="filter-pill ' + cls + (m===selectedMonth?' active':'') + '" onclick="setMonth(\'' + m + '\')">' + monthLabel(m) + '</button>';
   });
   html += '</div>';
 
   html += '<div class="hero"><div class="hero-label">' + monthLabel(selectedMonth).toUpperCase() + ' — NET REALIZED</div>'
-    + '<div class="hero-num ' + netClass + '">' + (monthTotal>=0?'+':'') + '$' + monthTotal.toFixed(2) + '</div>'
-    + '<div class="hero-sub">' + journal.length + ' positions \u00b7 ' + wins.length + ' wins, ' + losses.length + ' losses</div>'
-    + '<div style="margin-top:var(--sp-2);padding-top:var(--sp-2);border-top:1px solid var(--border);font-size:var(--fs-2);color:var(--text-muted)">All-time running total: <span style="color:' + (allTimeTotal>=0?'var(--green-bright)':'var(--red)') + ';font-weight:600">' + (allTimeTotal>=0?'+':'') + '$' + allTimeTotal.toFixed(2) + '</span> across ' + months.length + ' month' + (months.length===1?'':'s') + '</div>'
-    + '</div>';
+    + '<div class="hero-num ' + netClass + '">' + (periodTotal>=0?'+':'') + '$' + periodTotal.toFixed(2) + '</div>'
+    + '<div class="hero-sub">' + journal.length + ' positions \u00b7 ' + wins.length + ' wins, ' + losses.length + ' losses</div>';
+
+  if (selectedMonth !== 'ALL') {
+    html += '<div style="margin-top:var(--sp-2);font-size:var(--fs-2);color:var(--text-muted)">All-time running total: <span style="color:' + (allTimeTotal>=0?'var(--green-bright)':'var(--red)') + ';font-weight:600">' + (allTimeTotal>=0?'+':'') + '$' + allTimeTotal.toFixed(2) + '</span> across ' + months.length + ' month' + (months.length===1?'':'s') + '</div>';
+  }
+
+  // 30/30/40 split — only meaningful on a real profit, shown for whichever period is selected
+  if (periodTotal > 0) {
+    var tax = periodTotal * 0.30, takeHome = periodTotal * 0.30, reinvest = periodTotal * 0.40;
+    html += '<div class="split-row">'
+      + '<div class="split-item"><div class="split-label">TAX RESERVE (30%)</div><div class="split-val" style="color:var(--text-dim)">$' + tax.toFixed(2) + '</div></div>'
+      + '<div class="split-item"><div class="split-label">TAKE HOME (30%)</div><div class="split-val" style="color:var(--green-bright)">$' + takeHome.toFixed(2) + '</div></div>'
+      + '<div class="split-item"><div class="split-label">REINVEST (40%)</div><div class="split-val" style="color:var(--blue)">$' + reinvest.toFixed(2) + '</div></div>'
+      + '</div>';
+  }
+  html += '</div>';
 
   html += '<div class="stat-grid">'
-    + '<div class="stat"><div class="stat-label">WIN RATE</div><div class="stat-num">' + winRate + '%</div><div class="stat-sub">' + (wins.length+losses.length) + ' closed</div></div>'
+    + '<div class="stat"><div class="stat-label">WIN RATE</div><div class="stat-num">' + winRate + '%</div><div class="stat-sub">' + closedCount + ' closed</div></div>'
+    + '<div class="stat"><div class="stat-label">AVG / TRADE</div><div class="stat-num ' + (avgPerTrade>=0?'pos':'neg') + '">' + (avgPerTrade>=0?'+':'') + '$' + avgPerTrade.toFixed(0) + '</div></div>'
     + '<div class="stat"><div class="stat-label">AVG DAYS HELD</div><div class="stat-num">' + (avgDays!=null ? avgDays.toFixed(1) : '\u2014') + '</div><div class="stat-sub">' + knownHold.length + ' known</div></div>'
     + '<div class="stat"><div class="stat-label">LARGEST WIN</div><div class="stat-num pos">+$' + largestWin.toFixed(0) + '</div></div>'
     + '<div class="stat"><div class="stat-label">LARGEST LOSS</div><div class="stat-num neg">' + largestLoss.toFixed(0) + '</div></div>'
@@ -266,22 +303,31 @@ function render() {
   var buckets = Object.keys(byBucket).sort(function(a,b){ return Math.abs(byBucket[b])-Math.abs(byBucket[a]); });
   var maxAbsB = Math.max.apply(null, buckets.map(function(b){return Math.abs(byBucket[b]);})) || 1;
 
-  html += '<div class="grid2">';
-  html += '<div class="section"><div class="section-title">BY TICKER</div>';
+  // Full-width, stacked — not side-by-side, so the bars actually get room to show proportional differences
+  html += '<div class="section"><div class="section-title" style="margin-bottom:var(--sp-3)">BY TICKER' + (selectedMonth==='ALL'?' — LIFETIME':'') + '</div>';
   tickers.forEach(function(t){
     var v = byTicker[t], pct = Math.abs(v)/maxAbsT*100;
     html += '<div class="bucket-row"><div class="bucket-name">' + t + '</div><div class="bucket-bar-wrap"><div class="bucket-bar" style="width:' + pct + '%;background:' + (v>=0?tickerColor(t):'#f85149') + '"></div></div><div class="bucket-val ' + (v>=0?'pos':'neg') + '">' + (v>=0?'+':'') + '$' + v.toFixed(0) + '</div></div>';
   });
   html += '</div>';
 
-  html += '<div class="section"><div class="section-title">BY STRATEGY</div>';
+  html += '<div class="section"><div class="section-title" style="margin-bottom:var(--sp-3)">BY STRATEGY' + (selectedMonth==='ALL'?' — LIFETIME':'') + '</div>';
   buckets.forEach(function(b){
     var v = byBucket[b], pct = Math.abs(v)/maxAbsB*100;
     html += '<div class="bucket-row"><div class="bucket-name">' + b + '</div><div class="bucket-bar-wrap"><div class="bucket-bar" style="width:' + pct + '%;background:' + (v>=0?bucketColor(b):'#f85149') + '"></div></div><div class="bucket-val ' + (v>=0?'pos':'neg') + '">' + (v>=0?'+':'') + '$' + v.toFixed(0) + '</div></div>';
   });
-  html += '</div></div>';
+  html += '</div>';
 
-  html += '<div class="section"><div class="section-title">ALL TRADES</div>';
+  // Notes — per selected period, saved to the server
+  var noteKey = selectedMonth;
+  var noteText = (data.notes && data.notes[noteKey]) || '';
+  html += '<div class="section"><div class="section-title" style="margin-bottom:var(--sp-3)">NOTES — ' + monthLabel(selectedMonth).toUpperCase() + '</div>'
+    + '<textarea class="notes-area" id="notes-input" placeholder="e.g. watching HOOD for assignment risk, GLD spread rolled early...">' + noteText.replace(/</g,'&lt;') + '</textarea>'
+    + '<div><button class="notes-save" onclick="saveNotes()">Save note</button><span class="notes-status" id="notes-status"></span></div>'
+    + '</div>';
+
+  html += '<div class="section"><div class="section-head"><div class="section-title">' + (selectedMonth==='ALL' ? 'ALL TRADES' : monthLabel(selectedMonth).toUpperCase() + ' TRADES') + '</div>'
+    + '<input type="text" class="search-input" id="search-input" placeholder="Search ticker or strategy..." value="' + searchText.replace(/"/g,'&quot;') + '" oninput="setSearch(this.value)"></div>';
   html += '<div class="filter-row" id="tickerFilters"></div>';
   html += '<div class="filter-row" id="statusFilters"></div>';
   html += '<div class="table-wrap"><table><thead><tr>'
@@ -300,6 +346,30 @@ function render() {
 }
 
 function setPeriod(mode) { periodMode = mode; render(); }
+function setSearch(val) { searchText = val; renderTable(getFilteredJournal()); var input = document.getElementById('search-input'); if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); } }
+
+function getFilteredJournal() {
+  var allJournal = currentData.journal || [];
+  return selectedMonth === 'ALL' ? allJournal : allJournal.filter(function(j){ return j.date.slice(0,7) === selectedMonth; });
+}
+
+function saveNotes() {
+  var text = document.getElementById('notes-input').value;
+  var statusEl = document.getElementById('notes-status');
+  statusEl.textContent = 'Saving...';
+  fetch('/api/journal/notes', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ month: selectedMonth, text: text })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (!currentData.notes) currentData.notes = {};
+    currentData.notes[selectedMonth] = text;
+    statusEl.textContent = 'Saved';
+    setTimeout(function(){ statusEl.textContent = ''; }, 2000);
+  })
+  .catch(function(){ statusEl.textContent = 'Save failed'; });
+}
 
 function renderFilters(journal) {
   var tickers = ['All'].concat(Array.from(new Set(journal.map(function(j){return j.underlying;}))).sort());
@@ -315,11 +385,11 @@ function renderFilters(journal) {
   }).join('');
 }
 
-function setTickerFilter(t) { tickerFilter = t; renderFilters(currentData.journal); renderTable(currentData.journal); }
-function setStatusFilter(s) { statusFilter = s; renderFilters(currentData.journal); renderTable(currentData.journal); }
+function setTickerFilter(t) { tickerFilter = t; renderFilters(getFilteredJournal()); renderTable(getFilteredJournal()); }
+function setStatusFilter(s) { statusFilter = s; renderFilters(getFilteredJournal()); renderTable(getFilteredJournal()); }
 function setSort(col) {
   if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
-  renderTable(currentData.journal);
+  renderTable(getFilteredJournal());
 }
 
 function renderTable(journal) {
@@ -327,6 +397,11 @@ function renderTable(journal) {
     if (tickerFilter !== 'All' && j.underlying !== tickerFilter) return false;
     if (statusFilter === 'Open' && j.status !== 'open') return false;
     if (statusFilter === 'Closed' && j.status !== 'closed') return false;
+    if (searchText) {
+      var q = searchText.toLowerCase();
+      var hay = (j.underlying + ' ' + j.bucket + ' ' + j.date).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
     return true;
   });
   rows.sort(function(a,b){
@@ -335,7 +410,9 @@ function renderTable(journal) {
     if (bv == null) bv = sortDir===1 ? Infinity : -Infinity;
     if (av < bv) return -1*sortDir; if (av > bv) return 1*sortDir; return 0;
   });
-  document.getElementById('tradeRows').innerHTML = rows.map(function(j){
+  var tbody = document.getElementById('tradeRows');
+  if (!tbody) return;
+  tbody.innerHTML = rows.map(function(j){
     var badge = j.status==='open' ? '<span class="badge badge-open">OPEN</span>' : '<span class="badge badge-closed">CLOSED</span>';
     if (j.bucket.indexOf('NAKED')>=0) badge += ' <span class="badge badge-naked">NAKED</span>';
     var days = j.daysHeld != null ? j.daysHeld : (j.status==='open' ? '\u2014' : '?');
