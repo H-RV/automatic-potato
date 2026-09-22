@@ -1668,6 +1668,18 @@ async function fetchPillarPrice() {
   } catch(e) {
     msg.innerHTML = '<span style="color:var(--amber)">failed — enter manually</span>';
   }
+  // VIX is a macro-level reading, not pillar-specific — pull it here too
+  // whenever it's empty, regardless of which of the 7 pillars we're on.
+  // The plain /price endpoint above doesn't carry it, so this piggybacks
+  // on the FlashAlpha iv/ endpoint just for the vix field.
+  var vixEl = document.getElementById('vix');
+  if (vixEl && !vixEl.value) {
+    try {
+      var vr = await fetch(RAILWAY_BASE + 'iv/SPY');
+      var vd = await vr.json();
+      if (vd.vix) { vixEl.value = vd.vix; onSessChange(); }
+    } catch(e) { /* silent — VIX stays manual-entry on failure */ }
+  }
 }
 
 function clearPillar() {
