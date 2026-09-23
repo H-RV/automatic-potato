@@ -1254,7 +1254,7 @@ async function fetchAndDrawChart(sym) {
   try {
     var r = await fetch(RAILWAY_BASE + 'chart/' + sym);
     var d = await r.json();
-    if (!d.data || !d.data.length) return;
+    if (!d.data || !d.data.length) throw new Error('empty chart data');
     wrap.style.display = 'block';
     if (title) title.textContent = sym + ' — ' + d.data.length + ' DAYS';
     var ema200Legend = document.getElementById('ema200-legend');
@@ -1267,7 +1267,16 @@ async function fetchAndDrawChart(sym) {
     if (d.squeeze) renderSqueeze(d.squeeze);
     if (d.fib) renderFib(d.fib);
   } catch(e) {
-    // Silently fail — chart is supplementary
+    // Used to fail silently and just leave the whole chart area blank with
+    // no explanation — "where did the graph go" with nothing to go on.
+    // Show that it actually failed instead of pretending nothing was meant
+    // to be there.
+    wrap.style.display = 'block';
+    if (title) title.textContent = sym + ' — CHART';
+    var canvas = document.getElementById('price-canvas');
+    if (canvas) { var ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+    var footer = document.getElementById('chart-footer');
+    if (footer) footer.innerHTML = '<span style="color:var(--amber)">⚠ Chart unavailable right now — '+sym+' chart data didn\'t load from the backend. Not a client-side issue; check the Railway service.</span>';
   }
 }
 
@@ -2072,6 +2081,15 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
   }
 
   var eid = prefix==='pillar'?'p':'s';
+  if (prefix==='pillar' && !t1p && !t2p && !t3p) {
+    // All three tiers failed but a trade still gets built at the DTE floor
+    // as a reference — that ambiguity (three red FAIL badges sitting right
+    // above a fully-formed trade card) is what reads as a real entry if you
+    // don't look closely. Make the state explicit instead of implicit.
+    legsHtml = '<div style="background:var(--red-dim);border:1px solid var(--red);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-3);margin-bottom:var(--sp-2);font-size:var(--fs-2)">'
+      +'<strong style="color:var(--red)">⚠ NO TIER QUALIFIES</strong> — built at the DTE floor as a reference only. Nothing here clears T1, T2, or T3. Not a recommended entry.'
+      +'</div>' + legsHtml;
+  }
   document.getElementById(eid+'-legs').innerHTML = legsHtml;
   if(prefix==='single') document.getElementById('s-trade-label').textContent = typeName.toUpperCase()+' — '+sym;
   document.getElementById(eid+'-limit').innerHTML = 'Limit: <strong>$'+spreadCredit.toFixed(2)+'</strong> CR, DAY &nbsp;·&nbsp; '+typeName+' &nbsp;·&nbsp; Verify in IBKR';
@@ -2124,7 +2142,7 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
   var halfSz = !!(RI[regVal] && RI[regVal].size === 'Half');
   var sizeCap = MAX_RISK_PER_TRADE * (halfSz ? 0.5 : 1);
   var suggContracts = Math.max(1, Math.floor(sizeCap / maxRisk));
-  var capReq = suggContracts * maxRisk;
+  var capReq = Math.round(suggContracts * maxRisk);
   var szEl = document.getElementById(eid+'-suggsize');
   if (!szEl) {
     szEl = document.createElement('div');
@@ -2327,8 +2345,11 @@ function checkCFU(suffix) {
   var move = getEffectiveMove();
   var html = '';
 
-  // Spread width sanity check
-  var strikeMatch = trade.match(/(\d+\.?\d*)[\s]*\/[\s]*(\d+\.?\d*)/);
+  // Spread width sanity check — prefer a $-prefixed strike pair (how IBKR
+  // fills and most pastes write strikes, e.g. "$135/130") over a bare
+  // number/number pattern, which was matching the trade DATE ("10/23")
+  // instead of the strikes whenever both appeared in the pasted text.
+  var strikeMatch = trade.match(/\$\s*(\d+\.?\d*)\s*\/\s*(\d+\.?\d*)/) || trade.match(/(\d+\.?\d*)\s*\/\s*(\d+\.?\d*)/);
   if (strikeMatch) {
     var s1=parseFloat(strikeMatch[1]),s2=parseFloat(strikeMatch[2]);
     var sw=Math.abs(s1-s2), mid=(s1+s2)/2;
