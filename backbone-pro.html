@@ -478,16 +478,6 @@ canvas{display:block;width:100%}
         </div>
         <!-- Metrics -->
         <div class="metrics" id="p-metrics"></div>
-        <!-- Annualised return -->
-        <div class="sd-box">
-          <div class="sd-title">ANNUALISED RETURN — ROO</div>
-          <div class="sd-tiles">
-            <div class="sd-tile"><div class="sd-val" id="p-ar-period">—</div><div class="sd-sig" id="p-ar-period-lbl">this trade</div></div>
-            <div class="sd-tile"><div class="sd-val" id="p-ar-week">—</div><div class="sd-sig">weekly equiv</div></div>
-            <div class="sd-tile"><div class="sd-val" id="p-ar-month">—</div><div class="sd-sig">monthly equiv</div></div>
-            <div class="sd-tile active"><div class="sd-val" id="p-ar-year">—</div><div class="sd-sig">annualised</div></div>
-          </div>
-        </div>
         <!-- Visuals -->
         <div class="vis-row">
           <div class="vis-box">
@@ -594,16 +584,6 @@ canvas{display:block;width:100%}
           <div class="limit-line" id="s-limit"></div>
         </div>
         <div class="metrics" id="s-metrics"></div>
-        <!-- Annualised return -->
-        <div class="sd-box">
-          <div class="sd-title">ANNUALISED RETURN — ROO</div>
-          <div class="sd-tiles">
-            <div class="sd-tile"><div class="sd-val" id="s-ar-period">—</div><div class="sd-sig" id="s-ar-period-lbl">this trade</div></div>
-            <div class="sd-tile"><div class="sd-val" id="s-ar-week">—</div><div class="sd-sig">weekly equiv</div></div>
-            <div class="sd-tile"><div class="sd-val" id="s-ar-month">—</div><div class="sd-sig">monthly equiv</div></div>
-            <div class="sd-tile active"><div class="sd-val" id="s-ar-year">—</div><div class="sd-sig">annualised</div></div>
-          </div>
-        </div>
         <div class="vis-row">
           <div class="vis-box">
             <div class="vis-title">PAYOFF AT EXPIRY</div>
@@ -1166,7 +1146,7 @@ function selectPillar(sym) {
   fetchAndDrawChart(sym);
   // If this pillar has been scanned before, restore the result
   if (d.price && d.iv && d.scanned) {
-    var dte = resolveDTE('p-dte', d.ivr||0, sym);
+    var dte = resolveDTE('p-dte', d.ivr||0);
     var tt = d.lastTT || getAutoTT();
     currentTT = tt;
     renderAnalysis('pillar', sym, parseFloat(d.price), parseFloat(d.iv), parseFloat(d.ivr||0), dte, tt, 0);
@@ -1209,34 +1189,10 @@ function renderT3Panel() {
 // which needs the Income tab's IBKR-feed architecture that doesn't exist
 // yet. Left in place rather than deleted so it's easy to bring back once
 // that's built.
-// Wires the sizing box to the $12.5K/trade cap already defined in
-// MAX_RISK_PER_TRADE (capital allocation reference above), scaled to half
-// when the active pillar's regime calls for half size (per the 21-EMA
-// regime guide). This was previously a stub that just hid the box.
 function renderPositionSizing(sym, maxRiskPerContract) {
   var box = document.getElementById('sizing-box');
-  if (!box) return;
-  if (!maxRiskPerContract || maxRiskPerContract <= 0) { box.style.display = 'none'; return; }
-
-  var regEl = document.getElementById('regime');
-  var regVal = regEl ? regEl.value : '';
-  var half = RI[regVal] && RI[regVal].size === 'Half';
-  var cap = MAX_RISK_PER_TRADE * (half ? 0.5 : 1);
-  var maxContracts = Math.max(1, Math.floor(cap / maxRiskPerContract));
-
-  var open = (pillarData[sym] && pillarData[sym].openContracts) || 0;
-  var openInput = document.getElementById('p-open-contracts');
-  if (openInput && document.activeElement !== openInput) openInput.value = open || '';
-
-  var pct = Math.min(100, Math.round((open / maxContracts) * 100));
-  var fill = document.getElementById('sizing-fill');
-  if (fill) {
-    fill.style.width = pct + '%';
-    fill.className = 'sizing-fill' + (open > maxContracts ? ' over' : pct >= 80 ? ' warn' : '');
-  }
-  var num = document.getElementById('sizing-num');
-  if (num) num.textContent = open + ' / ' + maxContracts + (half ? ' (half size)' : '');
-  box.style.display = 'flex';
+  if (box) box.style.display = 'none';
+  return;
 }
 function onOpenContractsInput() {
   var v = parseInt(document.getElementById('p-open-contracts').value) || 0;
@@ -1254,7 +1210,7 @@ async function fetchAndDrawChart(sym) {
   try {
     var r = await fetch(RAILWAY_BASE + 'chart/' + sym);
     var d = await r.json();
-    if (!d.data || !d.data.length) throw new Error('empty chart data');
+    if (!d.data || !d.data.length) return;
     wrap.style.display = 'block';
     if (title) title.textContent = sym + ' — ' + d.data.length + ' DAYS';
     var ema200Legend = document.getElementById('ema200-legend');
@@ -1267,16 +1223,7 @@ async function fetchAndDrawChart(sym) {
     if (d.squeeze) renderSqueeze(d.squeeze);
     if (d.fib) renderFib(d.fib);
   } catch(e) {
-    // Used to fail silently and just leave the whole chart area blank with
-    // no explanation — "where did the graph go" with nothing to go on.
-    // Show that it actually failed instead of pretending nothing was meant
-    // to be there.
-    wrap.style.display = 'block';
-    if (title) title.textContent = sym + ' — CHART';
-    var canvas = document.getElementById('price-canvas');
-    if (canvas) { var ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
-    var footer = document.getElementById('chart-footer');
-    if (footer) footer.innerHTML = '<span style="color:var(--amber)">⚠ Chart unavailable right now — '+sym+' chart data didn\'t load from the backend. Not a client-side issue; check the Railway service.</span>';
+    // Silently fail — chart is supplementary
   }
 }
 
@@ -1701,18 +1648,6 @@ async function fetchPillarPrice() {
   } catch(e) {
     msg.innerHTML = '<span style="color:var(--amber)">failed — enter manually</span>';
   }
-  // VIX is a macro-level reading, not pillar-specific — pull it here too
-  // whenever it's empty, regardless of which of the 7 pillars we're on.
-  // The plain /price endpoint above doesn't carry it, so this piggybacks
-  // on the FlashAlpha iv/ endpoint just for the vix field.
-  var vixEl = document.getElementById('vix');
-  if (vixEl && !vixEl.value) {
-    try {
-      var vr = await fetch(RAILWAY_BASE + 'iv/SPY');
-      var vd = await vr.json();
-      if (vd.vix) { vixEl.value = vd.vix; onSessChange(); }
-    } catch(e) { /* silent — VIX stays manual-entry on failure */ }
-  }
 }
 
 function clearPillar() {
@@ -1787,7 +1722,7 @@ async function fetchEarningsForTicker(sym) {
     document.getElementById('fund-eps').textContent = (d.epsGrowth!=null) ? (d.epsGrowth>=0?'+':'')+d.epsGrowth+'%' : '—';
     document.getElementById('fund-rev').textContent = (d.revenueGrowth!=null) ? (d.revenueGrowth>=0?'+':'')+d.revenueGrowth+'%' : '—';
     document.getElementById('fund-next').textContent = d.nextEarnings || '—';
-    var dte = resolveDTE('s-dte', 0, sym);
+    var dte = resolveDTE('s-dte', 0);
     if (d.nextEarnings) {
       var days = daysAway(d.nextEarnings);
       var note = document.getElementById('fund-earnings-note');
@@ -1800,6 +1735,76 @@ async function fetchEarningsForTicker(sym) {
   } catch(e) {
     panel.style.display = 'none'; // silently degrade — endpoint not deployed yet
   }
+}
+
+// ── EXPIRY SNAPPING ───────────────────────────────────────────────────────────
+// today + DTE is not a real contract date. This snaps the target DTE to the
+// nearest REAL listed expiration using the actual listing rules:
+//   • SPY/QQQ list daily (Mon–Fri) expirations
+//   • everything else: Friday weeklies; if that Friday is an exchange holiday
+//     the weekly moves to Thursday
+//   • no expirations on NYSE holidays
+// "Today" is taken in New York time, not Adelaide — during the ACST session
+// (11pm–5:30am) Adelaide is already on the next calendar day.
+var DAILY_EXPIRY = { SPY:1, QQQ:1 };
+var VERIFIED_WEEKLY = { IWM:1, GLD:1, XLF:1, XLE:1, EEM:1 };
+var NYSE_HOLIDAYS = {
+  // 2026
+  '2026-01-01':1,'2026-01-19':1,'2026-02-16':1,'2026-04-03':1,'2026-05-25':1,
+  '2026-06-19':1,'2026-07-03':1,'2026-09-07':1,'2026-11-26':1,'2026-12-25':1,
+  // 2027
+  '2027-01-01':1,'2027-01-18':1,'2027-02-15':1,'2027-03-26':1,'2027-05-31':1,
+  '2027-06-18':1,'2027-07-05':1,'2027-09-06':1,'2027-11-25':1,'2027-12-24':1
+};
+var HOLIDAY_TABLE_LAST_YEAR = 2027; // extend NYSE_HOLIDAYS before 2028
+
+function nyToday() {
+  // Calendar date in America/New_York as a UTC-midnight Date (no DST drift)
+  var parts = new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',
+    year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).split('-');
+  return new Date(Date.UTC(+parts[0], +parts[1]-1, +parts[2]));
+}
+function isoDay(d) { return d.toISOString().slice(0,10); }
+function isTradingDay(d) {
+  var wd = d.getUTCDay();
+  return wd!==0 && wd!==6 && !NYSE_HOLIDAYS[isoDay(d)];
+}
+function isListedExpiry(sym, d) {
+  if (!isTradingDay(d)) return false;
+  if (DAILY_EXPIRY[sym]) return true;
+  var wd = d.getUTCDay();
+  if (wd===5) return true;                                   // Friday weekly
+  if (wd===4) {                                              // Thursday if Fri is a holiday
+    var fri = new Date(d.getTime()+86400000);
+    return !!NYSE_HOLIDAYS[isoDay(fri)];
+  }
+  return false;
+}
+function snapExpiry(sym, targetDte) {
+  var today = nyToday(), best = null;
+  // search ±10 calendar days around target; tie → later date (more premium/time)
+  for (var off=0; off<=10 && !best; off++) {
+    var cands = off===0 ? [targetDte] : [targetDte+off, targetDte-off];
+    for (var i=0;i<cands.length;i++) {
+      var n = cands[i]; if (n<1) continue;
+      var d = new Date(today.getTime()+n*86400000);
+      if (isListedExpiry(sym,d)) { best = {dte:n, date:d}; break; }
+    }
+  }
+  if (!best) best = {dte:targetDte, date:new Date(today.getTime()+targetDte*86400000)};
+  best.target = targetDte;
+  best.kind = DAILY_EXPIRY[sym] ? 'daily' : VERIFIED_WEEKLY[sym] ? 'weekly' : 'unverified';
+  best.stale = today.getUTCFullYear() > HOLIDAY_TABLE_LAST_YEAR;
+  return best;
+}
+function expiryNoteHtml(e) {
+  var shift = e.dte===e.target ? '' : ' · snapped from '+e.target+' → '+e.dte+' DTE';
+  var msg, col = 'var(--text-muted)';
+  if (e.stale) { msg='⚠ Holiday table out of date — update NYSE_HOLIDAYS'; col='var(--amber)'; }
+  else if (e.kind==='unverified') { msg='Friday expiry assumed — confirm this ticker lists weeklies (may be monthly only)'; col='var(--amber)'; }
+  else if (e.kind==='weekly' && e.dte>35) { msg='Weekly listing at '+e.dte+' DTE not guaranteed — if missing, use the 3rd-Friday monthly'; col='var(--amber)'; }
+  else msg = 'Real listed expiry ('+e.kind+')';
+  return '<div style="font-size:10px;color:'+col+';margin-top:4px">📅 '+msg+shift+'</div>';
 }
 
 // ── MATHS ─────────────────────────────────────────────────────────────────────
@@ -1866,17 +1871,10 @@ function getAutoTT() {
   return ri.trade.toLowerCase();
 }
 
-function resolveDTE(selId, ivr, sym) {
+function resolveDTE(selId, ivr) {
   var el = document.getElementById(selId);
   var v = el ? el.value : 'auto';
-  if (!v || v==='auto') {
-    if (ivr>=40) return 32;
-    if (ivr>=25) return 21;
-    // T3's 7-DTE weekly fallback is SPY-only per spec. Any other pillar
-    // that doesn't clear IVR 25 floors at T2's minimum (14d) instead of
-    // silently inheriting the SPY weekly spec.
-    return sym==='SPY' ? 7 : 14;
-  }
+  if (!v || v==='auto') return ivr>=40?32:ivr>=25?21:7;
   var n = parseInt(v);
   return isNaN(n) ? 21 : n;
 }
@@ -1889,7 +1887,7 @@ function scanPillar() {
   var ivr = parseFloat(document.getElementById('p-ivr').value) || 0;
   if (!price || !iv) { document.getElementById('p-status').textContent='Enter price and IV% first'; return; }
 
-  var dte = resolveDTE('p-dte', ivr, activePillar);
+  var dte = resolveDTE('p-dte', ivr);
   if (!currentTT) currentTT = getAutoTT();
   var tt = currentTT;
   // Ensure pillarData exists before renderAnalysis writes beyondSD to it
@@ -1915,7 +1913,7 @@ function setTT(t) {
   var price=parseFloat(document.getElementById('p-price').value);
   var iv=parseFloat(document.getElementById('p-iv').value);
   var ivr=parseFloat(document.getElementById('p-ivr').value)||0;
-  var dte=resolveDTE('p-dte',ivr,activePillar);
+  var dte=resolveDTE('p-dte',ivr);
   if(price&&iv) renderAnalysis('pillar',activePillar,price,iv,ivr,dte,t,0);
 }
 
@@ -1936,7 +1934,7 @@ function scanSingle() {
   var basis = parseFloat(document.getElementById('s-basis').value) || 0;
   if (!sym||!price||!iv) { document.getElementById('s-status').textContent='Enter ticker, price and IV%'; return; }
   saveWatch(sym);
-  var dte = resolveDTE('s-dte', ivr, sym);
+  var dte = resolveDTE('s-dte', ivr);
   if (!singleTT) singleTT = getAutoTT();
   renderAnalysis('single', sym, price, iv, ivr, dte, singleTT, basis);
   } catch(err) {
@@ -1947,6 +1945,10 @@ function scanSingle() {
 
 // ── CORE RENDER ───────────────────────────────────────────────────────────────
 function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
+  // Snap to a real listed expiration FIRST so strikes, credit, PoP, SD
+  // cushion and tier checks are all computed on a contract that exists.
+  var expInfo = snapExpiry(sym, dte);
+  dte = expInfo.dte;
   var isIC = tt==='ic', isCsp=tt==='csp', isCC=tt==='cc';
   var dir = (tt==='bps'||tt==='csp') ? 'put' : 'call';
   var delta = (isCsp||isCC) ? 0.25 : (tt==='bps'||tt==='bcs') ? 0.16 : 0.16;
@@ -1972,14 +1974,9 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
     longS = dir==='put' ? shortS-w : shortS+w;
     credit = estCredit(price,iv,dte,shortS,dir);
     var longCr = estCredit(price,iv,dte,longS,dir);
-    // Covered call has no long leg either — same treatment as CSP below,
-    // not the vertical-spread math (that was the bug: CC used to subtract
-    // a phantom long-call premium and size max risk off spread width
-    // instead of cost basis).
-    var basisUsed = isCC ? (basis || price) : 0;
-    spreadCredit = (isCsp||isCC) ? credit : Math.max(0.05, credit - longCr);
-    maxRisk = isCsp ? shortS*100 : isCC ? Math.max(1, basisUsed-credit)*100 : (w-spreadCredit)*100;
-    be = isCC ? (basisUsed-credit) : (dir==='put' ? shortS-spreadCredit : shortS+spreadCredit);
+    spreadCredit = isCsp ? credit : Math.max(0.05, credit - longCr);
+    maxRisk = isCsp ? shortS*100 : (w-spreadCredit)*100;
+    be = dir==='put' ? shortS-spreadCredit : shortS+spreadCredit;
   }
 
   var sd13 = sdMove(price,iv,dte,1.3);
@@ -1990,11 +1987,10 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
   var beyond10 = dir==='put' ? shortS<b10 : shortS>b10;
   var popVal = Math.round((1-delta)*100);
   var cushion = (Math.abs(price-shortS)/price*100).toFixed(1);
-  var roc = isCsp ? (spreadCredit/shortS*100).toFixed(1) : isCC ? (credit/basisUsed*100).toFixed(1) : (spreadCredit/w*100).toFixed(1);
+  var roc = isCsp ? (spreadCredit/shortS*100).toFixed(1) : (spreadCredit/w*100).toFixed(1);
 
   // Expiry label
-  var expDate = new Date(); expDate.setDate(expDate.getDate()+dte);
-  var expStr = expDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});
+  var expStr = expInfo.date.toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'2-digit'});
   var typeName = tt==='bps'?'Bull Put Spread':tt==='bcs'?'Bear Call Spread':tt==='ic'?'Iron Condor':tt==='csp'?'Cash Secured Put':'Covered Call';
 
   // Trade type buttons highlight
@@ -2006,24 +2002,19 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
     // Tier + exec badges
     var ivOk=ivr>=25, moveOk=dir==='put'?(getEffectiveMove()==='down'):(getEffectiveMove()==='up');
     var tb=document.getElementById('tbadge');
-    // T3 is SPY-only by spec — any other pillar under IVR 25 floors at T2, it never becomes T3.
-    var tier=ivr>=40?'T1':ivr>=25?'T2':(sym==='SPY'?'T3':'T2');
+    var tier=ivr>=40?'T1':ivr>=25?'T2':'T3';
     tb.textContent=tier; tb.className='tbadge '+(tier==='T1'?'t1b':tier==='T2'?'t2b':'t3b'); tb.style.display='';
     var eb=document.getElementById('ebadge');
     eb.style.display='';
-    // Reuse the exact same pass/fail booleans the tier strip below uses —
-    // this badge used to re-derive its own (looser, uncapped) versions of
-    // T1/T2, which could disagree with the strip two inches below it.
-    var t1p=ivr>=40&&dte>=21&&dte<=45;
-    var t2p=ivr>=25&&ivr<40&&dte>=14&&dte<=21;
-    var t3p=(sym==='SPY')&&dte<=9&&(getEffectiveMove()==='down');
-    if(t1p&&beyond10){eb.textContent='✓ T1 QUALIFIES';eb.className='ebadge e-yes';}
-    else if(t2p&&beyond10){eb.textContent='✓ T2 QUALIFIES';eb.className='ebadge e-yes';}
+    if(ivr>=40&&dte>=21&&dte<=45&&beyond10){eb.textContent='✓ T1 QUALIFIES';eb.className='ebadge e-yes';}
+    else if(ivr>=25&&dte>=14&&beyond10){eb.textContent='✓ T2 QUALIFIES';eb.className='ebadge e-yes';}
     else if(beyond10){eb.textContent='T3 ONLY';eb.className='ebadge e-warn';}
     else{eb.textContent='⚠ CHECK FILTERS';eb.className='ebadge e-warn';}
     document.getElementById('active-px').textContent='$'+price.toFixed(2);
     // Tier strip
-    var ts=document.getElementById('tier-strip');
+    var t1p=ivr>=40&&dte>=21&&dte<=45;
+    var t2p=ivr>=25&&dte>=14&&dte<=45;
+    var t3p=(sym==='SPY')&&dte<=9&&(getEffectiveMove()==='down');
     var ts=document.getElementById('tier-strip');
     ts.innerHTML=
       '<div class="ts-card '+(t1p?'ts-pass-t1':'')+'">'
@@ -2080,16 +2071,8 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
       +'<div class="leg"><span class="leg-badge bto">BTO</span>'+sym+' '+expStr+' $'+longS.toFixed(2)+(dir==='put'?'P':'C')+'</div>';
   }
 
+  legsHtml += expiryNoteHtml(expInfo);
   var eid = prefix==='pillar'?'p':'s';
-  if (prefix==='pillar' && !t1p && !t2p && !t3p) {
-    // All three tiers failed but a trade still gets built at the DTE floor
-    // as a reference — that ambiguity (three red FAIL badges sitting right
-    // above a fully-formed trade card) is what reads as a real entry if you
-    // don't look closely. Make the state explicit instead of implicit.
-    legsHtml = '<div style="background:var(--red-dim);border:1px solid var(--red);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-3);margin-bottom:var(--sp-2);font-size:var(--fs-2)">'
-      +'<strong style="color:var(--red)">⚠ NO TIER QUALIFIES</strong> — built at the DTE floor as a reference only. Nothing here clears T1, T2, or T3. Not a recommended entry.'
-      +'</div>' + legsHtml;
-  }
   document.getElementById(eid+'-legs').innerHTML = legsHtml;
   if(prefix==='single') document.getElementById('s-trade-label').textContent = typeName.toUpperCase()+' — '+sym;
   document.getElementById(eid+'-limit').innerHTML = 'Limit: <strong>$'+spreadCredit.toFixed(2)+'</strong> CR, DAY &nbsp;·&nbsp; '+typeName+' &nbsp;·&nbsp; Verify in IBKR';
@@ -2107,51 +2090,6 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
   }
   tpEl.innerHTML = 'Take profit (50%): <strong style="color:var(--green-bright)">$'+takeProfitPrice.toFixed(2)+'</strong> buy-to-close &nbsp;·&nbsp; set as GTC once filled';
 
-  // Min-credit vs tier spec — informational only, never gates pass/fail.
-  // Two reasons per HH: the $0.80/$0.57/$0.50 floors are too strict to hard-block on,
-  // and the credit number itself is a Black-Scholes estimate, not a live quote,
-  // so this is a rough flag to eyeball, not something to trust to the cent.
-  var anchorEl = tpEl;
-  if (prefix === 'pillar') {
-    var MIN_CREDIT = {T1:0.80, T2:0.57, T3:0.50};
-    var minC = MIN_CREDIT[tier];
-    var mcEl = document.getElementById(eid+'-mincredit');
-    if (!mcEl) {
-      mcEl = document.createElement('div');
-      mcEl.id = eid+'-mincredit';
-      mcEl.style.cssText = 'font-size:var(--fs-1);margin-top:4px';
-      tpEl.insertAdjacentElement('afterend', mcEl);
-    }
-    if (minC != null) {
-      var meetsMin = spreadCredit >= minC;
-      mcEl.style.color = meetsMin ? 'var(--text-muted)' : 'var(--amber)';
-      mcEl.innerHTML = (meetsMin?'✓':'⚠')+' Credit vs '+tier+' min $'+minC.toFixed(2)+' — '+(meetsMin?'meets it':'below it')+' <span style="opacity:.65">(estimate, not a live quote — flag only, not enforced)</span>';
-    } else {
-      mcEl.innerHTML = '';
-    }
-    anchorEl = mcEl;
-  }
-
-  // Suggested size — how many contracts fit the $12.5K max-per-trade cap
-  // (MAX_RISK_PER_TRADE), halved when the active regime calls for half size.
-  // This is the cap-derived max, not a personal comfort limit — HH's own
-  // largest fill to date is 5, scaling toward 20, neither of which this
-  // formula knows about.
-  var regEl = document.getElementById('regime');
-  var regVal = regEl ? regEl.value : '';
-  var halfSz = !!(RI[regVal] && RI[regVal].size === 'Half');
-  var sizeCap = MAX_RISK_PER_TRADE * (halfSz ? 0.5 : 1);
-  var suggContracts = Math.max(1, Math.floor(sizeCap / maxRisk));
-  var capReq = Math.round(suggContracts * maxRisk);
-  var szEl = document.getElementById(eid+'-suggsize');
-  if (!szEl) {
-    szEl = document.createElement('div');
-    szEl.id = eid+'-suggsize';
-    szEl.style.cssText = 'font-size:var(--fs-2);color:var(--text-dim);margin-top:4px';
-    anchorEl.insertAdjacentElement('afterend', szEl);
-  }
-  szEl.innerHTML = 'Suggested size: <strong style="color:var(--text)">'+suggContracts+' contract'+(suggContracts===1?'':'s')+'</strong> ('+(halfSz?'half size, ':'')+'≤ $'+sizeCap.toLocaleString()+' cap) &nbsp;·&nbsp; Capital required: <strong style="color:var(--amber)">$'+capReq.toLocaleString()+'</strong>';
-
   // Metrics
   var metrics=[
     {l:'PoP',v:popVal+'%',c:'vg',s:'prob of profit'},
@@ -2164,24 +2102,6 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
   document.getElementById(eid+'-metrics').innerHTML = metrics.map(function(m){
     return '<div class="mt"><div class="mt-label">'+m.l+'</div><div class="mt-val '+m.c+'">'+m.v+'</div><div class="mt-sub">'+m.s+'</div></div>';
   }).join('');
-
-  // Annualised return (ROO) — same logic as the classic covered-call/CSP ROO
-  // table: period return scaled to 7/30/365 day equivalents. roc above is
-  // the period return already (credit as % of capital at risk), so we just
-  // rescale it by the trade's actual DTE.
-  var roocPct = parseFloat(roc);
-  var arPeriodEl = document.getElementById(eid+'-ar-period');
-  var arPeriodLblEl = document.getElementById(eid+'-ar-period-lbl');
-  var arWeekEl = document.getElementById(eid+'-ar-week');
-  var arMonthEl = document.getElementById(eid+'-ar-month');
-  var arYearEl = document.getElementById(eid+'-ar-year');
-  if (arPeriodEl && dte > 0 && !isNaN(roocPct)) {
-    arPeriodEl.textContent = roocPct.toFixed(2)+'%';
-    arPeriodLblEl.textContent = dte+'d trade';
-    arWeekEl.textContent = (roocPct*7/dte).toFixed(2)+'%';
-    arMonthEl.textContent = (roocPct*30/dte).toFixed(2)+'%';
-    arYearEl.textContent = (roocPct*365/dte).toFixed(1)+'%';
-  }
 
   // SD
   var s10=sdMove(price,iv,dte,1.0),s13=sdMove(price,iv,dte,1.3),s15=sdMove(price,iv,dte,1.5),s20=sdMove(price,iv,dte,2.0);
@@ -2198,13 +2118,13 @@ function renderAnalysis(prefix, sym, price, iv, ivr, dte, tt, basis) {
 
   // Draw visuals
   setTimeout(function(){
-    drawPayoff(eid+'-canvas',shortS,longS,spreadCredit,isIC?w:isCsp?shortS:w,dir,price,isIC,isCC,basisUsed);
+    drawPayoff(eid+'-canvas',shortS,longS,spreadCredit,isIC?w:isCsp?shortS:w,dir,price,isIC);
     drawEMBar(eid+'-embar',eid+'-emresult',price,s13,s10,shortS,dir,beyond13);
   },50);
 }
 
 // ── PAYOFF DIAGRAM ────────────────────────────────────────────────────────────
-function drawPayoff(id, shortS, longS, credit, width, dir, spot, isIC, isCC, basisUsed) {
+function drawPayoff(id, shortS, longS, credit, width, dir, spot, isIC) {
   var canvas = document.getElementById(id);
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
@@ -2220,16 +2140,10 @@ function drawPayoff(id, shortS, longS, credit, width, dir, spot, isIC, isCC, bas
   var hi = Math.max(spot,shortS,longS)*1.08;
   var rng = hi-lo;
   function toX(p){return Math.round(((p-lo)/rng)*(W-8)+4);}
+  function toY(pnl){var tot=maxP+maxL;return Math.round(8+(1-(pnl+maxL)/tot)*72);}
 
   var pts;
-  if(isCC){
-    // Covered call: still long the stock, so P&L moves 1:1 with price below
-    // the strike, then caps at expiry once called away — the opposite shape
-    // from a bear call spread, not a vertical.
-    var capPnl = (shortS - basisUsed + credit) * 100;
-    var loPnl = (lo - basisUsed + credit) * 100;
-    pts=[[lo,loPnl],[shortS,capPnl],[hi,capPnl]];
-  } else if(isIC){
+  if(isIC){
     // Show put side of IC in payoff
     pts=[[lo,-maxL],[longS,-maxL],[shortS,maxP],[spot,maxP]];
     if(spot>shortS) pts=[[lo,-maxL],[longS,-maxL],[shortS,maxP],[spot,maxP]];
@@ -2239,14 +2153,6 @@ function drawPayoff(id, shortS, longS, credit, width, dir, spot, isIC, isCC, bas
   } else {
     pts=[[lo,maxP],[shortS,maxP],[longS,-maxL],[hi,-maxL]];
   }
-
-  // Scale off the actual plotted points (always including zero so the
-  // dashed breakeven line lands correctly) rather than the maxP/maxL pair —
-  // equivalent for spreads/IC, and the only way to scale CC's uncapped-below shape.
-  var yVals = pts.map(function(p){return p[1];}).concat([0]);
-  var yMin = Math.min.apply(null,yVals), yMax = Math.max.apply(null,yVals);
-  var ySpan = (yMax-yMin) || 1;
-  function toY(pnl){return Math.round(8+(1-(pnl-yMin)/ySpan)*72);}
 
   // Zero line
   ctx.beginPath(); ctx.moveTo(0,toY(0)); ctx.lineTo(W,toY(0));
@@ -2270,8 +2176,8 @@ function drawPayoff(id, shortS, longS, credit, width, dir, spot, isIC, isCC, bas
 
   // Labels
   ctx.font='bold 10px -apple-system,sans-serif';
-  ctx.fillStyle='#3fb950'; ctx.fillText('+$'+yMax.toFixed(0),4,16);
-  ctx.fillStyle='#f85149'; ctx.fillText('-$'+Math.abs(yMin).toFixed(0),4,88);
+  ctx.fillStyle='#3fb950'; ctx.fillText('+$'+maxP.toFixed(0),4,16);
+  ctx.fillStyle='#f85149'; ctx.fillText('-$'+maxL.toFixed(0),4,88);
   ctx.fillStyle='rgba(88,166,255,0.7)'; ctx.font='9px -apple-system,sans-serif';
   ctx.fillText('spot',Math.min(W-32,Math.max(4,sx-10)),toY(0)-4);
 }
@@ -2345,11 +2251,8 @@ function checkCFU(suffix) {
   var move = getEffectiveMove();
   var html = '';
 
-  // Spread width sanity check — prefer a $-prefixed strike pair (how IBKR
-  // fills and most pastes write strikes, e.g. "$135/130") over a bare
-  // number/number pattern, which was matching the trade DATE ("10/23")
-  // instead of the strikes whenever both appeared in the pasted text.
-  var strikeMatch = trade.match(/\$\s*(\d+\.?\d*)\s*\/\s*(\d+\.?\d*)/) || trade.match(/(\d+\.?\d*)\s*\/\s*(\d+\.?\d*)/);
+  // Spread width sanity check
+  var strikeMatch = trade.match(/(\d+\.?\d*)[\s]*\/[\s]*(\d+\.?\d*)/);
   if (strikeMatch) {
     var s1=parseFloat(strikeMatch[1]),s2=parseFloat(strikeMatch[2]);
     var sw=Math.abs(s1-s2), mid=(s1+s2)/2;
