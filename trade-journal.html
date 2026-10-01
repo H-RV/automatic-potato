@@ -16,7 +16,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg0);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;font-size:var(--fs-3);line-height:1.5;min-height:100vh}
-.app{max-width:1000px;margin:0 auto;padding:var(--sp-4)}
+.app{max-width:1080px;margin:0 auto;padding:var(--sp-4)}
 
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4);padding-bottom:var(--sp-3);border-bottom:1px solid var(--border)}
 .htitle{font-size:var(--fs-4);font-weight:600;letter-spacing:-.3px}
@@ -92,6 +92,57 @@ tr:hover td{background:var(--bg2)}
 .gap-note{font-size:var(--fs-1);color:var(--text-muted);line-height:1.6;padding:var(--sp-3);background:var(--bg2);border-radius:var(--r-sm);margin-top:var(--sp-3)}
 .empty{text-align:center;padding:var(--sp-6) var(--sp-4);color:var(--text-muted);font-size:var(--fs-3)}
 .pos{color:var(--green-bright)}.neg{color:var(--red)}
+
+/* ── Performance block ─────────────────────────────────────────── */
+.perf{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:var(--sp-3);overflow:hidden}
+.perf-top{display:flex;justify-content:space-between;align-items:flex-end;gap:var(--sp-4);padding:var(--sp-4) var(--sp-4) var(--sp-2);flex-wrap:wrap}
+.perf-title{font-size:var(--fs-3);color:var(--text-dim);font-weight:600}
+.perf-sub{font-size:var(--fs-2);color:var(--text-muted);margin-top:2px}
+.perf-kpis{display:flex;gap:var(--sp-6);flex-wrap:wrap}
+.kpi-l{font-size:var(--fs-2);color:var(--text-muted)}
+.kpi-v{font-size:var(--fs-5);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
+.eq-wrap{position:relative;padding:0 var(--sp-4)}
+.eq-svg{display:block;width:100%;height:200px}
+.dd-svg{display:block;width:100%;height:64px}
+.eq-axis{position:absolute;right:calc(var(--sp-4) + 4px);font-size:var(--fs-1);color:var(--text-muted);font-variant-numeric:tabular-nums;pointer-events:none}
+.eq-dates{display:flex;justify-content:space-between;font-size:var(--fs-1);color:var(--text-muted);padding:4px var(--sp-4) var(--sp-3)}
+.eq-tip{position:absolute;top:6px;pointer-events:none;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 9px;font-size:var(--fs-2);white-space:nowrap;display:none;z-index:2;font-variant-numeric:tabular-nums}
+.eq-cross{position:absolute;top:0;bottom:0;width:1px;background:var(--text-muted);opacity:.5;display:none;pointer-events:none}
+
+.perf-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--border)}
+.pcell{padding:var(--sp-4);border-right:1px solid var(--border)}
+.pcell:last-child{border-right:none}
+.pcell-h{font-size:var(--fs-2);color:var(--text-dim);font-weight:600;margin-bottom:var(--sp-3)}
+.pcell-foot{font-size:var(--fs-2);color:var(--text-muted);margin-top:var(--sp-2);line-height:1.5}
+
+.edge-track{position:relative;height:14px;background:var(--bg3);border-radius:7px;margin:22px 0 8px}
+.edge-fill{position:absolute;left:0;top:0;bottom:0;border-radius:7px}
+.edge-mark{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--text)}
+.edge-mark span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:var(--fs-1);color:var(--text-dim);white-space:nowrap;margin-bottom:2px}
+
+.payoff-row{display:flex;align-items:center;gap:var(--sp-2);margin-bottom:6px}
+.payoff-l{flex:0 0 58px;font-size:var(--fs-2);color:var(--text-muted)}
+.payoff-bar{height:12px;border-radius:3px}
+.payoff-v{font-size:var(--fs-2);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.tape{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:var(--sp-2)}
+.tape i{display:block;width:7px;height:18px;border-radius:2px}
+.streaks{display:flex;gap:var(--sp-4);font-size:var(--fs-2);color:var(--text-muted)}
+.streaks b{font-size:var(--fs-4);font-variant-numeric:tabular-nums}
+
+.perf-strip{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--border)}
+.ps{padding:var(--sp-3) var(--sp-2);text-align:center;border-right:1px solid var(--border)}
+.ps:last-child{border-right:none}
+.ps-l{font-size:var(--fs-1);color:var(--text-muted)}
+.ps-v{font-size:var(--fs-4);font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
+.perf-note{font-size:var(--fs-2);color:var(--amber);padding:0 var(--sp-4) var(--sp-3)}
+
+@media (max-width:720px){
+  .perf-grid{grid-template-columns:1fr}
+  .pcell{border-right:none;border-bottom:1px solid var(--border)}
+  .perf-strip{grid-template-columns:repeat(3,1fr)}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
@@ -203,6 +254,148 @@ function monthLabel(m) {
 
 function setMonth(m) { selectedMonth = m; render(); }
 
+
+// ── PERFORMANCE BLOCK ────────────────────────────────────────────────────────
+// Closed trades only, in close-date order. Everything here is derived from
+// net P/L per position — no account size needed, so no % returns / CAGR.
+function fmt$(v, sign) {
+  var a = Math.abs(v), str = a >= 10000 ? (a/1000).toFixed(1)+'k' : a.toFixed(0);
+  return (v < 0 ? '−$' : (sign ? '+$' : '$')) + str;
+}
+function perfStats(journal) {
+  var closed = journal.filter(function(j){ return j.status === 'closed' && j.pnl !== 0; })
+    .sort(function(a,b){ return (a.closeDate||a.date) < (b.closeDate||b.date) ? -1 : 1; });
+  var n = closed.length;
+  var wins = closed.filter(function(j){ return j.pnl > 0; });
+  var losses = closed.filter(function(j){ return j.pnl < 0; });
+  var grossW = wins.reduce(function(s,j){ return s+j.pnl; },0);
+  var grossL = -losses.reduce(function(s,j){ return s+j.pnl; },0);
+  var avgW = wins.length ? grossW/wins.length : 0, avgL = losses.length ? grossL/losses.length : 0;
+  var cum = 0, peak = 0, maxDD = 0, curve = [], dd = [];
+  closed.forEach(function(j){
+    cum += j.pnl; peak = Math.max(peak, cum);
+    var d = cum - peak; maxDD = Math.min(maxDD, d);
+    curve.push(cum); dd.push(d);
+  });
+  var maxW = 0, maxL = 0, rW = 0, rL = 0;
+  closed.forEach(function(j){
+    if (j.pnl > 0) { rW++; rL = 0; } else { rL++; rW = 0; }
+    maxW = Math.max(maxW, rW); maxL = Math.max(maxL, rL);
+  });
+  function avgHold(arr){ var k = arr.filter(function(j){ return j.daysHeld != null; });
+    return k.length ? k.reduce(function(s,j){ return s+j.daysHeld; },0)/k.length : null; }
+  return {
+    closed: closed, n: n, wins: wins.length, losses: losses.length,
+    winRate: n ? wins.length/n : 0,
+    breakeven: (avgW+avgL) > 0 ? avgL/(avgW+avgL) : 0,   // win rate needed to break even
+    avgW: avgW, avgL: avgL, payoff: avgL ? avgW/avgL : null,
+    pf: grossL ? grossW/grossL : null,
+    expectancy: n ? (grossW-grossL)/n : 0,
+    net: grossW-grossL, maxDD: maxDD, recovery: maxDD ? (grossW-grossL)/-maxDD : null,
+    curve: curve, dd: dd, maxWinStreak: maxW, maxLossStreak: maxL,
+    holdW: avgHold(wins), holdL: avgHold(losses), current: rW ? {k:'win',n:rW} : {k:'loss',n:rL}
+  };
+}
+
+function perfHtml(st, label) {
+  if (st.n < 2) return '';
+  var W = 1000, H = 200, DH = 64;
+  var lo = Math.min(0, Math.min.apply(null, st.curve)), hi = Math.max(0, Math.max.apply(null, st.curve));
+  var pad = (hi-lo)*0.08 || 1; lo -= pad; hi += pad;
+  var x = function(i){ return st.n === 1 ? 0 : i/(st.n-1)*W; };
+  var y = function(v){ return H - (v-lo)/(hi-lo)*H; };
+  var line = st.curve.map(function(v,i){ return (i?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1); }).join('');
+  var area = line + 'L'+W+','+y(0).toFixed(1)+'L0,'+y(0).toFixed(1)+'Z';
+  var ddLo = Math.min(-1, st.maxDD);
+  var dy = function(v){ return v/ddLo*DH; };
+  var ddPath = 'M0,0' + st.dd.map(function(v,i){ return 'L'+x(i).toFixed(1)+','+dy(v).toFixed(1); }).join('') + 'L'+W+',0Z';
+  var up = st.net >= 0, col = up ? '#3fb950' : '#f85149';
+  var first = st.closed[0], last = st.closed[st.n-1];
+
+  var h = '<div class="perf">';
+  h += '<div class="perf-top"><div><div class="perf-title">Equity curve</div><div class="perf-sub">' + label + ', ' + st.n + ' closed trades in close order</div></div>'
+    + '<div class="perf-kpis">'
+    + '<div><div class="kpi-l">Net</div><div class="kpi-v ' + (up?'pos':'neg') + '">' + fmt$(st.net,true) + '</div></div>'
+    + '<div><div class="kpi-l">Max drawdown</div><div class="kpi-v neg">' + fmt$(st.maxDD) + '</div></div>'
+    + '<div><div class="kpi-l">Expectancy</div><div class="kpi-v ' + (st.expectancy>=0?'pos':'neg') + '">' + fmt$(st.expectancy,true) + '<span style="font-size:var(--fs-2);color:var(--text-muted);font-weight:500"> /trade</span></div></div>'
+    + '</div></div>';
+
+  h += '<div class="eq-wrap" id="eqWrap">'
+    + '<div class="eq-axis" style="top:0">' + fmt$(hi) + '</div>'
+    + '<div class="eq-axis" style="top:' + (y(0)/H*200 - 6).toFixed(0) + 'px">$0</div>'
+    + '<svg class="eq-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
+    + '<defs><linearGradient id="eqg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity=".28"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'
+    + '<line x1="0" x2="'+W+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" stroke="#484f58" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>'
+    + '<path d="'+area+'" fill="url(#eqg)"/>'
+    + '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>'
+    + '</svg>'
+    + '<svg class="dd-svg" viewBox="0 0 '+W+' '+DH+'" preserveAspectRatio="none" aria-label="Drawdown from peak">'
+    + '<path d="'+ddPath+'" fill="rgba(248,81,73,.35)" stroke="#f85149" stroke-width="1" vector-effect="non-scaling-stroke"/>'
+    + '</svg>'
+    + '<div class="eq-cross" id="eqCross"></div><div class="eq-tip" id="eqTip"></div>'
+    + '</div>'
+    + '<div class="eq-dates"><span>' + (first.closeDate||first.date) + '</span><span>drawdown from peak shown below the curve</span><span>' + (last.closeDate||last.date) + '</span></div>';
+  if (st.n < 30) h += '<div class="perf-note">' + st.n + ' trades is a small sample — treat these ratios as directional until you pass about 30.</div>';
+
+  // Edge: actual win rate vs the win rate this payoff needs to break even
+  var wr = st.winRate*100, be = st.breakeven*100, edgeOk = wr > be;
+  h += '<div class="perf-grid">';
+  h += '<div class="pcell"><div class="pcell-h">Edge</div>'
+    + '<div class="edge-track"><div class="edge-fill" style="width:'+wr.toFixed(1)+'%;background:'+(edgeOk?'#3fb950':'#f85149')+'"></div>'
+    + '<div class="edge-mark" style="left:'+be.toFixed(1)+'%"><span>break-even '+be.toFixed(0)+'%</span></div></div>'
+    + '<div style="font-size:var(--fs-5);font-weight:700" class="'+(edgeOk?'pos':'neg')+'">'+wr.toFixed(0)+'% win rate</div>'
+    + '<div class="pcell-foot">With your average win and loss, you need '+be.toFixed(0)+'% to break even. '
+    + (edgeOk ? 'You are '+(wr-be).toFixed(0)+' points above that line.' : 'You are '+(be-wr).toFixed(0)+' points below it.') + '</div></div>';
+
+  // Payoff: average win vs average loss, drawn to scale
+  var mx = Math.max(st.avgW, st.avgL) || 1;
+  h += '<div class="pcell"><div class="pcell-h">Payoff</div>'
+    + '<div class="payoff-row"><div class="payoff-l">Avg win</div><div class="payoff-bar" style="width:'+(st.avgW/mx*60).toFixed(0)+'%;background:#3fb950"></div><div class="payoff-v pos">'+fmt$(st.avgW,true)+'</div></div>'
+    + '<div class="payoff-row"><div class="payoff-l">Avg loss</div><div class="payoff-bar" style="width:'+(st.avgL/mx*60).toFixed(0)+'%;background:#f85149"></div><div class="payoff-v neg">'+fmt$(-st.avgL)+'</div></div>'
+    + '<div class="payoff-row" style="margin-top:10px"><div class="payoff-l">Days held</div><div class="payoff-v" style="color:var(--text-dim)">'
+    + (st.holdW!=null?'<span class="pos">'+st.holdW.toFixed(1)+'d</span> winners':'') + (st.holdW!=null&&st.holdL!=null?' vs ':'')
+    + (st.holdL!=null?'<span class="neg">'+st.holdL.toFixed(1)+'d</span> losers':'') + '</div></div>'
+    + '<div class="pcell-foot">Each loss costs '+(st.payoff?(1/st.payoff).toFixed(2):'—')+'× an average win.</div></div>';
+
+  // Trade tape + streaks
+  var tape = st.closed.slice(-60).map(function(j){
+    var a = Math.min(1, 0.35 + Math.abs(j.pnl)/(mx*1.5));
+    return '<i title="'+(j.closeDate||j.date)+' '+j.underlying+' '+fmt$(j.pnl,true)+'" style="background:'+(j.pnl>0?'rgba(63,185,80,'+a+')':'rgba(248,81,73,'+a+')')+'"></i>';
+  }).join('');
+  h += '<div class="pcell"><div class="pcell-h">Trade tape' + (st.n>60?' (last 60)':'') + '</div><div class="tape">'+tape+'</div>'
+    + '<div class="streaks"><div><b class="pos">'+st.maxWinStreak+'</b> best run</div><div><b class="neg">'+st.maxLossStreak+'</b> worst run</div>'
+    + '<div><b style="color:var(--text)">'+st.current.n+'</b> current '+st.current.k+(st.current.n===1?'':(st.current.k==='win'?'s':'es'))+'</div></div>'
+    + '<div class="pcell-foot">Brighter bars are bigger results.</div></div>';
+  h += '</div>';
+
+  h += '<div class="perf-strip">'
+    + '<div class="ps"><div class="ps-l">Profit factor</div><div class="ps-v '+(st.pf>=1?'pos':'neg')+'">'+(st.pf!=null?st.pf.toFixed(2):'∞')+'</div></div>'
+    + '<div class="ps"><div class="ps-l">Payoff ratio</div><div class="ps-v">'+(st.payoff!=null?st.payoff.toFixed(2):'—')+'</div></div>'
+    + '<div class="ps"><div class="ps-l">Recovery factor</div><div class="ps-v">'+(st.recovery!=null?st.recovery.toFixed(1):'—')+'</div></div>'
+    + '<div class="ps"><div class="ps-l">Wins / losses</div><div class="ps-v"><span class="pos">'+st.wins+'</span> / <span class="neg">'+st.losses+'</span></div></div>'
+    + '<div class="ps"><div class="ps-l">Gross won / lost</div><div class="ps-v"><span class="pos">'+fmt$(st.avgW*st.wins)+'</span> / <span class="neg">'+fmt$(st.avgL*st.losses)+'</span></div></div>'
+    + '</div>';
+  h += '</div>';
+  return h;
+}
+
+function wireEquityHover(st) {
+  var wrap = document.getElementById('eqWrap'); if (!wrap || st.n < 2) return;
+  var tip = document.getElementById('eqTip'), cross = document.getElementById('eqCross');
+  wrap.addEventListener('mousemove', function(e){
+    var r = wrap.getBoundingClientRect(), padL = 16, w = r.width - 32;
+    var f = Math.max(0, Math.min(1, (e.clientX - r.left - padL) / w));
+    var i = Math.round(f*(st.n-1)), j = st.closed[i];
+    var px = padL + i/(st.n-1)*w;
+    cross.style.left = px+'px'; cross.style.display = 'block';
+    tip.innerHTML = (j.closeDate||j.date)+'  '+j.underlying+' <span class="'+(j.pnl>0?'pos':'neg')+'">'+fmt$(j.pnl,true)+'</span><br>Running '+fmt$(st.curve[i],true)
+      + (st.dd[i]<0?' <span class="neg">('+fmt$(st.dd[i])+' from peak)</span>':'');
+    tip.style.display = 'block';
+    tip.style.left = Math.min(px+10, r.width - tip.offsetWidth - 4)+'px';
+  });
+  wrap.addEventListener('mouseleave', function(){ tip.style.display='none'; cross.style.display='none'; });
+}
+
 function render() {
   var data = currentData;
   var allJournal = data.journal || [];
@@ -273,6 +466,9 @@ function render() {
     + '<div class="stat"><div class="stat-label">LARGEST LOSS</div><div class="stat-num neg">' + largestLoss.toFixed(0) + '</div></div>'
     + '</div>';
 
+  var perf = perfStats(journal);
+  html += perfHtml(perf, monthLabel(selectedMonth));
+
   var periods = {};
   journal.forEach(function(j){
     var key = periodMode==='week' ? isoWeek(j.date) : j.date.slice(0,7);
@@ -330,6 +526,7 @@ function render() {
   html += '<div class="gap-note">Not yet tracked: gross premium generated vs. paid to close (currently net P/L per position only).</div>';
 
   content.innerHTML = html;
+  wireEquityHover(perf);
   renderFilters(journal);
   renderTable(journal);
 }
